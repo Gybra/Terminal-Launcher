@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
@@ -45,6 +46,7 @@ class DataStorePreferencesRepositoryTest {
         )
 
         firstRepository.setShellType(ShellType.DOS)
+        firstRepository.setTerminalTheme(TerminalTheme.AMBER)
         firstRepository.setShowClock(false)
         firstRepository.setUsername("oreste")
         firstRepository.setHostname("phone")
@@ -61,6 +63,7 @@ class DataStorePreferencesRepositoryTest {
         assertEquals(
             LauncherPreferences(
                 shellType = ShellType.DOS,
+                terminalTheme = TerminalTheme.AMBER,
                 showClock = false,
                 username = "oreste",
                 hostname = "phone",
@@ -138,6 +141,18 @@ class DataStorePreferencesRepositoryTest {
         )
 
         assertEquals(ShellType.UNIX, repository.preferences.first().shellType)
+    }
+
+    @Test
+    fun `maps an unknown persisted theme to the default theme`() = runTest {
+        val storedPreferences = mutablePreferencesOf(
+            stringPreferencesKey("terminal_theme") to "UNKNOWN",
+        )
+        val repository = DataStorePreferencesRepository(
+            FakePreferencesDataStore(initialPreferences = storedPreferences),
+        )
+
+        assertEquals(TerminalTheme.SYSTEM, repository.preferences.first().terminalTheme)
     }
 
     private fun fileBackedRepository(

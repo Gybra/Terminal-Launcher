@@ -4,6 +4,7 @@ import com.gybra.terminallauncher.MainDispatcherRule
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,6 +32,7 @@ class SettingsViewModelTest {
         repository.emit(
             LauncherPreferences(
                 shellType = ShellType.DOS,
+                terminalTheme = TerminalTheme.GREEN,
                 showClock = false,
                 username = "oreste",
                 hostname = "phone",
@@ -41,6 +43,7 @@ class SettingsViewModelTest {
         assertEquals(
             SettingsUiState(
                 shellType = ShellType.DOS,
+                terminalTheme = TerminalTheme.GREEN,
                 showClock = false,
                 username = "oreste",
                 hostname = "phone",
@@ -55,12 +58,14 @@ class SettingsViewModelTest {
         val viewModel = SettingsViewModel(repository)
 
         viewModel.selectShell(ShellType.DOS)
+        viewModel.selectTheme(TerminalTheme.AMBER)
         viewModel.setShowClock(false)
         viewModel.setUsername("oreste")
         viewModel.setHostname("phone")
         advanceUntilIdle()
 
         assertEquals(ShellType.DOS, repository.shellType)
+        assertEquals(TerminalTheme.AMBER, repository.terminalTheme)
         assertEquals(false, repository.showClock)
         assertEquals("oreste", repository.username)
         assertEquals("phone", repository.hostname)
@@ -127,6 +132,7 @@ class SettingsViewModelTest {
         override val preferences: Flow<LauncherPreferences> = mutablePreferences
 
         var shellType: ShellType? = null
+        var terminalTheme: TerminalTheme? = null
         var showClock: Boolean? = null
         var username: String? = null
         var hostname: String? = null
@@ -140,6 +146,12 @@ class SettingsViewModelTest {
             writeFailure?.let { throw it }
             this.shellType = shellType
             emit(mutablePreferences.value.copy(shellType = shellType))
+        }
+
+        override suspend fun setTerminalTheme(terminalTheme: TerminalTheme) {
+            writeFailure?.let { throw it }
+            this.terminalTheme = terminalTheme
+            emit(mutablePreferences.value.copy(terminalTheme = terminalTheme))
         }
 
         override suspend fun setShowClock(showClock: Boolean) {
@@ -188,6 +200,8 @@ class SettingsViewModelTest {
         }
 
         override suspend fun setShellType(shellType: ShellType) = unsupported()
+
+        override suspend fun setTerminalTheme(terminalTheme: TerminalTheme) = unsupported()
 
         override suspend fun setShowClock(showClock: Boolean) {
             throw IOException("disk full")

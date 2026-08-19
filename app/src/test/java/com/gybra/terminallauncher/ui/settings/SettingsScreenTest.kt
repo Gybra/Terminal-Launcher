@@ -2,6 +2,7 @@ package com.gybra.terminallauncher.ui.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -14,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.theme.TerminalTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -36,6 +38,7 @@ class SettingsScreenTest {
 
         composeRule.onNodeWithText("(*) UNIX").assertIsDisplayed()
         composeRule.onNodeWithText("( ) DOS").performClick()
+        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("[*] Show clock"))
         composeRule.onNodeWithText("[*] Show clock").performClick()
 
         assertEquals(ShellType.DOS, harness.state.shellType)
@@ -43,10 +46,33 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `forwards every theme selection`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+
+        val selectionOrder = listOf(
+            TerminalTheme.GREEN,
+            TerminalTheme.AMBER,
+            TerminalTheme.MONOCHROME,
+            TerminalTheme.SYSTEM,
+        )
+        selectionOrder.forEach { theme ->
+            val optionText = "( ) ${theme.name}"
+            composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(optionText))
+            composeRule.onNodeWithText(optionText).performClick()
+
+            assertEquals(theme, harness.state.terminalTheme)
+        }
+    }
+
+    @Test
     fun `forwards username and hostname input`() {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
 
+        composeRule
+            .onNodeWithTag("settings-list")
+            .performScrollToNode(hasContentDescription("Username"))
         composeRule.onNodeWithContentDescription("Username").performTextReplacement("oreste")
         composeRule
             .onNodeWithTag("settings-list")
@@ -71,8 +97,9 @@ class SettingsScreenTest {
         composeRule.setContent { harness.Content() }
 
         composeRule.onNodeWithText("(*) DOS").assertIsDisplayed()
-        composeRule.onNodeWithText("[ ] Show clock").assertIsDisplayed()
         composeRule.onNodeWithText("Unable to save preferences").assertIsDisplayed()
+        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("[ ] Show clock"))
+        composeRule.onNodeWithText("[ ] Show clock").assertIsDisplayed()
     }
 
     @Test
@@ -87,6 +114,7 @@ class SettingsScreenTest {
 
     private fun defaultState(): SettingsUiState = SettingsUiState(
         shellType = ShellType.UNIX,
+        terminalTheme = TerminalTheme.SYSTEM,
         showClock = true,
         username = "user",
         hostname = "android",
@@ -104,6 +132,7 @@ class SettingsScreenTest {
                 state = state,
                 actions = SettingsActions(
                     selectShell = { state = state.copy(shellType = it) },
+                    selectTheme = { state = state.copy(terminalTheme = it) },
                     setShowClock = { state = state.copy(showClock = it) },
                     setUsername = { state = state.copy(username = it) },
                     setHostname = { state = state.copy(hostname = it) },

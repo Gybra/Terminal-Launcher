@@ -12,11 +12,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.ui.terminalTextStyle
+import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 
 @Composable
 public fun HomeScreen(
@@ -25,10 +26,12 @@ public fun HomeScreen(
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = LocalTerminalColors.current
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(colors.background)
+            .testTag("home-list"),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -63,9 +66,10 @@ private fun AppRow(
     displayName: String,
     onClick: () -> Unit,
 ) {
+    val colors = LocalTerminalColors.current
     BasicText(
         text = displayName,
-        style = terminalTextStyle,
+        style = terminalTextStyle(colors.foreground),
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
@@ -75,8 +79,9 @@ private fun AppRow(
 
 @Composable
 private fun TerminalLine(text: String) {
+    val colors = LocalTerminalColors.current
     BasicText(
         text = text,
-        style = terminalTextStyle,
+        style = terminalTextStyle(colors.foreground),
     )
 }
