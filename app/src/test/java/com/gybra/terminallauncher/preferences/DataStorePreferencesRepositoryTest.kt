@@ -1,12 +1,18 @@
 package com.gybra.terminallauncher.preferences
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.gybra.terminallauncher.shell.ShellType
+import java.io.File
 import java.io.IOException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -14,9 +20,14 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class DataStorePreferencesRepositoryTest {
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
     @Test
     fun `uses documented defaults when preferences are empty`() = runTest {
         val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
@@ -26,13 +37,26 @@ class DataStorePreferencesRepositoryTest {
 
     @Test
     fun `persists every launcher preference`() = runTest {
-        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+        val storageFile = File(temporaryFolder.root, "launcher.preferences_pb")
+        val firstJob = SupervisorJob()
+        val firstRepository = fileBackedRepository(
+            storageFile = storageFile,
+            scope = CoroutineScope(firstJob + Dispatchers.IO),
+        )
 
-        repository.setShellType(ShellType.DOS)
-        repository.setShowClock(false)
-        repository.setUsername("oreste")
-        repository.setHostname("phone")
-        repository.pinPackage("org.example.mail")
+        firstRepository.setShellType(ShellType.DOS)
+        firstRepository.setShowClock(false)
+        firstRepository.setUsername("oreste")
+        firstRepository.setHostname("phone")
+        firstRepository.pinPackage("org.example.mail")
+        firstJob.cancelAndJoin()
+
+        val secondJob = SupervisorJob()
+        val restoredPreferences = fileBackedRepository(
+            storageFile = storageFile,
+            scope = CoroutineScope(secondJob + Dispatchers.IO),
+        ).preferences.first()
+        secondJob.cancelAndJoin()
 
         assertEquals(
             LauncherPreferences(
@@ -42,7 +66,7 @@ class DataStorePreferencesRepositoryTest {
                 hostname = "phone",
                 pinnedPackages = setOf("org.example.mail"),
             ),
-            repository.preferences.first(),
+            restoredPreferences,
         )
     }
 
@@ -52,11 +76,21 @@ class DataStorePreferencesRepositoryTest {
 
         repository.pinPackage("org.example.mail")
         repository.pinPackage("org.example.mail")
+        repository.pinPackage("org.example.browser")
         repository.unpinPackage("org.example.missing")
+
+        assertEquals(
+            setOf("org.example.mail", "org.example.browser"),
+            repository.preferences.first().pinnedPackages,
+        )
+
         repository.unpinPackage("org.example.mail")
         repository.unpinPackage("org.example.mail")
 
-        assertEquals(emptySet<String>(), repository.preferences.first().pinnedPackages)
+        assertEquals(
+            setOf("org.example.browser"),
+            repository.preferences.first().pinnedPackages,
+        )
     }
 
     @Test
@@ -102,6 +136,16 @@ class DataStorePreferencesRepositoryTest {
 
         assertEquals(ShellType.UNIX, repository.preferences.first().shellType)
     }
+
+    private fun fileBackedRepository(
+        storageFile: File,
+        scope: CoroutineScope,
+    ): DataStorePreferencesRepository = DataStorePreferencesRepository(
+        dataStore = PreferenceDataStoreFactory.create(
+            scope = scope,
+            produceFile = { storageFile },
+        ),
+    )
 
     private class FakePreferencesDataStore(
         initialPreferences: Preferences = emptyPreferences(),

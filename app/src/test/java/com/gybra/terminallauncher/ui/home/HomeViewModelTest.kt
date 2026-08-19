@@ -51,6 +51,9 @@ class HomeViewModelTest {
             appRepository = FakeAppRepository(apps = listOf(app)),
             preferencesRepository = preferencesRepository,
         )
+        advanceUntilIdle()
+
+        assertEquals(HomeUiState(), viewModel.uiState.value)
 
         preferencesRepository.emit(
             LauncherPreferences(pinnedPackages = setOf(app.packageName)),
