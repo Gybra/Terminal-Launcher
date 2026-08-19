@@ -18,10 +18,12 @@ The current implementation provides:
 - a Home screen that reacts to preference changes and shows only installed pinned apps;
 - DOS and Unix shell profiles for prompts, paths, application names, lists, and command aliases;
 - reactive shell-specific application naming without DOS/Unix branches in Compose;
+- an optional live clock and shell-formatted static prompt on Home;
+- a minimal settings screen for shell, clock, username, and hostname preferences;
 - command-line builds without Android Studio;
 - JVM tests and a mandatory 100% coverage gate for application logic.
 
-Settings UI, prompt input, search, and command execution are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
+Interactive prompt input, search, and command execution are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
 
 ## Safety model
 
@@ -80,6 +82,7 @@ The v0.1 codebase is a single Gradle module with explicit boundaries:
 Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
                           \-> PreferencesRepository -> DataStore
                           \-> ShellProfiles ---------> DOS / Unix formatting
+                          \-> LauncherClock ---------> local system time
                          tap -> AppLauncher ----------> explicit package launch Intent
 ```
 
@@ -87,6 +90,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
 - `shell`: shell context, locations, profile selection, and all DOS/Unix presentation rules;
 - `ui/home`: immutable UI state, screen-level ViewModel, and stateless Compose rendering;
+- `ui/settings`: immutable settings state, preference coordination, and stateless controls;
 - `MainActivity`: Android composition root only.
 
 The repository and launcher own Android integration. Compose receives immutable state and emits user events. Later shell and command behavior must remain independent from Compose.

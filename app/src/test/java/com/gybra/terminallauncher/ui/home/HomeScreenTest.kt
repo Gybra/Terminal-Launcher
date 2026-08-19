@@ -6,10 +6,16 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.shell.LauncherLocation
+import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,10 +36,12 @@ class HomeScreenTest {
         composeRule.setContent {
             HomeScreen(
                 state = HomeUiState(
-                    apps = listOf(app),
                     shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    apps = listOf(app),
                 ),
                 onAppClick = { clickedApp = it },
+                onSettingsClick = {},
             )
         }
 
@@ -55,8 +63,10 @@ class HomeScreenTest {
                 state = HomeUiState(
                     apps = listOf(app),
                     shellProfile = DosShellProfile,
+                    shellContext = defaultShellContext(),
                 ),
                 onAppClick = {},
+                onSettingsClick = {},
             )
         }
 
@@ -68,11 +78,79 @@ class HomeScreenTest {
     fun `renders no application rows for empty state`() {
         composeRule.setContent {
             HomeScreen(
-                state = HomeUiState(shellProfile = UnixShellProfile),
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                ),
                 onAppClick = {},
+                onSettingsClick = {},
             )
         }
 
         composeRule.onNodeWithText("Browser").assertDoesNotExist()
     }
+
+    @Test
+    fun `removes the clock when reactive state hides it`() {
+        var state by mutableStateOf(homeState(clockText = "22:10"))
+
+        composeRule.setContent {
+            HomeScreen(
+                state = state,
+                onAppClick = {},
+                onSettingsClick = {},
+            )
+        }
+
+        composeRule.onNodeWithText("22:10").assertIsDisplayed()
+        state = state.copy(clockText = null)
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("22:10").assertDoesNotExist()
+    }
+
+    @Test
+    fun `reacts to prompt identity and shell profile changes`() {
+        var state by mutableStateOf(homeState())
+        composeRule.setContent {
+            HomeScreen(state = state, onAppClick = {}, onSettingsClick = {})
+        }
+
+        state = state.copy(
+            shellContext = ShellContext("oreste", "phone", LauncherLocation.HOME),
+        )
+        composeRule.onNodeWithText("oreste@phone:~$ _").assertIsDisplayed()
+
+        state = state.copy(shellProfile = DosShellProfile)
+        composeRule.onNodeWithText("C:\\HOME> _").assertIsDisplayed()
+        composeRule.onNodeWithText("oreste@phone:~$ _").assertDoesNotExist()
+    }
+
+    @Test
+    fun `forwards settings clicks`() {
+        var settingsClicked = false
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState(),
+                onAppClick = {},
+                onSettingsClick = { settingsClicked = true },
+            )
+        }
+
+        composeRule.onNodeWithText("settings").performClick()
+
+        assertTrue(settingsClicked)
+    }
+
+    private fun homeState(clockText: String? = null): HomeUiState = HomeUiState(
+        shellProfile = UnixShellProfile,
+        shellContext = defaultShellContext(),
+        clockText = clockText,
+    )
+
+    private fun defaultShellContext(): ShellContext = ShellContext(
+        username = "user",
+        hostname = "android",
+        location = LauncherLocation.HOME,
+    )
 }
