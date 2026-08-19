@@ -17,4 +17,3 @@ Closes #
 ## Screenshots
 
 <!-- Required for user-visible UI changes; otherwise write "Not applicable". -->
-

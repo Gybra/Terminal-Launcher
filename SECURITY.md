@@ -11,4 +11,3 @@ Do not disclose exploitable vulnerabilities in a public issue. Use GitHub privat
 ## Security boundary
 
 Terminal Launcher does not execute a real shell. Any contribution that introduces arbitrary command execution, shell passthrough, root access, or arbitrary Intent URI execution will be rejected.
-

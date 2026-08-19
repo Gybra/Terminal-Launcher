@@ -25,4 +25,3 @@ body:
       options:
         - label: This proposal does not execute a real shell, arbitrary commands, or arbitrary Intent URIs.
           required: true
-

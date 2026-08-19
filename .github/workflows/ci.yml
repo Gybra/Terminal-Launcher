@@ -60,4 +60,3 @@ jobs:
             app/build/reports/kover/
             app/build/reports/lint-results-debug.html
           if-no-files-found: ignore
-

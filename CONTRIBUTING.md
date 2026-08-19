@@ -43,4 +43,3 @@ The required `build-and-test` GitHub check must be green. Only the repository ow
 ## Review
 
 Reviewers check correctness, Android lifecycle safety, architecture boundaries, accessibility, tests, coverage, function density, duplication, and alignment with [AGENTS.md](AGENTS.md). Resolve every review conversation before merge.
-
