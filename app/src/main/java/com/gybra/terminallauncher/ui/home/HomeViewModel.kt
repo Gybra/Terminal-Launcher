@@ -3,7 +3,6 @@ package com.gybra.terminallauncher.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gybra.terminallauncher.launcher.AppRepository
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,9 +22,7 @@ public class HomeViewModel(
         viewModelScope.launch {
             val apps = try {
                 appRepository.getInstalledApps()
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (_: Exception) {
+            } catch (_: SecurityException) {
                 emptyList()
             }
             mutableUiState.value = HomeUiState(apps = apps)

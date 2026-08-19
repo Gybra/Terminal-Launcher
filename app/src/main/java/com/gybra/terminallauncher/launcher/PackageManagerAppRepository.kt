@@ -42,7 +42,7 @@ public class PackageManagerAppRepository(
         return packageManager
             .queryIntentActivities(launcherIntent, PackageManager.MATCH_ALL)
             .mapNotNull { resolveInfo ->
-                val packageName = resolveInfo.activityInfo?.packageName.orEmpty()
+                val packageName = resolveInfo.activityInfo?.packageName ?: return@mapNotNull null
                 val label = resolveInfo.loadLabel(packageManager).toString().trim()
 
                 if (packageName.isBlank() || packageName == launcherPackageName || label.isBlank()) {

@@ -42,6 +42,40 @@ jobs:
       - name: Test, verify coverage, lint, and build
         run: ./gradlew testDebugUnitTest koverVerifyDebug lintDebug assembleDebug --stacktrace
 
+      - name: Verify launcher registration
+        run: |
+          apkanalyzer manifest print app/build/outputs/apk/debug/app-debug.apk > merged-manifest.xml
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+
+          android = "{http://schemas.android.com/apk/res/android}"
+          root = ET.parse("merged-manifest.xml").getroot()
+          required_categories = {
+              "android.intent.category.HOME",
+              "android.intent.category.DEFAULT",
+          }
+
+          for activity in root.findall("./application/activity"):
+              if activity.get(f"{android}exported") != "true":
+                  continue
+              for intent_filter in activity.findall("intent-filter"):
+                  actions = {
+                      action.get(f"{android}name")
+                      for action in intent_filter.findall("action")
+                  }
+                  categories = {
+                      category.get(f"{android}name")
+                      for category in intent_filter.findall("category")
+                  }
+                  if (
+                      "android.intent.action.MAIN" in actions
+                      and required_categories <= categories
+                  ):
+                      raise SystemExit(0)
+
+          raise SystemExit("No exported HOME launcher activity found")
+          PY
+
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4

@@ -13,7 +13,7 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -46,8 +46,8 @@ class PackageManagerAppRepositoryTest {
 
         assertEquals(
             listOf(
-                InstalledApp("com.example.alpha", "Alpha"),
-                InstalledApp("com.example.zebra", "zebra"),
+                InstalledApp(packageName = "com.example.alpha", label = "Alpha"),
+                InstalledApp(packageName = "com.example.zebra", label = "zebra"),
             ),
             repository.getInstalledApps(),
         )
@@ -69,7 +69,7 @@ class PackageManagerAppRepositoryTest {
         stubLaunchableApps(resolveInfo(packageName = "com.example.browser", label = "Browser"))
 
         assertEquals(
-            listOf(InstalledApp("com.example.browser", "Browser")),
+            listOf(InstalledApp(packageName = "com.example.browser", label = "Browser")),
             repository().observeInstalledApps().first(),
         )
     }
@@ -84,7 +84,10 @@ class PackageManagerAppRepositoryTest {
     private fun stubLaunchableApps(vararg apps: ResolveInfo) {
         whenever(
             packageManager.queryIntentActivities(
-                any<Intent>(),
+                argThat<Intent> { intent ->
+                    intent.action == Intent.ACTION_MAIN &&
+                        intent.categories == setOf(Intent.CATEGORY_LAUNCHER)
+                },
                 eq(PackageManager.MATCH_ALL),
             ),
         ).thenReturn(apps.toList())

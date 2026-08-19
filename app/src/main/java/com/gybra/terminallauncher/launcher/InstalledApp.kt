@@ -1,6 +1,6 @@
 package com.gybra.terminallauncher.launcher
 
 public data class InstalledApp(
-    val packageName: String,
-    val label: String,
+    public val packageName: String,
+    public val label: String,
 )

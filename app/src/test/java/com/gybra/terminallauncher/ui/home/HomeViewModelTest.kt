@@ -3,7 +3,6 @@ package com.gybra.terminallauncher.ui.home
 import com.gybra.terminallauncher.MainDispatcherRule
 import com.gybra.terminallauncher.launcher.AppRepository
 import com.gybra.terminallauncher.launcher.InstalledApp
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -20,7 +19,9 @@ class HomeViewModelTest {
 
     @Test
     fun `loads installed applications into immutable UI state`() = runTest(mainDispatcherRule.dispatcher) {
-        val apps = listOf(InstalledApp("com.example.browser", "Browser"))
+        val apps = listOf(
+            InstalledApp(packageName = "com.example.browser", label = "Browser"),
+        )
         val viewModel = HomeViewModel(FakeAppRepository(apps = apps))
 
         advanceUntilIdle()
@@ -29,23 +30,13 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `keeps an empty state when loading applications fails`() = runTest(mainDispatcherRule.dispatcher) {
-        val viewModel = HomeViewModel(FakeAppRepository(failure = IllegalStateException("failed")))
+    fun `keeps an empty state when package access is denied`() = runTest(mainDispatcherRule.dispatcher) {
+        val viewModel = HomeViewModel(FakeAppRepository(failure = SecurityException("denied")))
 
         advanceUntilIdle()
 
         assertEquals(HomeUiState(), viewModel.uiState.value)
     }
-
-    @Test
-    fun `does not convert coroutine cancellation into application state`() =
-        runTest(mainDispatcherRule.dispatcher) {
-            val viewModel = HomeViewModel(FakeAppRepository(failure = CancellationException("cancelled")))
-
-            advanceUntilIdle()
-
-            assertEquals(HomeUiState(), viewModel.uiState.value)
-        }
 
     private class FakeAppRepository(
         private val apps: List<InstalledApp> = emptyList(),
