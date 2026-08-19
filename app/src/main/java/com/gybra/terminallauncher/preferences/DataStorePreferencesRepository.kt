@@ -56,7 +56,7 @@ public class DataStorePreferencesRepository(
         require(packageName.isNotBlank()) { "Package name must not be blank" }
         dataStore.edit { preferences ->
             preferences[Keys.pinnedPackages] =
-                preferences[Keys.pinnedPackages].orEmpty() + packageName
+                (preferences[Keys.pinnedPackages] ?: defaults.pinnedPackages) + packageName
         }
     }
 
@@ -64,7 +64,7 @@ public class DataStorePreferencesRepository(
         require(packageName.isNotBlank()) { "Package name must not be blank" }
         dataStore.edit { preferences ->
             preferences[Keys.pinnedPackages] =
-                preferences[Keys.pinnedPackages].orEmpty() - packageName
+                (preferences[Keys.pinnedPackages] ?: defaults.pinnedPackages) - packageName
         }
     }
 
@@ -73,7 +73,7 @@ public class DataStorePreferencesRepository(
         showClock = preferences[Keys.showClock] ?: defaults.showClock,
         username = preferences[Keys.username] ?: defaults.username,
         hostname = preferences[Keys.hostname] ?: defaults.hostname,
-        pinnedPackages = preferences[Keys.pinnedPackages].orEmpty(),
+        pinnedPackages = preferences[Keys.pinnedPackages] ?: defaults.pinnedPackages,
     )
 
     private fun String?.toShellType(): ShellType =
