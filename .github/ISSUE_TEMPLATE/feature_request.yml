@@ -1,0 +1,28 @@
+name: Feature request
+description: Propose a focused improvement within the safe terminal-launcher model.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Which user problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe observable behavior, not only an implementation.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety boundary
+      options:
+        - label: This proposal does not execute a real shell, arbitrary commands, or arbitrary Intent URIs.
+          required: true
+
