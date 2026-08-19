@@ -74,6 +74,9 @@ class DataStorePreferencesRepositoryTest {
     fun `pin and unpin operations are idempotent`() = runTest {
         val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
 
+        repository.unpinPackage("org.example.missing")
+        assertEquals(emptySet<String>(), repository.preferences.first().pinnedPackages)
+
         repository.pinPackage("org.example.mail")
         repository.pinPackage("org.example.mail")
         repository.pinPackage("org.example.browser")
