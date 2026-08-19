@@ -56,6 +56,7 @@ android {
 kotlin {
     compilerOptions {
         allWarningsAsErrors = true
+        jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.NO_COMPATIBILITY)
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
