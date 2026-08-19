@@ -3,15 +3,19 @@ package com.gybra.terminallauncher.ui.home
 import com.gybra.terminallauncher.MainDispatcherRule
 import com.gybra.terminallauncher.launcher.AppRepository
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.LauncherClock
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.shell.LauncherLocation
+import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -38,6 +42,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(apps = apps),
             preferencesRepository = preferencesRepository,
+            launcherClock = FakeLauncherClock(),
         )
 
         advanceUntilIdle()
@@ -52,6 +57,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(apps = listOf(app)),
             preferencesRepository = preferencesRepository,
+            launcherClock = FakeLauncherClock(),
         )
         advanceUntilIdle()
 
@@ -76,6 +82,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(apps = listOf(app)),
             preferencesRepository = preferencesRepository,
+            launcherClock = FakeLauncherClock(),
         )
         advanceUntilIdle()
 
@@ -91,6 +98,41 @@ class HomeViewModelTest {
             HomeUiState(
                 apps = listOf(app),
                 shellProfile = DosShellProfile,
+                shellContext = defaultShellContext(),
+                clockText = "22:10",
+            ),
+            viewModel.uiState.value,
+        )
+    }
+
+    @Test
+    fun `reacts when clock visibility and prompt identity change`() = runTest(mainDispatcherRule.dispatcher) {
+        val preferencesRepository = FakePreferencesRepository()
+        val viewModel = HomeViewModel(
+            appRepository = FakeAppRepository(),
+            preferencesRepository = preferencesRepository,
+            launcherClock = FakeLauncherClock(),
+        )
+        advanceUntilIdle()
+
+        preferencesRepository.emit(
+            LauncherPreferences(
+                showClock = false,
+                username = "oreste",
+                hostname = "phone",
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            HomeUiState(
+                shellProfile = UnixShellProfile,
+                shellContext = ShellContext(
+                    username = "oreste",
+                    hostname = "phone",
+                    location = LauncherLocation.HOME,
+                ),
+                clockText = null,
             ),
             viewModel.uiState.value,
         )
@@ -105,6 +147,7 @@ class HomeViewModelTest {
                     pinnedPackages = setOf("com.example.mail"),
                 ),
             ),
+            launcherClock = FakeLauncherClock(),
         )
 
         advanceUntilIdle()
@@ -121,6 +164,7 @@ class HomeViewModelTest {
                         failure = IllegalStateException("broken repository"),
                     ),
                     preferencesRepository = FakePreferencesRepository(),
+                    launcherClock = FakeLauncherClock(),
                 )
 
                 advanceUntilIdle()
@@ -146,9 +190,21 @@ class HomeViewModelTest {
     }
 
     private fun unixHomeState(apps: List<InstalledApp> = emptyList()): HomeUiState = HomeUiState(
-        apps = apps,
         shellProfile = UnixShellProfile,
+        shellContext = defaultShellContext(),
+        apps = apps,
+        clockText = "22:10",
     )
+
+    private fun defaultShellContext(): ShellContext = ShellContext(
+        username = "user",
+        hostname = "android",
+        location = LauncherLocation.HOME,
+    )
+
+    private class FakeLauncherClock : LauncherClock {
+        override fun observeTime(): Flow<String> = flowOf("22:10")
+    }
 
     private class FakePreferencesRepository(
         initialPreferences: LauncherPreferences = LauncherPreferences(),

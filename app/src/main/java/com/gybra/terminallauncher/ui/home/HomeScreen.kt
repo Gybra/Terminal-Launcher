@@ -17,12 +17,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.launcher.InstalledApp
 
 @Composable
 public fun HomeScreen(
     state: HomeUiState,
     onAppClick: (InstalledApp) -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -32,6 +34,9 @@ public fun HomeScreen(
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        state.clockText?.let { clockText ->
+            item(key = "clock") { TerminalLine(text = clockText) }
+        }
         items(
             items = state.apps,
             key = InstalledApp::packageName,
@@ -39,6 +44,17 @@ public fun HomeScreen(
             AppRow(
                 displayName = state.shellProfile.formatAppName(app),
                 onClick = { onAppClick(app) },
+            )
+        }
+        item(key = "settings") {
+            AppRow(
+                displayName = state.shellProfile.aliasFor(Command.SETTINGS),
+                onClick = onSettingsClick,
+            )
+        }
+        item(key = "prompt") {
+            TerminalLine(
+                text = "${state.shellProfile.prompt(state.shellContext)} _",
             )
         }
     }
@@ -61,5 +77,18 @@ private fun AppRow(
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .clickable(onClick = onClick),
+    )
+}
+
+@Composable
+private fun TerminalLine(text: String) {
+    BasicText(
+        text = text,
+        style = TextStyle(
+            color = Color.White,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 18.sp,
+            lineHeight = 24.sp,
+        ),
     )
 }

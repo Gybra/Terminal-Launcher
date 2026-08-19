@@ -7,9 +7,12 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.shell.LauncherLocation
+import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,10 +33,12 @@ class HomeScreenTest {
         composeRule.setContent {
             HomeScreen(
                 state = HomeUiState(
-                    apps = listOf(app),
                     shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    apps = listOf(app),
                 ),
                 onAppClick = { clickedApp = it },
+                onSettingsClick = {},
             )
         }
 
@@ -55,8 +60,10 @@ class HomeScreenTest {
                 state = HomeUiState(
                     apps = listOf(app),
                     shellProfile = DosShellProfile,
+                    shellContext = defaultShellContext(),
                 ),
                 onAppClick = {},
+                onSettingsClick = {},
             )
         }
 
@@ -68,11 +75,44 @@ class HomeScreenTest {
     fun `renders no application rows for empty state`() {
         composeRule.setContent {
             HomeScreen(
-                state = HomeUiState(shellProfile = UnixShellProfile),
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                ),
                 onAppClick = {},
+                onSettingsClick = {},
             )
         }
 
         composeRule.onNodeWithText("Browser").assertDoesNotExist()
     }
+
+    @Test
+    fun `renders clock prompt and forwards settings clicks`() {
+        var settingsClicked = false
+
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    clockText = "22:10",
+                ),
+                onAppClick = {},
+                onSettingsClick = { settingsClicked = true },
+            )
+        }
+
+        composeRule.onNodeWithText("22:10").assertIsDisplayed()
+        composeRule.onNodeWithText("user@android:~$ _").assertIsDisplayed()
+        composeRule.onNodeWithText("settings").performClick()
+
+        assertTrue(settingsClicked)
+    }
+
+    private fun defaultShellContext(): ShellContext = ShellContext(
+        username = "user",
+        hostname = "android",
+        location = LauncherLocation.HOME,
+    )
 }
