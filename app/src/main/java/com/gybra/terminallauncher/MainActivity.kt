@@ -16,6 +16,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.gybra.terminallauncher.launcher.AppLauncher
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
+import com.gybra.terminallauncher.preferences.DataStorePreferencesRepository
+import com.gybra.terminallauncher.preferences.launcherDataStore
 import com.gybra.terminallauncher.ui.home.HomeScreen
 import com.gybra.terminallauncher.ui.home.HomeViewModel
 
@@ -28,9 +30,15 @@ public class MainActivity : ComponentActivity() {
             packageManager = packageManager,
             launcherPackageName = packageName,
         )
+        val preferencesRepository = DataStorePreferencesRepository(applicationContext.launcherDataStore)
         val appLauncher = AppLauncher(applicationContext)
         val homeViewModelFactory = viewModelFactory {
-            initializer { HomeViewModel(appRepository) }
+            initializer {
+                HomeViewModel(
+                    appRepository = appRepository,
+                    preferencesRepository = preferencesRepository,
+                )
+            }
         }
 
         setContent {

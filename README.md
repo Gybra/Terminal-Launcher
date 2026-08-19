@@ -6,17 +6,20 @@ Terminal Launcher is a minimal, open-source Android Home application written in 
 
 ## Current status
 
-Milestone 1 provides:
+The current implementation provides:
 
 - Android Home registration;
 - a text-only list of launchable applications;
 - tap-to-launch behavior;
 - a full-screen, edge-to-edge Compose UI;
 - system monospace typography;
+- DataStore-backed launcher preferences;
+- persisted shell, clock, username, hostname, and pinned-package settings;
+- a Home screen that reacts to preference changes and shows only installed pinned apps;
 - command-line builds without Android Studio;
 - JVM tests and a mandatory 100% coverage gate for application logic.
 
-Preferences, pinned applications, DOS/Unix profiles, prompt input, search, and commands are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally not part of this milestone.
+Settings UI, DOS/Unix profiles, prompt input, search, and commands are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
 
 ## Safety model
 
@@ -72,11 +75,14 @@ Then choose Terminal Launcher when Android asks for the default Home application
 The v0.1 codebase is a single Gradle module with explicit boundaries:
 
 ```text
-Compose UI -> HomeViewModel -> AppRepository -> PackageManager
-                         tap -> AppLauncher -> explicit package launch Intent
+Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
+                          \-> PreferencesRepository -> DataStore
+                         tap -> AppLauncher ----------> explicit package launch Intent
 ```
 
 - `launcher`: installed-application model, repository boundary, PackageManager adapter, and app launcher;
+- `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
+- `shell`: shell selection model, with formatting profiles added in a later issue;
 - `ui/home`: immutable UI state, screen-level ViewModel, and stateless Compose rendering;
 - `MainActivity`: Android composition root only.
 
