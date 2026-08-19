@@ -31,10 +31,7 @@ import com.gybra.terminallauncher.ui.terminalTextStyle
 @Composable
 public fun SettingsScreen(
     state: SettingsUiState,
-    onShellSelected: (ShellType) -> Unit,
-    onShowClockChanged: (Boolean) -> Unit,
-    onUsernameChanged: (String) -> Unit,
-    onHostnameChanged: (String) -> Unit,
+    actions: SettingsActions,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -57,7 +54,7 @@ public fun SettingsScreen(
                 ShellOption(
                     shellType = shellType,
                     selected = state.shellType == shellType,
-                    onSelected = onShellSelected,
+                    onSelected = actions.selectShell,
                 )
             }
         }
@@ -65,7 +62,7 @@ public fun SettingsScreen(
             ToggleOption(
                 label = "Show clock",
                 checked = state.showClock,
-                onCheckedChange = onShowClockChanged,
+                onCheckedChange = actions.setShowClock,
             )
         }
         item(key = "unix") { SectionTitle("Unix") }
@@ -73,14 +70,14 @@ public fun SettingsScreen(
             TextSetting(
                 label = "Username",
                 value = state.username,
-                onValueChange = onUsernameChanged,
+                onValueChange = actions.setUsername,
             )
         }
         item(key = "hostname") {
             TextSetting(
                 label = "Hostname",
                 value = state.hostname,
-                onValueChange = onHostnameChanged,
+                onValueChange = actions.setHostname,
             )
         }
     }

@@ -86,11 +86,12 @@ public class SettingsViewModel(
     }
 
     private suspend fun refreshPersistedState() {
-        val error = if (batchFailed) STORAGE_ERROR else null
-        batchFailed = false
-        mutableUiState.value = preferencesRepository.preferences.first().toUiState().copy(
-            storageError = error,
-        )
+        val preferences = preferencesRepository.preferences.first()
+        if (pendingWrites == 0) {
+            val error = if (batchFailed) STORAGE_ERROR else null
+            batchFailed = false
+            mutableUiState.value = preferences.toUiState().copy(storageError = error)
+        }
     }
 
     private fun LauncherPreferences.toUiState(): SettingsUiState = SettingsUiState(

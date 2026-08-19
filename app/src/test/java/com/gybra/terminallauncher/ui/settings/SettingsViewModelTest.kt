@@ -5,10 +5,13 @@ import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.ShellType
 import java.io.IOException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -93,6 +96,30 @@ class SettingsViewModelTest {
         assertEquals("Unable to save preferences", viewModel.uiState.value.storageError)
     }
 
+    @Test
+    fun `does not replace a newer edit when failure recovery resumes`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repository = RefreshRacePreferencesRepository()
+            val viewModel = SettingsViewModel(repository)
+            runCurrent()
+
+            viewModel.setShowClock(false)
+            repository.refreshStarted.await()
+            viewModel.setUsername("oreste")
+            runCurrent()
+
+            repository.releaseRefresh.complete(Unit)
+            runCurrent()
+
+            assertEquals("oreste", viewModel.uiState.value.username)
+
+            repository.releaseUsernameWrite.complete(Unit)
+            advanceUntilIdle()
+
+            assertEquals("oreste", viewModel.uiState.value.username)
+            assertEquals("Unable to save preferences", viewModel.uiState.value.storageError)
+        }
+
     private class FakePreferencesRepository(
         private val writeFailure: IOException? = null,
     ) : PreferencesRepository {
@@ -133,6 +160,45 @@ class SettingsViewModelTest {
             this.hostname = hostname
             emit(mutablePreferences.value.copy(hostname = hostname))
         }
+
+        override suspend fun pinPackage(packageName: String) = unsupported()
+
+        override suspend fun unpinPackage(packageName: String) = unsupported()
+
+        private fun unsupported(): Nothing = error("Not required by this test")
+    }
+
+    private class RefreshRacePreferencesRepository : PreferencesRepository {
+        private var preferencesValue = LauncherPreferences()
+        private var subscriptions = 0
+        val refreshStarted = CompletableDeferred<Unit>()
+        val releaseRefresh = CompletableDeferred<Unit>()
+        val releaseUsernameWrite = CompletableDeferred<Unit>()
+
+        override val preferences: Flow<LauncherPreferences> = flow {
+            subscriptions += 1
+            if (subscriptions == 1) {
+                emit(preferencesValue)
+            } else {
+                val snapshot = preferencesValue
+                refreshStarted.complete(Unit)
+                releaseRefresh.await()
+                emit(snapshot)
+            }
+        }
+
+        override suspend fun setShellType(shellType: ShellType) = unsupported()
+
+        override suspend fun setShowClock(showClock: Boolean) {
+            throw IOException("disk full")
+        }
+
+        override suspend fun setUsername(username: String) {
+            releaseUsernameWrite.await()
+            preferencesValue = preferencesValue.copy(username = username)
+        }
+
+        override suspend fun setHostname(hostname: String) = unsupported()
 
         override suspend fun pinPackage(packageName: String) = unsupported()
 

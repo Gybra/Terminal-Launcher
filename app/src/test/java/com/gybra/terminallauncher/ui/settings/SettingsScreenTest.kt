@@ -102,10 +102,12 @@ class SettingsScreenTest {
         fun Content() {
             SettingsScreen(
                 state = state,
-                onShellSelected = { state = state.copy(shellType = it) },
-                onShowClockChanged = { state = state.copy(showClock = it) },
-                onUsernameChanged = { state = state.copy(username = it) },
-                onHostnameChanged = { state = state.copy(hostname = it) },
+                actions = SettingsActions(
+                    selectShell = { state = state.copy(shellType = it) },
+                    setShowClock = { state = state.copy(showClock = it) },
+                    setUsername = { state = state.copy(username = it) },
+                    setHostname = { state = state.copy(hostname = it) },
+                ),
                 onBack = { wentBack = true },
             )
         }

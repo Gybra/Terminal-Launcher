@@ -35,10 +35,7 @@ public fun LauncherApp(
     } else {
         SettingsScreen(
             state = settingsState,
-            onShellSelected = settingsActions.selectShell,
-            onShowClockChanged = settingsActions.setShowClock,
-            onUsernameChanged = settingsActions.setUsername,
-            onHostnameChanged = settingsActions.setHostname,
+            actions = settingsActions,
             onBack = { destination = LauncherDestination.HOME },
         )
     }
