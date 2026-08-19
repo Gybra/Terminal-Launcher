@@ -13,12 +13,10 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.ui.terminalTextStyle
 
 @Composable
 public fun HomeScreen(
@@ -67,12 +65,7 @@ private fun AppRow(
 ) {
     BasicText(
         text = displayName,
-        style = TextStyle(
-            color = Color.White,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 18.sp,
-            lineHeight = 24.sp,
-        ),
+        style = terminalTextStyle,
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
@@ -84,11 +77,6 @@ private fun AppRow(
 private fun TerminalLine(text: String) {
     BasicText(
         text = text,
-        style = TextStyle(
-            color = Color.White,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 18.sp,
-            lineHeight = 24.sp,
-        ),
+        style = terminalTextStyle,
     )
 }

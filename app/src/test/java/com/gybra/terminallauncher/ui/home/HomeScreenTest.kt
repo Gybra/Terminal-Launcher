@@ -6,6 +6,9 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
@@ -88,27 +91,62 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `renders clock prompt and forwards settings clicks`() {
-        var settingsClicked = false
+    fun `removes the clock when reactive state hides it`() {
+        var state by mutableStateOf(homeState(clockText = "22:10"))
 
         composeRule.setContent {
             HomeScreen(
-                state = HomeUiState(
-                    shellProfile = UnixShellProfile,
-                    shellContext = defaultShellContext(),
-                    clockText = "22:10",
-                ),
+                state = state,
+                onAppClick = {},
+                onSettingsClick = {},
+            )
+        }
+
+        composeRule.onNodeWithText("22:10").assertIsDisplayed()
+        state = state.copy(clockText = null)
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("22:10").assertDoesNotExist()
+    }
+
+    @Test
+    fun `reacts to prompt identity and shell profile changes`() {
+        var state by mutableStateOf(homeState())
+        composeRule.setContent {
+            HomeScreen(state = state, onAppClick = {}, onSettingsClick = {})
+        }
+
+        state = state.copy(
+            shellContext = ShellContext("oreste", "phone", LauncherLocation.HOME),
+        )
+        composeRule.onNodeWithText("oreste@phone:~$ _").assertIsDisplayed()
+
+        state = state.copy(shellProfile = DosShellProfile)
+        composeRule.onNodeWithText("C:\\HOME> _").assertIsDisplayed()
+        composeRule.onNodeWithText("oreste@phone:~$ _").assertDoesNotExist()
+    }
+
+    @Test
+    fun `forwards settings clicks`() {
+        var settingsClicked = false
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState(),
                 onAppClick = {},
                 onSettingsClick = { settingsClicked = true },
             )
         }
 
-        composeRule.onNodeWithText("22:10").assertIsDisplayed()
-        composeRule.onNodeWithText("user@android:~$ _").assertIsDisplayed()
         composeRule.onNodeWithText("settings").performClick()
 
         assertTrue(settingsClicked)
     }
+
+    private fun homeState(clockText: String? = null): HomeUiState = HomeUiState(
+        shellProfile = UnixShellProfile,
+        shellContext = defaultShellContext(),
+        clockText = clockText,
+    )
 
     private fun defaultShellContext(): ShellContext = ShellContext(
         username = "user",

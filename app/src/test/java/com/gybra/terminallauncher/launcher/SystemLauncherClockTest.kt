@@ -39,6 +39,15 @@ class SystemLauncherClockTest {
     fun `default clock emits a valid twenty four hour time`() = runTest {
         val value = SystemLauncherClock().observeTime().first()
 
-        assertTrue(value.matches(Regex("[0-2][0-9]:[0-5][0-9]")))
+        assertTrue(value.matches(Regex("(?:[01][0-9]|2[0-3]):[0-5][0-9]")))
+    }
+
+    @Test
+    fun `formats midnight as zero hours`() = runTest {
+        val value = SystemLauncherClock(
+            currentTime = { LocalTime.MIDNIGHT },
+        ).observeTime().first()
+
+        assertEquals("00:00", value)
     }
 }

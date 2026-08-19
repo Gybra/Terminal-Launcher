@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.Composable
 import com.gybra.terminallauncher.shell.ShellType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -29,41 +30,23 @@ class SettingsScreenTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `renders current settings and forwards every user change`() {
-        var selectedShell: ShellType? = null
-        var showClock = true
-        var username = ""
-        var hostname = ""
-        var wentBack = false
-        var state by mutableStateOf(defaultState())
-
-        composeRule.setContent {
-            SettingsScreen(
-                state = state,
-                onShellSelected = {
-                    selectedShell = it
-                    state = state.copy(shellType = it)
-                },
-                onShowClockChanged = {
-                    showClock = it
-                    state = state.copy(showClock = it)
-                },
-                onUsernameChanged = {
-                    username = it
-                    state = state.copy(username = it)
-                },
-                onHostnameChanged = {
-                    hostname = it
-                    state = state.copy(hostname = it)
-                },
-                onBack = { wentBack = true },
-            )
-        }
+    fun `renders and changes shell and clock controls`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
 
         composeRule.onNodeWithText("(*) UNIX").assertIsDisplayed()
         composeRule.onNodeWithText("( ) DOS").performClick()
         composeRule.onNodeWithText("[*] Show clock").performClick()
-        composeRule.onNodeWithText("< back").performClick()
+
+        assertEquals(ShellType.DOS, harness.state.shellType)
+        assertFalse(harness.state.showClock)
+    }
+
+    @Test
+    fun `forwards username and hostname input`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+
         composeRule.onNodeWithContentDescription("Username").performTextReplacement("oreste")
         composeRule
             .onNodeWithTag("settings-list")
@@ -72,28 +55,34 @@ class SettingsScreenTest {
             .onNodeWithContentDescription("Hostname")
             .performTextReplacement("phone")
 
-        assertEquals(ShellType.DOS, selectedShell)
-        assertFalse(showClock)
-        assertEquals("oreste", username)
-        assertEquals("phone", hostname)
-        assertTrue(wentBack)
+        assertEquals("oreste", harness.state.username)
+        assertEquals("phone", harness.state.hostname)
     }
 
     @Test
     fun `renders unchecked clock and selected DOS state`() {
-        composeRule.setContent {
-            SettingsScreen(
-                state = defaultState().copy(shellType = ShellType.DOS, showClock = false),
-                onShellSelected = {},
-                onShowClockChanged = {},
-                onUsernameChanged = {},
-                onHostnameChanged = {},
-                onBack = {},
-            )
-        }
+        val harness = SettingsHarness(
+            initialState = defaultState().copy(
+                shellType = ShellType.DOS,
+                showClock = false,
+                storageError = "Unable to save preferences",
+            ),
+        )
+        composeRule.setContent { harness.Content() }
 
         composeRule.onNodeWithText("(*) DOS").assertIsDisplayed()
         composeRule.onNodeWithText("[ ] Show clock").assertIsDisplayed()
+        composeRule.onNodeWithText("Unable to save preferences").assertIsDisplayed()
+    }
+
+    @Test
+    fun `forwards the explicit back action`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+
+        composeRule.onNodeWithText("< back").performClick()
+
+        assertTrue(harness.wentBack)
     }
 
     private fun defaultState(): SettingsUiState = SettingsUiState(
@@ -102,4 +91,23 @@ class SettingsScreenTest {
         username = "user",
         hostname = "android",
     )
+
+    private inner class SettingsHarness(
+        initialState: SettingsUiState = defaultState(),
+    ) {
+        var state by mutableStateOf(initialState)
+        var wentBack = false
+
+        @Composable
+        fun Content() {
+            SettingsScreen(
+                state = state,
+                onShellSelected = { state = state.copy(shellType = it) },
+                onShowClockChanged = { state = state.copy(showClock = it) },
+                onUsernameChanged = { state = state.copy(username = it) },
+                onHostnameChanged = { state = state.copy(hostname = it) },
+                onBack = { wentBack = true },
+            )
+        }
+    }
 }

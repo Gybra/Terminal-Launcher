@@ -7,4 +7,5 @@ public data class SettingsUiState(
     public val showClock: Boolean,
     public val username: String,
     public val hostname: String,
+    public val storageError: String? = null,
 )

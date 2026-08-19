@@ -4,13 +4,9 @@ import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -24,9 +20,9 @@ import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
 import com.gybra.terminallauncher.launcher.SystemLauncherClock
 import com.gybra.terminallauncher.preferences.DataStorePreferencesRepository
 import com.gybra.terminallauncher.preferences.launcherDataStore
-import com.gybra.terminallauncher.ui.home.HomeScreen
+import com.gybra.terminallauncher.ui.LauncherApp
 import com.gybra.terminallauncher.ui.home.HomeViewModel
-import com.gybra.terminallauncher.ui.settings.SettingsScreen
+import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsViewModel
 
 public class MainActivity : ComponentActivity() {
@@ -67,26 +63,17 @@ public class MainActivity : ComponentActivity() {
             val settingsViewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
             val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
             val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
-            var settingsVisible by rememberSaveable { mutableStateOf(false) }
-
-            BackHandler(enabled = settingsVisible) { settingsVisible = false }
-
-            if (settingsVisible) {
-                SettingsScreen(
-                    state = settingsState,
-                    onShellSelected = settingsViewModel::selectShell,
-                    onShowClockChanged = settingsViewModel::setShowClock,
-                    onUsernameChanged = settingsViewModel::setUsername,
-                    onHostnameChanged = settingsViewModel::setHostname,
-                    onBack = { settingsVisible = false },
-                )
-            } else {
-                HomeScreen(
-                    state = homeState,
-                    onAppClick = appLauncher::launch,
-                    onSettingsClick = { settingsVisible = true },
-                )
-            }
+            LauncherApp(
+                homeState = homeState,
+                settingsState = settingsState,
+                settingsActions = SettingsActions(
+                    selectShell = settingsViewModel::selectShell,
+                    setShowClock = settingsViewModel::setShowClock,
+                    setUsername = settingsViewModel::setUsername,
+                    setHostname = settingsViewModel::setHostname,
+                ),
+                onAppClick = appLauncher::launch,
+            )
         }
     }
 

@@ -24,11 +24,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.ui.terminalTextStyle
 
 @Composable
 public fun SettingsScreen(
@@ -49,6 +47,9 @@ public fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item(key = "back") { ActionLine(text = "< back", onClick = onBack) }
+        state.storageError?.let { error ->
+            item(key = "storage-error") { TerminalText(error) }
+        }
         item(key = "appearance") { SectionTitle("Appearance") }
         item(key = "shell") { TerminalText("Shell") }
         ShellType.entries.forEach { shellType ->
@@ -138,7 +139,7 @@ private fun TextSetting(
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            textStyle = TerminalTextStyle,
+            textStyle = terminalTextStyle,
             cursorBrush = SolidColor(Color.White),
             singleLine = true,
             modifier = Modifier
@@ -154,7 +155,7 @@ private fun TextSetting(
 private fun SectionTitle(text: String) {
     BasicText(
         text = text,
-        style = TerminalTextStyle.copy(color = Color(0xFFAAAAAA)),
+        style = terminalTextStyle.copy(color = Color(0xFFAAAAAA)),
         modifier = Modifier.padding(top = 16.dp),
     )
 }
@@ -163,7 +164,7 @@ private fun SectionTitle(text: String) {
 private fun ActionLine(text: String, onClick: () -> Unit) {
     BasicText(
         text = text,
-        style = TerminalTextStyle,
+        style = terminalTextStyle,
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
@@ -173,12 +174,5 @@ private fun ActionLine(text: String, onClick: () -> Unit) {
 
 @Composable
 private fun TerminalText(text: String) {
-    BasicText(text = text, style = TerminalTextStyle)
+    BasicText(text = text, style = terminalTextStyle)
 }
-
-private val TerminalTextStyle = TextStyle(
-    color = Color.White,
-    fontFamily = FontFamily.Monospace,
-    fontSize = 18.sp,
-    lineHeight = 24.sp,
-)
