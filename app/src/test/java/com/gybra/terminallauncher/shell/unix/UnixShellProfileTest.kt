@@ -6,7 +6,6 @@ import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellType
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 class UnixShellProfileTest {
@@ -56,13 +55,10 @@ class UnixShellProfileTest {
         assertEquals(ShellType.UNIX, profile.type)
         expectedAliases.forEach { (command, alias) ->
             assertEquals(alias, profile.aliasFor(command))
-            assertEquals(command, profile.commandForAlias(alias.uppercase()))
         }
         assertEquals(setOf("ls", "dir"), profile.aliasesFor(Command.LIST_APPS))
         assertEquals(setOf("clear", "cls"), profile.aliasesFor(Command.CLEAR))
-        assertEquals(Command.LIST_APPS, profile.commandForAlias("DIR"))
-        assertEquals(Command.CLEAR, profile.commandForAlias("CLS"))
-        assertNull(profile.commandForAlias("unknown"))
+        assertEquals(setOf("help"), profile.aliasesFor(Command.HELP))
     }
 
     private fun contextAt(location: LauncherLocation): ShellContext = ShellContext(

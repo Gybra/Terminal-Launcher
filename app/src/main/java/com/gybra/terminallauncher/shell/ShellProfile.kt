@@ -17,8 +17,4 @@ public interface ShellProfile {
     public fun formatAppList(apps: List<InstalledApp>): List<String> = apps.map(::formatAppName)
 
     public fun aliasesFor(command: Command): Set<String> = setOf(aliasFor(command))
-
-    public fun commandForAlias(alias: String): Command? = Command.entries.firstOrNull { command ->
-        aliasesFor(command).any { candidate -> candidate.equals(alias, ignoreCase = true) }
-    }
 }

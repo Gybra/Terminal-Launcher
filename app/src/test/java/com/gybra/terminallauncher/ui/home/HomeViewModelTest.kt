@@ -7,6 +7,7 @@ import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
+import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,7 +42,7 @@ class HomeViewModelTest {
 
         advanceUntilIdle()
 
-        assertEquals(HomeUiState(apps = listOf(apps[1])), viewModel.uiState.value)
+        assertEquals(unixHomeState(apps = listOf(apps[1])), viewModel.uiState.value)
     }
 
     @Test
@@ -54,14 +55,14 @@ class HomeViewModelTest {
         )
         advanceUntilIdle()
 
-        assertEquals(HomeUiState(), viewModel.uiState.value)
+        assertEquals(unixHomeState(), viewModel.uiState.value)
 
         preferencesRepository.emit(
             LauncherPreferences(pinnedPackages = setOf(app.packageName)),
         )
         advanceUntilIdle()
 
-        assertEquals(HomeUiState(apps = listOf(app)), viewModel.uiState.value)
+        assertEquals(unixHomeState(apps = listOf(app)), viewModel.uiState.value)
     }
 
     @Test
@@ -108,7 +109,7 @@ class HomeViewModelTest {
 
         advanceUntilIdle()
 
-        assertEquals(HomeUiState(), viewModel.uiState.value)
+        assertEquals(unixHomeState(), viewModel.uiState.value)
     }
 
     @Test
@@ -143,6 +144,11 @@ class HomeViewModelTest {
             emit(apps)
         }
     }
+
+    private fun unixHomeState(apps: List<InstalledApp> = emptyList()): HomeUiState = HomeUiState(
+        apps = apps,
+        shellProfile = UnixShellProfile,
+    )
 
     private class FakePreferencesRepository(
         initialPreferences: LauncherPreferences = LauncherPreferences(),

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
+import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -28,7 +29,10 @@ class HomeScreenTest {
 
         composeRule.setContent {
             HomeScreen(
-                state = HomeUiState(apps = listOf(app)),
+                state = HomeUiState(
+                    apps = listOf(app),
+                    shellProfile = UnixShellProfile,
+                ),
                 onAppClick = { clickedApp = it },
             )
         }
@@ -64,7 +68,7 @@ class HomeScreenTest {
     fun `renders no application rows for empty state`() {
         composeRule.setContent {
             HomeScreen(
-                state = HomeUiState(),
+                state = HomeUiState(shellProfile = UnixShellProfile),
                 onAppClick = {},
             )
         }

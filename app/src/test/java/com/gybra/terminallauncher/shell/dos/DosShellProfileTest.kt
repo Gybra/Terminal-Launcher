@@ -6,7 +6,6 @@ import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellType
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 class DosShellProfileTest {
@@ -46,7 +45,7 @@ class DosShellProfileTest {
     }
 
     @Test
-    fun `exposes DOS command aliases and resolves them case insensitively`() {
+    fun `exposes DOS command aliases`() {
         val expectedAliases = mapOf(
             Command.LIST_APPS to "DIR",
             Command.CLEAR to "CLS",
@@ -60,9 +59,7 @@ class DosShellProfileTest {
         expectedAliases.forEach { (command, alias) ->
             assertEquals(alias, profile.aliasFor(command))
             assertEquals(setOf(alias), profile.aliasesFor(command))
-            assertEquals(command, profile.commandForAlias(alias.lowercase()))
         }
-        assertNull(profile.commandForAlias("unknown"))
     }
 
     private fun contextAt(location: LauncherLocation): ShellContext = ShellContext(
