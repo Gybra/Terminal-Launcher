@@ -3,29 +3,44 @@ package com.gybra.terminallauncher.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gybra.terminallauncher.launcher.AppRepository
+import com.gybra.terminallauncher.preferences.PreferencesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 public class HomeViewModel(
     private val appRepository: AppRepository,
+    private val preferencesRepository: PreferencesRepository,
 ) : ViewModel() {
     private val mutableUiState = MutableStateFlow(HomeUiState())
     public val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
 
     init {
-        loadInstalledApps()
+        observePinnedApps()
     }
 
-    private fun loadInstalledApps() {
+    private fun observePinnedApps() {
         viewModelScope.launch {
-            val apps = try {
-                appRepository.getInstalledApps()
-            } catch (_: SecurityException) {
-                emptyList()
-            }
-            mutableUiState.value = HomeUiState(apps = apps)
+            appRepository
+                .observeInstalledApps()
+                .catch { failure ->
+                    if (failure is SecurityException) {
+                        emit(emptyList())
+                    } else {
+                        throw failure
+                    }
+                }
+                .combine(preferencesRepository.preferences) { apps, preferences ->
+                    HomeUiState(
+                        apps = apps.filter { app ->
+                            app.packageName in preferences.pinnedPackages
+                        },
+                    )
+                }
+                .collect(mutableUiState)
         }
     }
 }
