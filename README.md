@@ -21,10 +21,11 @@ The current implementation provides:
 - an optional live clock and shell-formatted static prompt on Home;
 - independent System, Green, Amber, and Monochrome terminal color themes;
 - a minimal settings screen for shell, theme, clock, username, and hostname preferences;
+- a focusable prompt with keyboard input, Enter submission, and a focus-aware blinking cursor;
 - command-line builds without Android Studio;
 - JVM tests and a mandatory 100% coverage gate for application logic.
 
-Interactive prompt input, search, and command execution are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
+Live application search and command execution are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
 
 ## Safety model
 

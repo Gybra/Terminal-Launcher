@@ -1,5 +1,6 @@
 package com.gybra.terminallauncher.ui.home
 
+import androidx.compose.ui.text.TextRange
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gybra.terminallauncher.launcher.AppRepository
@@ -7,14 +8,16 @@ import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.LauncherClock
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
-import com.gybra.terminallauncher.shell.ShellProfiles
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
+import com.gybra.terminallauncher.shell.ShellProfiles
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
 public class HomeViewModel(
     private val appRepository: AppRepository,
@@ -22,6 +25,7 @@ public class HomeViewModel(
     private val launcherClock: LauncherClock,
 ) : ViewModel() {
     private val initialPreferences = LauncherPreferences()
+    private val promptState = MutableStateFlow(PromptState())
     private val installedApps = appRepository
         .observeInstalledApps()
         .catch { failure ->
@@ -36,6 +40,7 @@ public class HomeViewModel(
         installedApps,
         preferencesRepository.preferences,
         launcherClock.observeTime(),
+        promptState,
         ::createUiState,
     ).stateIn(
         scope = viewModelScope,
@@ -44,18 +49,37 @@ public class HomeViewModel(
             installedApps = emptyList(),
             preferences = initialPreferences,
             clockText = "",
+            prompt = PromptState(),
         ),
     )
+
+    public fun updatePromptValue(value: PromptState) {
+        promptState.update { state ->
+            value.copy(focused = state.focused)
+        }
+    }
+
+    public fun updatePromptFocus(focused: Boolean) {
+        promptState.update { state -> state.copy(focused = focused) }
+    }
+
+    public fun submitPrompt() {
+        promptState.update { state ->
+            state.copy(input = "", selection = TextRange.Zero, composition = null)
+        }
+    }
 
     private fun createUiState(
         installedApps: List<InstalledApp>,
         preferences: LauncherPreferences,
         clockText: String,
+        prompt: PromptState,
     ): HomeUiState = HomeUiState(
         shellProfile = ShellProfiles.forType(preferences.shellType),
         shellContext = preferences.toShellContext(),
         apps = installedApps.filter { app -> app.packageName in preferences.pinnedPackages },
         clockText = clockText.takeIf { preferences.showClock && it.isNotEmpty() },
+        prompt = prompt,
     )
 
     private fun LauncherPreferences.toShellContext(): ShellContext = ShellContext(

@@ -24,6 +24,7 @@ public fun HomeScreen(
     state: HomeUiState,
     onAppClick: (InstalledApp) -> Unit,
     onSettingsClick: () -> Unit,
+    promptActions: PromptActions,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalTerminalColors.current
@@ -54,8 +55,10 @@ public fun HomeScreen(
             )
         }
         item(key = "prompt") {
-            TerminalLine(
-                text = "${state.shellProfile.prompt(state.shellContext)} _",
+            Prompt(
+                prompt = state.shellProfile.prompt(state.shellContext),
+                state = state.prompt,
+                actions = promptActions,
             )
         }
     }

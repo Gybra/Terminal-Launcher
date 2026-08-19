@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.ui.home.HomeScreen
 import com.gybra.terminallauncher.ui.home.HomeUiState
+import com.gybra.terminallauncher.ui.home.PromptActions
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsScreen
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
@@ -19,6 +20,7 @@ public fun LauncherApp(
     homeState: HomeUiState,
     settingsState: SettingsUiState,
     settingsActions: SettingsActions,
+    promptActions: PromptActions,
     onAppClick: (InstalledApp) -> Unit,
 ) {
     var destination by rememberSaveable { mutableStateOf(LauncherDestination.HOME) }
@@ -33,6 +35,7 @@ public fun LauncherApp(
                 state = homeState,
                 onAppClick = onAppClick,
                 onSettingsClick = { destination = LauncherDestination.SETTINGS },
+                promptActions = promptActions,
             )
         } else {
             SettingsScreen(
