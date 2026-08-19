@@ -9,4 +9,5 @@ public data class HomeUiState(
     public val shellContext: ShellContext,
     public val apps: List<InstalledApp> = emptyList(),
     public val clockText: String? = null,
+    public val prompt: PromptState = PromptState(),
 )

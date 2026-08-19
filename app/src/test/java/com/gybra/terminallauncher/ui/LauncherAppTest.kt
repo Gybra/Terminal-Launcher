@@ -23,6 +23,7 @@ import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.theme.colors
 import com.gybra.terminallauncher.ui.home.HomeUiState
+import com.gybra.terminallauncher.ui.home.PromptActions
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
 import org.junit.Assert.assertTrue
@@ -47,6 +48,7 @@ class LauncherAppTest {
                 homeState = homeState(),
                 settingsState = settingsState(),
                 settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
                 onAppClick = {},
             )
         }
@@ -55,7 +57,7 @@ class LauncherAppTest {
         composeRule.onNodeWithText("Appearance").assertIsDisplayed()
 
         composeRule.onNodeWithText("< back").performClick()
-        composeRule.onNodeWithText("user@android:~$ _").assertIsDisplayed()
+        composeRule.onNodeWithText("user@android:~$", substring = true).assertIsDisplayed()
     }
 
     @Test
@@ -67,6 +69,7 @@ class LauncherAppTest {
                 homeState = homeState(),
                 settingsState = settingsState(),
                 settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
                 onAppClick = {},
             )
         }
@@ -77,7 +80,7 @@ class LauncherAppTest {
         }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("user@android:~$ _").assertIsDisplayed()
+        composeRule.onNodeWithText("user@android:~$", substring = true).assertIsDisplayed()
     }
 
     @Test
@@ -88,6 +91,7 @@ class LauncherAppTest {
                 homeState = homeState(),
                 settingsState = settingsState,
                 settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
                 onAppClick = {},
             )
         }
@@ -115,6 +119,7 @@ class LauncherAppTest {
                 homeState = homeState,
                 settingsState = settingsState,
                 settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
                 onAppClick = {},
             )
         }
@@ -124,13 +129,13 @@ class LauncherAppTest {
                 type = ShellType.UNIX,
                 profile = UnixShellProfile,
                 appName = "mail",
-                prompt = "user@android:~$ _",
+                prompt = "user@android:~$",
             ),
             ShellCase(
                 type = ShellType.DOS,
                 profile = DosShellProfile,
                 appName = "MAIL.EXE",
-                prompt = "C:\\HOME> _",
+                prompt = "C:\\HOME>",
             ),
         )
         shells.forEach { shell ->
@@ -147,7 +152,7 @@ class LauncherAppTest {
                 }
 
                 composeRule.onNodeWithText(shell.appName).assertIsDisplayed()
-                composeRule.onNodeWithText(shell.prompt).assertIsDisplayed()
+                composeRule.onNodeWithText(shell.prompt, substring = true).assertIsDisplayed()
                 val colors = theme.colors(systemDarkTheme = false)
                 assertBackgroundColor(colors.background)
                 assertRenderedColor(colors.foreground)
@@ -199,6 +204,12 @@ class LauncherAppTest {
         setShowClock = {},
         setUsername = {},
         setHostname = {},
+    )
+
+    private fun emptyPromptActions(): PromptActions = PromptActions(
+        updateValue = {},
+        updateFocus = {},
+        submit = {},
     )
 
     private data class ShellCase(

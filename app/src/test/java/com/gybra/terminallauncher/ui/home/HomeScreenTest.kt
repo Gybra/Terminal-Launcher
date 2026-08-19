@@ -1,14 +1,14 @@
 package com.gybra.terminallauncher.ui.home
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
@@ -42,6 +42,7 @@ class HomeScreenTest {
                 ),
                 onAppClick = { clickedApp = it },
                 onSettingsClick = {},
+                promptActions = emptyPromptActions(),
             )
         }
 
@@ -67,6 +68,7 @@ class HomeScreenTest {
                 ),
                 onAppClick = {},
                 onSettingsClick = {},
+                promptActions = emptyPromptActions(),
             )
         }
 
@@ -84,6 +86,7 @@ class HomeScreenTest {
                 ),
                 onAppClick = {},
                 onSettingsClick = {},
+                promptActions = emptyPromptActions(),
             )
         }
 
@@ -99,6 +102,7 @@ class HomeScreenTest {
                 state = state,
                 onAppClick = {},
                 onSettingsClick = {},
+                promptActions = emptyPromptActions(),
             )
         }
 
@@ -113,17 +117,22 @@ class HomeScreenTest {
     fun `reacts to prompt identity and shell profile changes`() {
         var state by mutableStateOf(homeState())
         composeRule.setContent {
-            HomeScreen(state = state, onAppClick = {}, onSettingsClick = {})
+            HomeScreen(
+                state = state,
+                onAppClick = {},
+                onSettingsClick = {},
+                promptActions = emptyPromptActions(),
+            )
         }
 
         state = state.copy(
             shellContext = ShellContext("oreste", "phone", LauncherLocation.HOME),
         )
-        composeRule.onNodeWithText("oreste@phone:~$ _").assertIsDisplayed()
+        composeRule.onNodeWithText("oreste@phone:~$", substring = true).assertIsDisplayed()
 
         state = state.copy(shellProfile = DosShellProfile)
-        composeRule.onNodeWithText("C:\\HOME> _").assertIsDisplayed()
-        composeRule.onNodeWithText("oreste@phone:~$ _").assertDoesNotExist()
+        composeRule.onNodeWithText("C:\\HOME>", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("oreste@phone:~$", substring = true).assertDoesNotExist()
     }
 
     @Test
@@ -134,6 +143,7 @@ class HomeScreenTest {
                 state = homeState(),
                 onAppClick = {},
                 onSettingsClick = { settingsClicked = true },
+                promptActions = emptyPromptActions(),
             )
         }
 
@@ -152,5 +162,11 @@ class HomeScreenTest {
         username = "user",
         hostname = "android",
         location = LauncherLocation.HOME,
+    )
+
+    private fun emptyPromptActions(): PromptActions = PromptActions(
+        updateValue = {},
+        updateFocus = {},
+        submit = {},
     )
 }

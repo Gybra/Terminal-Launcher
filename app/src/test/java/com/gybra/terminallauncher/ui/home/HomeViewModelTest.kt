@@ -1,5 +1,6 @@
 package com.gybra.terminallauncher.ui.home
 
+import androidx.compose.ui.text.TextRange
 import com.gybra.terminallauncher.MainDispatcherRule
 import com.gybra.terminallauncher.launcher.AppRepository
 import com.gybra.terminallauncher.launcher.InstalledApp
@@ -208,6 +209,46 @@ class HomeViewModelTest {
         runCurrent()
         assertEquals(0, clock.activeCollectors)
     }
+
+    @Test
+    fun `updates prompt input and focus then clears input on submit`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(),
+                preferencesRepository = FakePreferencesRepository(),
+                launcherClock = FakeLauncherClock(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(
+                PromptState(
+                    input = "telegram",
+                    selection = TextRange(2, 5),
+                    composition = TextRange(0, 8),
+                ),
+            )
+            viewModel.updatePromptFocus(focused = true)
+            advanceUntilIdle()
+
+            assertEquals(
+                PromptState(
+                    input = "telegram",
+                    selection = TextRange(2, 5),
+                    composition = TextRange(0, 8),
+                    focused = true,
+                ),
+                viewModel.uiState.value.prompt,
+            )
+
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(
+                PromptState(input = "", focused = true),
+                viewModel.uiState.value.prompt,
+            )
+        }
 
     private class FakeAppRepository(
         private val apps: List<InstalledApp> = emptyList(),

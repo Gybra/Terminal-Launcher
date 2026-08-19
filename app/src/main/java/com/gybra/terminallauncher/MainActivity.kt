@@ -26,6 +26,7 @@ import com.gybra.terminallauncher.theme.colors
 import com.gybra.terminallauncher.theme.useDarkSystemBarIcons
 import com.gybra.terminallauncher.ui.LauncherApp
 import com.gybra.terminallauncher.ui.home.HomeViewModel
+import com.gybra.terminallauncher.ui.home.PromptActions
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsViewModel
 
@@ -82,6 +83,11 @@ public class MainActivity : ComponentActivity() {
                     setShowClock = settingsViewModel::setShowClock,
                     setUsername = settingsViewModel::setUsername,
                     setHostname = settingsViewModel::setHostname,
+                ),
+                promptActions = PromptActions(
+                    updateValue = homeViewModel::updatePromptValue,
+                    updateFocus = homeViewModel::updatePromptFocus,
+                    submit = homeViewModel::submitPrompt,
                 ),
                 onAppClick = appLauncher::launch,
             )
