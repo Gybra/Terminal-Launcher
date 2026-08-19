@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.map
 public class DataStorePreferencesRepository(
     private val dataStore: DataStore<Preferences>,
 ) : PreferencesRepository {
+    private val defaults = LauncherPreferences()
+
     override val preferences: Flow<LauncherPreferences> = dataStore.data
         .catch { failure ->
             if (failure is IOException) {
@@ -68,14 +70,14 @@ public class DataStorePreferencesRepository(
 
     private fun mapPreferences(preferences: Preferences): LauncherPreferences = LauncherPreferences(
         shellType = preferences[Keys.shellType].toShellType(),
-        showClock = preferences[Keys.showClock] ?: true,
-        username = preferences[Keys.username] ?: "user",
-        hostname = preferences[Keys.hostname] ?: "android",
+        showClock = preferences[Keys.showClock] ?: defaults.showClock,
+        username = preferences[Keys.username] ?: defaults.username,
+        hostname = preferences[Keys.hostname] ?: defaults.hostname,
         pinnedPackages = preferences[Keys.pinnedPackages].orEmpty(),
     )
 
     private fun String?.toShellType(): ShellType =
-        ShellType.entries.firstOrNull { shellType -> shellType.name == this } ?: ShellType.UNIX
+        ShellType.entries.firstOrNull { shellType -> shellType.name == this } ?: defaults.shellType
 
     private object Keys {
         val shellType: Preferences.Key<String> = stringPreferencesKey("shell_type")
