@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicText
@@ -18,7 +19,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -26,7 +26,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.ui.terminalTextStyle
+import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 
 @Composable
 public fun SettingsScreen(
@@ -35,10 +37,11 @@ public fun SettingsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = LocalTerminalColors.current
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(colors.background)
             .testTag("settings-list"),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -47,47 +50,71 @@ public fun SettingsScreen(
         state.storageError?.let { error ->
             item(key = "storage-error") { TerminalText(error) }
         }
-        item(key = "appearance") { SectionTitle("Appearance") }
-        item(key = "shell") { TerminalText("Shell") }
-        ShellType.entries.forEach { shellType ->
-            item(key = shellType.name) {
-                ShellOption(
-                    shellType = shellType,
-                    selected = state.shellType == shellType,
-                    onSelected = actions.selectShell,
-                )
-            }
-        }
-        item(key = "clock") {
-            ToggleOption(
-                label = "Show clock",
-                checked = state.showClock,
-                onCheckedChange = actions.setShowClock,
+        appearanceSettings(state = state, actions = actions)
+        unixSettings(state = state, actions = actions)
+    }
+}
+
+private fun LazyListScope.appearanceSettings(
+    state: SettingsUiState,
+    actions: SettingsActions,
+) {
+    item(key = "appearance") { SectionTitle("Appearance") }
+    item(key = "shell") { TerminalText("Shell") }
+    ShellType.entries.forEach { shellType ->
+        item(key = "shell-${shellType.name}") {
+            SelectionOption(
+                label = shellType.name,
+                selected = state.shellType == shellType,
+                onClick = { actions.selectShell(shellType) },
             )
         }
-        item(key = "unix") { SectionTitle("Unix") }
-        item(key = "username") {
-            TextSetting(
-                label = "Username",
-                value = state.username,
-                onValueChange = actions.setUsername,
+    }
+    item(key = "theme") { TerminalText("Theme") }
+    TerminalTheme.entries.forEach { terminalTheme ->
+        item(key = "theme-${terminalTheme.name}") {
+            SelectionOption(
+                label = terminalTheme.name,
+                selected = state.terminalTheme == terminalTheme,
+                onClick = { actions.selectTheme(terminalTheme) },
             )
         }
-        item(key = "hostname") {
-            TextSetting(
-                label = "Hostname",
-                value = state.hostname,
-                onValueChange = actions.setHostname,
-            )
-        }
+    }
+    item(key = "clock") {
+        ToggleOption(
+            label = "Show clock",
+            checked = state.showClock,
+            onCheckedChange = actions.setShowClock,
+        )
+    }
+}
+
+private fun LazyListScope.unixSettings(
+    state: SettingsUiState,
+    actions: SettingsActions,
+) {
+    item(key = "unix") { SectionTitle("Unix") }
+    item(key = "username") {
+        TextSetting(
+            label = "Username",
+            value = state.username,
+            onValueChange = actions.setUsername,
+        )
+    }
+    item(key = "hostname") {
+        TextSetting(
+            label = "Hostname",
+            value = state.hostname,
+            onValueChange = actions.setHostname,
+        )
     }
 }
 
 @Composable
-private fun ShellOption(
-    shellType: ShellType,
+private fun SelectionOption(
+    label: String,
     selected: Boolean,
-    onSelected: (ShellType) -> Unit,
+    onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -96,11 +123,11 @@ private fun ShellOption(
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
-                onClick = { onSelected(shellType) },
+                onClick = onClick,
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TerminalText("${if (selected) "(*)" else "( )"} ${shellType.name}")
+        TerminalText("${if (selected) "(*)" else "( )"} $label")
     }
 }
 
@@ -131,17 +158,18 @@ private fun TextSetting(
     value: String,
     onValueChange: (String) -> Unit,
 ) {
+    val colors = LocalTerminalColors.current
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         TerminalText(label)
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            textStyle = terminalTextStyle,
-            cursorBrush = SolidColor(Color.White),
+            textStyle = terminalTextStyle(colors.foreground),
+            cursorBrush = SolidColor(colors.foreground),
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF181818))
+                .background(colors.secondary.copy(alpha = 0.2f))
                 .padding(12.dp)
                 .semantics { contentDescription = label },
         )
@@ -150,18 +178,20 @@ private fun TextSetting(
 
 @Composable
 private fun SectionTitle(text: String) {
+    val colors = LocalTerminalColors.current
     BasicText(
         text = text,
-        style = terminalTextStyle.copy(color = Color(0xFFAAAAAA)),
+        style = terminalTextStyle(colors.secondary),
         modifier = Modifier.padding(top = 16.dp),
     )
 }
 
 @Composable
 private fun ActionLine(text: String, onClick: () -> Unit) {
+    val colors = LocalTerminalColors.current
     BasicText(
         text = text,
-        style = terminalTextStyle,
+        style = terminalTextStyle(colors.foreground),
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
@@ -171,5 +201,6 @@ private fun ActionLine(text: String, onClick: () -> Unit) {
 
 @Composable
 private fun TerminalText(text: String) {
-    BasicText(text = text, style = terminalTextStyle)
+    val colors = LocalTerminalColors.current
+    BasicText(text = text, style = terminalTextStyle(colors.foreground))
 }

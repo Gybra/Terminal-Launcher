@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +32,13 @@ public class SettingsViewModel(
         updateSetting(
             update = { state -> state.copy(shellType = shellType) },
             persist = { preferencesRepository.setShellType(shellType) },
+        )
+    }
+
+    public fun selectTheme(terminalTheme: TerminalTheme) {
+        updateSetting(
+            update = { state -> state.copy(terminalTheme = terminalTheme) },
+            persist = { preferencesRepository.setTerminalTheme(terminalTheme) },
         )
     }
 
@@ -96,6 +104,7 @@ public class SettingsViewModel(
 
     private fun LauncherPreferences.toUiState(): SettingsUiState = SettingsUiState(
         shellType = shellType,
+        terminalTheme = terminalTheme,
         showClock = showClock,
         username = username,
         hostname = hostname,

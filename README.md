@@ -14,12 +14,13 @@ The current implementation provides:
 - a full-screen, edge-to-edge Compose UI;
 - system monospace typography;
 - DataStore-backed launcher preferences;
-- persisted shell, clock, username, hostname, and pinned-package settings;
+- persisted shell, terminal theme, clock, username, hostname, and pinned-package settings;
 - a Home screen that reacts to preference changes and shows only installed pinned apps;
 - DOS and Unix shell profiles for prompts, paths, application names, lists, and command aliases;
 - reactive shell-specific application naming without DOS/Unix branches in Compose;
 - an optional live clock and shell-formatted static prompt on Home;
-- a minimal settings screen for shell, clock, username, and hostname preferences;
+- independent System, Green, Amber, and Monochrome terminal color themes;
+- a minimal settings screen for shell, theme, clock, username, and hostname preferences;
 - command-line builds without Android Studio;
 - JVM tests and a mandatory 100% coverage gate for application logic.
 
@@ -82,6 +83,7 @@ The v0.1 codebase is a single Gradle module with explicit boundaries:
 Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
                           \-> PreferencesRepository -> DataStore
                           \-> ShellProfiles ---------> DOS / Unix formatting
+                          \-> TerminalTheme ---------> shell-independent colors
                           \-> LauncherClock ---------> local system time
                          tap -> AppLauncher ----------> explicit package launch Intent
 ```
@@ -89,6 +91,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
 - `launcher`: installed-application model, repository boundary, PackageManager adapter, and app launcher;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
 - `shell`: shell context, locations, profile selection, and all DOS/Unix presentation rules;
+- `theme`: shell-independent terminal theme and color definitions;
 - `ui/home`: immutable UI state, screen-level ViewModel, and stateless Compose rendering;
 - `ui/settings`: immutable settings state, preference coordination, and stateless controls;
 - `MainActivity`: Android composition root only.

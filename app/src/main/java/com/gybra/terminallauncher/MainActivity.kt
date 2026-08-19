@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -20,6 +22,8 @@ import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
 import com.gybra.terminallauncher.launcher.SystemLauncherClock
 import com.gybra.terminallauncher.preferences.DataStorePreferencesRepository
 import com.gybra.terminallauncher.preferences.launcherDataStore
+import com.gybra.terminallauncher.theme.colors
+import com.gybra.terminallauncher.theme.useDarkSystemBarIcons
 import com.gybra.terminallauncher.ui.LauncherApp
 import com.gybra.terminallauncher.ui.home.HomeViewModel
 import com.gybra.terminallauncher.ui.settings.SettingsActions
@@ -63,11 +67,18 @@ public class MainActivity : ComponentActivity() {
             val settingsViewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
             val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
             val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
+            val terminalColors = settingsState.terminalTheme.colors(isSystemInDarkTheme())
+            SideEffect {
+                updateSystemBarIconAppearance(
+                    useDarkIcons = terminalColors.useDarkSystemBarIcons(),
+                )
+            }
             LauncherApp(
                 homeState = homeState,
                 settingsState = settingsState,
                 settingsActions = SettingsActions(
                     selectShell = settingsViewModel::selectShell,
+                    selectTheme = settingsViewModel::selectTheme,
                     setShowClock = settingsViewModel::setShowClock,
                     setUsername = settingsViewModel::setUsername,
                     setHostname = settingsViewModel::setHostname,
@@ -86,8 +97,8 @@ public class MainActivity : ComponentActivity() {
 
     private fun configureFullScreenWindow() {
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
         )
         WindowCompat.getInsetsController(window, window.decorView).systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -98,5 +109,12 @@ public class MainActivity : ComponentActivity() {
         WindowCompat
             .getInsetsController(window, window.decorView)
             .hide(WindowInsetsCompat.Type.systemBars())
+    }
+
+    private fun updateSystemBarIconAppearance(useDarkIcons: Boolean) {
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = useDarkIcons
+            isAppearanceLightNavigationBars = useDarkIcons
+        }
     }
 }

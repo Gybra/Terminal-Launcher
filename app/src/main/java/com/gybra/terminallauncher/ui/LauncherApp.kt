@@ -12,6 +12,7 @@ import com.gybra.terminallauncher.ui.home.HomeUiState
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsScreen
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
+import com.gybra.terminallauncher.ui.theme.TerminalThemeProvider
 
 @Composable
 public fun LauncherApp(
@@ -22,22 +23,24 @@ public fun LauncherApp(
 ) {
     var destination by rememberSaveable { mutableStateOf(LauncherDestination.HOME) }
 
-    BackHandler(enabled = destination == LauncherDestination.SETTINGS) {
-        destination = LauncherDestination.HOME
-    }
+    TerminalThemeProvider(theme = settingsState.terminalTheme) {
+        BackHandler(enabled = destination == LauncherDestination.SETTINGS) {
+            destination = LauncherDestination.HOME
+        }
 
-    if (destination == LauncherDestination.HOME) {
-        HomeScreen(
-            state = homeState,
-            onAppClick = onAppClick,
-            onSettingsClick = { destination = LauncherDestination.SETTINGS },
-        )
-    } else {
-        SettingsScreen(
-            state = settingsState,
-            actions = settingsActions,
-            onBack = { destination = LauncherDestination.HOME },
-        )
+        if (destination == LauncherDestination.HOME) {
+            HomeScreen(
+                state = homeState,
+                onAppClick = onAppClick,
+                onSettingsClick = { destination = LauncherDestination.SETTINGS },
+            )
+        } else {
+            SettingsScreen(
+                state = settingsState,
+                actions = settingsActions,
+                onBack = { destination = LauncherDestination.HOME },
+            )
+        }
     }
 }
 

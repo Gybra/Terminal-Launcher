@@ -7,6 +7,7 @@ import com.gybra.terminallauncher.launcher.LauncherClock
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
@@ -273,6 +274,8 @@ class HomeViewModelTest {
         }
 
         override suspend fun setShellType(shellType: ShellType) = unsupported()
+
+        override suspend fun setTerminalTheme(terminalTheme: TerminalTheme) = unsupported()
 
         override suspend fun setShowClock(showClock: Boolean) = unsupported()
 
