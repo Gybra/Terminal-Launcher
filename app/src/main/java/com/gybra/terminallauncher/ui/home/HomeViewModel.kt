@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gybra.terminallauncher.launcher.AppRepository
 import com.gybra.terminallauncher.preferences.PreferencesRepository
+import com.gybra.terminallauncher.shell.ShellProfiles
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,6 +39,7 @@ public class HomeViewModel(
                         apps = apps.filter { app ->
                             app.packageName in preferences.pinnedPackages
                         },
+                        shellProfile = ShellProfiles.forType(preferences.shellType),
                     )
                 }
                 .collect(mutableUiState)

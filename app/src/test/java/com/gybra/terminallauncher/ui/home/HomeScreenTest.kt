@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -33,12 +34,30 @@ class HomeScreenTest {
         }
 
         composeRule
-            .onNodeWithText("Browser")
+            .onNodeWithText("browser")
             .assertIsDisplayed()
             .assertHeightIsAtLeast(48.dp)
             .performClick()
 
         assertEquals(app, clickedApp)
+    }
+
+    @Test
+    fun `delegates application naming to the selected shell profile`() {
+        val app = InstalledApp(packageName = "com.example.browser", label = "Browser")
+
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    apps = listOf(app),
+                    shellProfile = DosShellProfile,
+                ),
+                onAppClick = {},
+            )
+        }
+
+        composeRule.onNodeWithText("BROWSER.EXE").assertIsDisplayed()
+        composeRule.onNodeWithText("Browser").assertDoesNotExist()
     }
 
     @Test

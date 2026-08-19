@@ -6,6 +6,7 @@ import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,6 +62,37 @@ class HomeViewModelTest {
         advanceUntilIdle()
 
         assertEquals(HomeUiState(apps = listOf(app)), viewModel.uiState.value)
+    }
+
+    @Test
+    fun `reacts when the selected shell changes`() = runTest(mainDispatcherRule.dispatcher) {
+        val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
+        val preferencesRepository = FakePreferencesRepository(
+            initialPreferences = LauncherPreferences(
+                pinnedPackages = setOf(app.packageName),
+            ),
+        )
+        val viewModel = HomeViewModel(
+            appRepository = FakeAppRepository(apps = listOf(app)),
+            preferencesRepository = preferencesRepository,
+        )
+        advanceUntilIdle()
+
+        preferencesRepository.emit(
+            LauncherPreferences(
+                shellType = ShellType.DOS,
+                pinnedPackages = setOf(app.packageName),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            HomeUiState(
+                apps = listOf(app),
+                shellProfile = DosShellProfile,
+            ),
+            viewModel.uiState.value,
+        )
     }
 
     @Test
