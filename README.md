@@ -16,10 +16,12 @@ The current implementation provides:
 - DataStore-backed launcher preferences;
 - persisted shell, clock, username, hostname, and pinned-package settings;
 - a Home screen that reacts to preference changes and shows only installed pinned apps;
+- DOS and Unix shell profiles for prompts, paths, application names, lists, and command aliases;
+- reactive shell-specific application naming without DOS/Unix branches in Compose;
 - command-line builds without Android Studio;
 - JVM tests and a mandatory 100% coverage gate for application logic.
 
-Settings UI, DOS/Unix profiles, prompt input, search, and commands are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
+Settings UI, prompt input, search, and command execution are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
 
 ## Safety model
 
@@ -77,12 +79,13 @@ The v0.1 codebase is a single Gradle module with explicit boundaries:
 ```text
 Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
                           \-> PreferencesRepository -> DataStore
+                          \-> ShellProfiles ---------> DOS / Unix formatting
                          tap -> AppLauncher ----------> explicit package launch Intent
 ```
 
 - `launcher`: installed-application model, repository boundary, PackageManager adapter, and app launcher;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
-- `shell`: shell selection model, with formatting profiles added in a later issue;
+- `shell`: shell context, locations, profile selection, and all DOS/Unix presentation rules;
 - `ui/home`: immutable UI state, screen-level ViewModel, and stateless Compose rendering;
 - `MainActivity`: Android composition root only.
 

@@ -37,7 +37,7 @@ public fun HomeScreen(
             key = InstalledApp::packageName,
         ) { app ->
             AppRow(
-                app = app,
+                displayName = state.shellProfile.formatAppName(app),
                 onClick = { onAppClick(app) },
             )
         }
@@ -46,11 +46,11 @@ public fun HomeScreen(
 
 @Composable
 private fun AppRow(
-    app: InstalledApp,
+    displayName: String,
     onClick: () -> Unit,
 ) {
     BasicText(
-        text = app.label,
+        text = displayName,
         style = TextStyle(
             color = Color.White,
             fontFamily = FontFamily.Monospace,
