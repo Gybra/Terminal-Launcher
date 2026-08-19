@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 
-class PackageManagerAppRepository(
+public class PackageManagerAppRepository(
     private val packageManager: PackageManager,
     private val launcherPackageName: String,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -58,4 +58,3 @@ class PackageManagerAppRepository(
             )
     }
 }
-

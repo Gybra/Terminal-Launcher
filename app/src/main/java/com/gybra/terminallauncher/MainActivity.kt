@@ -18,7 +18,7 @@ import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
 import com.gybra.terminallauncher.ui.home.HomeScreen
 import com.gybra.terminallauncher.ui.home.HomeViewModel
 
-class MainActivity : ComponentActivity() {
+public class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         configureFullScreenWindow()
@@ -51,4 +51,3 @@ class MainActivity : ComponentActivity() {
         WindowCompat.getInsetsController(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars())
     }
 }
-

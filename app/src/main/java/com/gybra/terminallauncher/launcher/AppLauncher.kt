@@ -4,10 +4,10 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 
-class AppLauncher(
+public class AppLauncher(
     private val context: Context,
 ) {
-    fun launch(app: InstalledApp): Boolean {
+    public fun launch(app: InstalledApp): Boolean {
         return try {
             val launchIntent = context.packageManager.getLaunchIntentForPackage(app.packageName)
                 ?: return false

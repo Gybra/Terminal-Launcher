@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.gybra.terminallauncher.launcher.InstalledApp
 
 @Composable
-fun HomeScreen(
+public fun HomeScreen(
     state: HomeUiState,
     onAppClick: (InstalledApp) -> Unit,
     modifier: Modifier = Modifier,

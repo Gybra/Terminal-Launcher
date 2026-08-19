@@ -2,7 +2,6 @@ package com.gybra.terminallauncher.ui.home
 
 import com.gybra.terminallauncher.launcher.InstalledApp
 
-data class HomeUiState(
+public data class HomeUiState(
     val apps: List<InstalledApp> = emptyList(),
 )
-

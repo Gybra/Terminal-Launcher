@@ -9,11 +9,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class HomeViewModel(
+public class HomeViewModel(
     private val appRepository: AppRepository,
 ) : ViewModel() {
     private val mutableUiState = MutableStateFlow(HomeUiState())
-    val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
+    public val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
 
     init {
         loadInstalledApps()

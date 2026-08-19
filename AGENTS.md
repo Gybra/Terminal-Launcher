@@ -24,7 +24,7 @@ These rules apply to humans and coding agents. Optimize for a small codebase tha
 - Prefer `val`, immutable collections, immutable UI state, pure functions, and expression bodies when they remain readable.
 - Use named arguments when multiple adjacent parameters share a type or when a Boolean argument would be ambiguous.
 - Keep nullability explicit. Prefer guard clauses and sealed/data types over sentinel values and deeply nested conditionals.
-- Public APIs require explicit visibility and return types. Add KDoc only for public contracts or non-obvious behavior.
+- Public boundary declarations require explicit visibility and explicit non-`Unit` return types. Overrides may rely on inherited visibility. Add KDoc only for public contracts or non-obvious behavior.
 - Keep one principal public type per file. Closely related private declarations may share its file.
 - Order class members so the public workflow reads top-down; place private implementation details near the code that uses them.
 - Do not use `!!` outside tests. Avoid global mutable state, platform types escaping Android adapters, broad exception swallowing, and coroutine launches without an owning scope.
@@ -99,4 +99,3 @@ For every pull request:
 3. Run the branch-standards audit for naming, reuse, duplication, boundaries, tests, and documentation.
 4. Run the required local Gradle gate.
 5. Confirm the PR links and closes exactly one issue, CI `build-and-test` is green, and only the repository owner performs the merge.
-
