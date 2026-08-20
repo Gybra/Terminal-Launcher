@@ -3,6 +3,7 @@ package com.gybra.terminallauncher.shell
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.PinnedShortcut
 
 public interface ShellProfile {
     public val type: ShellType
@@ -10,6 +11,9 @@ public interface ShellProfile {
     public fun prompt(context: ShellContext): String
 
     public fun formatAppName(app: InstalledApp): String
+
+    /** Writes the name of a shortcut pinned to Home, which no application list ever contains. */
+    public fun formatShortcutName(shortcut: PinnedShortcut): String
 
     /** Writes the location [context] points at, whether or not the prompt shows it. */
     public fun formatPath(context: ShellContext): String

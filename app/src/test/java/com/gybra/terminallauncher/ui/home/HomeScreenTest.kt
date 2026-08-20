@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.search.SearchResult
 import com.gybra.terminallauncher.search.SearchResult.Match
 import com.gybra.terminallauncher.shell.LauncherLocation
@@ -45,6 +46,7 @@ class HomeScreenTest {
                     apps = listOf(app),
                 ),
                 onAppClick = { clickedApp = it },
+                onShortcutClick = {},
                 onSettingsClick = {},
                 promptActions = emptyPromptActions(),
             )
@@ -71,6 +73,7 @@ class HomeScreenTest {
                     shellContext = defaultShellContext(),
                 ),
                 onAppClick = {},
+                onShortcutClick = {},
                 onSettingsClick = {},
                 promptActions = emptyPromptActions(),
             )
@@ -89,6 +92,7 @@ class HomeScreenTest {
                     shellContext = defaultShellContext(),
                 ),
                 onAppClick = {},
+                onShortcutClick = {},
                 onSettingsClick = {},
                 promptActions = emptyPromptActions(),
             )
@@ -105,6 +109,7 @@ class HomeScreenTest {
             HomeScreen(
                 state = state,
                 onAppClick = {},
+                onShortcutClick = {},
                 onSettingsClick = {},
                 promptActions = emptyPromptActions(),
             )
@@ -124,6 +129,7 @@ class HomeScreenTest {
             HomeScreen(
                 state = state,
                 onAppClick = {},
+                onShortcutClick = {},
                 onSettingsClick = {},
                 promptActions = emptyPromptActions(),
             )
@@ -146,6 +152,7 @@ class HomeScreenTest {
             HomeScreen(
                 state = homeState(),
                 onAppClick = {},
+                onShortcutClick = {},
                 onSettingsClick = { settingsClicked = true },
                 promptActions = emptyPromptActions(),
             )
@@ -169,6 +176,7 @@ class HomeScreenTest {
                     searchResults = listOf(SearchResult(app = app, match = Match.EXACT)),
                 ),
                 onAppClick = { clickedApp = it },
+                onShortcutClick = {},
                 onSettingsClick = {},
                 promptActions = emptyPromptActions(),
             )
@@ -196,6 +204,7 @@ class HomeScreenTest {
                     searchResults = listOf(SearchResult(app = app, match = Match.EXACT)),
                 ),
                 onAppClick = {},
+                onShortcutClick = {},
                 onSettingsClick = {},
                 promptActions = emptyPromptActions(),
             )
@@ -216,6 +225,7 @@ class HomeScreenTest {
                     ),
                 ),
                 onAppClick = {},
+                onShortcutClick = {},
                 onSettingsClick = {},
                 promptActions = emptyPromptActions(),
             )
@@ -243,4 +253,35 @@ class HomeScreenTest {
         updateFocus = {},
         submit = {},
     )
+
+    @Test
+    fun `lists the shortcuts pinned to Home and starts the one that is tapped`() {
+        val shortcut = PinnedShortcut(
+            packageName = "org.example.browser",
+            id = "new-tab",
+            label = "New Tab",
+        )
+        var startedShortcut: PinnedShortcut? = null
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    shortcuts = listOf(shortcut),
+                ),
+                onAppClick = {},
+                onShortcutClick = { startedShortcut = it },
+                onSettingsClick = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule
+            .onNodeWithText("new tab")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+            .performClick()
+
+        assertEquals(shortcut, startedShortcut)
+    }
 }

@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 
@@ -25,6 +26,7 @@ import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 public fun HomeScreen(
     state: HomeUiState,
     onAppClick: (InstalledApp) -> Unit,
+    onShortcutClick: (PinnedShortcut) -> Unit,
     onSettingsClick: () -> Unit,
     promptActions: PromptActions,
     modifier: Modifier = Modifier,
@@ -48,6 +50,15 @@ public fun HomeScreen(
             AppRow(
                 displayName = state.shellProfile.formatAppName(app),
                 onClick = { onAppClick(app) },
+            )
+        }
+        items(
+            items = state.shortcuts,
+            key = { shortcut -> "shortcut-${shortcut.packageName}-${shortcut.id}" },
+        ) { shortcut ->
+            AppRow(
+                displayName = state.shellProfile.formatShortcutName(shortcut),
+                onClick = { onShortcutClick(shortcut) },
             )
         }
         item(key = "settings") {

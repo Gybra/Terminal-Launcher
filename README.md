@@ -11,9 +11,10 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 **Home and appearance**
 
 - registers as an Android Home application and renders full screen, edge to edge, in system monospace type;
-- persists every preference in DataStore: shell, terminal theme, clock, username, hostname, prompt symbol, prompt path visibility, DOS drive letter, pinned applications, and how often and how recently each application is launched;
+- persists every preference in DataStore: shell, terminal theme, clock, username, hostname, prompt symbol, prompt path visibility, DOS drive letter, pinned applications, pinned shortcuts, and how often and how recently each application is launched;
 - offers independent System, Green, Amber, and Monochrome terminal themes and an optional live clock;
-- offers a minimal settings screen for shell, theme, clock, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter.
+- offers a minimal settings screen for shell, theme, clock, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter;
+- answers the requests applications make to pin one of their shortcuts to Home, such as a browser adding a website, and keeps nothing until the user accepts.
 
 **Shell metaphor**
 
@@ -68,6 +69,8 @@ Anything that is not a registered command is treated as a search. Command names 
 `alias` names an application so submitting that name launches it, for example `alias browser firefox`. Aliases persist across restarts, are matched without case, and are replaced by defining the same name again. A registered command is always resolved before an alias, and a name any shell already uses for a command is refused rather than allowed to shadow it, so no alias can ever take over `ls`, `clear`, or any other command.
 
 `pin`, `unpin`, and `alias` accept an exact or unique application name; an ambiguous name is answered with the matching applications so a longer name can be given. Output, confirmations, and errors are written in the style of the selected shell: lowercase names on Unix, decorative `.EXE` names and uppercase messages on DOS.
+
+An application can also ask the launcher to keep one of its own shortcuts, which is what a browser does when it adds a website to Home. The launcher answers with a confirmation naming the shortcut and the application that asked for it, and keeps nothing until it is accepted. An accepted shortcut is listed on Home under the pinned applications, written as `new tab` on Unix and `NEW TAB.LNK` on DOS, and tapping it asks Android to start it. A shortcut is started by the package and the identifier Android published for it, never by an Intent the launcher builds or the asking application supplies. Uninstalling an application removes the shortcuts it published, while updating it keeps them; removing a single shortcut without its application is not possible yet.
 
 The prompt can be customized from the settings screen, and the customization is cosmetic only. The Unix prompt is written as `username@hostname:path$`, where the username and the hostname are kept usable as prompt tokens by dropping whitespace and control characters and keeping at most sixteen characters, and where the end symbol is `$`, `%`, or `>`. The DOS prompt is written as `C:\HOME>` on the chosen drive letter, `A`, `C`, or `D`. Hiding the path shortens the Unix prompt to `username@hostname$` and the DOS prompt to `C:\>`. A username or hostname cleared in the settings is left out of the prompt with its separator, so clearing both leaves `~$`.
 
@@ -145,9 +148,11 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
                           \-> Torch -----------------> CameraManager torch mode
   submitted line -> SystemScreenLauncher ----> documented Settings and package Intents
           tap or Enter -> AppLauncher ----------> explicit package launch Intent
+             shortcut tap -> ShortcutLauncher --> LauncherApps shortcut start
+     pin request -> ShortcutPinRequests -------> LauncherApps pin item request
 ```
 
-- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery and torch boundaries, and the named system destinations;
+- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery and torch boundaries, the named system destinations, and the pinned-shortcut model with its pin request and start boundaries;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
 - `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the registered help, application-list, history-clearing, pinning, aliasing, settings, and Android utility commands;
 - `search`: Compose-independent label matching and deterministic result ranking;
@@ -156,7 +161,8 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
 - `ui`: terminal typography, theme provider, and the destination the launcher renders;
 - `ui/home`: immutable UI state, screen-level ViewModel, terminal history, and stateless Compose rendering;
 - `ui/settings`: immutable settings state, preference coordination, and stateless controls;
-- `MainActivity`: Android composition root only.
+- `ui/pin`: immutable confirmation state, the answer to one pin request, and its stateless screen;
+- `MainActivity` and `PinShortcutActivity`: Android composition roots only.
 
 The repository, the package monitor, and the launcher own Android integration. Compose receives immutable state and emits user events, and what a submitted line asks the launcher to do travels back as a typed action. The command engine and the search engine never depend on Compose, so a new command registers through the command registry without touching Home.
 

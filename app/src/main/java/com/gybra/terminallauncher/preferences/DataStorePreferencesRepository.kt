@@ -8,11 +8,13 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.gybra.terminallauncher.launcher.AppUsage
+import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
+import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -96,6 +98,28 @@ public class DataStorePreferencesRepository(
         }
     }
 
+    override suspend fun pinShortcut(shortcut: PinnedShortcut) {
+        require(shortcut.packageName.isNotBlank()) { "Package name must not be blank" }
+        require(shortcut.id.isNotBlank()) { "Shortcut id must not be blank" }
+        require(shortcut.label.isNotBlank()) { "Shortcut label must not be blank" }
+        dataStore.edit { preferences ->
+            val stored = preferences[Keys.pinnedShortcuts] ?: emptySet()
+            preferences[Keys.pinnedShortcuts] =
+                stored.filterNot { entry -> entry.startsWith(shortcut.storedPrefix()) }.toSet() +
+                    shortcut.toStoredEntry()
+        }
+    }
+
+    override suspend fun unpinShortcuts(packageName: String) {
+        require(packageName.isNotBlank()) { "Package name must not be blank" }
+        dataStore.edit { preferences ->
+            val stored = preferences[Keys.pinnedShortcuts] ?: return@edit
+            preferences[Keys.pinnedShortcuts] = stored
+                .filterNot { entry -> entry.startsWith("$packageName$SHORTCUT_SEPARATOR") }
+                .toSet()
+        }
+    }
+
     override suspend fun setAlias(name: String, packageName: String) {
         require(name.isNotBlank()) { "Alias name must not be blank" }
         require(packageName.isNotBlank()) { "Package name must not be blank" }
@@ -131,6 +155,8 @@ public class DataStorePreferencesRepository(
         showPromptPath = preferences[Keys.showPromptPath] ?: defaults.showPromptPath,
         dosDrive = preferences[Keys.dosDrive].toEnum(DosDrive.entries, defaults.dosDrive),
         pinnedPackages = preferences[Keys.pinnedPackages] ?: defaults.pinnedPackages,
+        pinnedShortcuts = preferences[Keys.pinnedShortcuts]?.toShortcuts()
+            ?: defaults.pinnedShortcuts,
         aliases = preferences[Keys.aliases]?.toAliases() ?: defaults.aliases,
         usage = preferences[Keys.appUsage]?.toUsage() ?: defaults.usage,
     )
@@ -162,6 +188,30 @@ public class DataStorePreferencesRepository(
         )
     }.toMap()
 
+    /**
+     * Reads the stored shortcut entries, dropping anything malformed. The label keeps whatever
+     * follows the second separator, so only a package name or an identifier containing one is
+     * unreadable. Shortcuts are ordered the way Home lists them, and never by storage order.
+     */
+    private fun Set<String>.toShortcuts(): List<PinnedShortcut> = mapNotNull { entry ->
+        val fields = entry.split(SHORTCUT_SEPARATOR, limit = SHORTCUT_FIELD_COUNT)
+        if (fields.size != SHORTCUT_FIELD_COUNT) return@mapNotNull null
+        val (packageName, id, label) = fields
+        if (packageName.isBlank() || id.isBlank() || label.isBlank()) return@mapNotNull null
+        PinnedShortcut(packageName = packageName, id = id, label = label)
+    }.sortedWith(
+        compareBy(
+            { shortcut -> shortcut.label.lowercase(Locale.ROOT) },
+            { shortcut -> shortcut.packageName },
+            { shortcut -> shortcut.id },
+        ),
+    )
+
+    private fun PinnedShortcut.toStoredEntry(): String = storedPrefix() + label
+
+    private fun PinnedShortcut.storedPrefix(): String =
+        "$packageName$SHORTCUT_SEPARATOR$id$SHORTCUT_SEPARATOR"
+
     private fun Map<String, AppUsage>.toStoredEntries(): Set<String> =
         map { (packageName, usage) ->
             listOf(packageName, usage.launchCount, usage.lastLaunchedAt)
@@ -185,6 +235,8 @@ public class DataStorePreferencesRepository(
         val showPromptPath: Preferences.Key<Boolean> = booleanPreferencesKey("show_prompt_path")
         val dosDrive: Preferences.Key<String> = stringPreferencesKey("dos_drive")
         val pinnedPackages: Preferences.Key<Set<String>> = stringSetPreferencesKey("pinned_packages")
+        val pinnedShortcuts: Preferences.Key<Set<String>> =
+            stringSetPreferencesKey("pinned_shortcuts")
         val aliases: Preferences.Key<Set<String>> = stringSetPreferencesKey("aliases")
         val appUsage: Preferences.Key<Set<String>> = stringSetPreferencesKey("app_usage")
     }
@@ -198,5 +250,15 @@ public class DataStorePreferencesRepository(
 
         /** Package name, launch count, and last launch time. */
         const val USAGE_FIELD_COUNT = 3
+
+        /**
+         * Separates the fields of a stored shortcut. A shortcut identifier is written by the
+         * application that publishes it and often carries an address, so it needs a separator
+         * those never contain.
+         */
+        const val SHORTCUT_SEPARATOR = '\n'
+
+        /** Package name, shortcut identifier, and label. */
+        const val SHORTCUT_FIELD_COUNT = 3
     }
 }
