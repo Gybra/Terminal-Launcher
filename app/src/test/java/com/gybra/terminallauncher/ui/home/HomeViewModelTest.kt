@@ -10,12 +10,15 @@ import com.gybra.terminallauncher.command.LauncherCommand
 import com.gybra.terminallauncher.command.RecordingCommand
 import com.gybra.terminallauncher.launcher.AppRepository
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.FakePackageMonitor
 import com.gybra.terminallauncher.launcher.LauncherClock
+import com.gybra.terminallauncher.launcher.PackageChange
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.RecordingPreferencesRepository
 import com.gybra.terminallauncher.search.SearchResult
 import com.gybra.terminallauncher.search.SearchResult.Match
 import com.gybra.terminallauncher.shell.ShellType
+import java.io.IOException
 import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
@@ -60,6 +63,7 @@ class HomeViewModelTest {
             preferencesRepository = preferencesRepository,
             launcherClock = FakeLauncherClock(),
             commandExecutor = commandExecutor(),
+            packageMonitor = FakePackageMonitor(),
         )
         startCollecting(viewModel)
 
@@ -77,6 +81,7 @@ class HomeViewModelTest {
             preferencesRepository = preferencesRepository,
             launcherClock = FakeLauncherClock(),
             commandExecutor = commandExecutor(),
+            packageMonitor = FakePackageMonitor(),
         )
         startCollecting(viewModel)
         advanceUntilIdle()
@@ -104,6 +109,7 @@ class HomeViewModelTest {
             preferencesRepository = preferencesRepository,
             launcherClock = FakeLauncherClock(),
             commandExecutor = commandExecutor(),
+            packageMonitor = FakePackageMonitor(),
         )
         startCollecting(viewModel)
         advanceUntilIdle()
@@ -135,6 +141,7 @@ class HomeViewModelTest {
             preferencesRepository = preferencesRepository,
             launcherClock = FakeLauncherClock(),
             commandExecutor = commandExecutor(),
+            packageMonitor = FakePackageMonitor(),
         )
         startCollecting(viewModel)
         advanceUntilIdle()
@@ -173,6 +180,7 @@ class HomeViewModelTest {
             ),
             launcherClock = FakeLauncherClock(),
             commandExecutor = commandExecutor(),
+            packageMonitor = FakePackageMonitor(),
         )
         startCollecting(viewModel)
 
@@ -192,6 +200,7 @@ class HomeViewModelTest {
                     preferencesRepository = RecordingPreferencesRepository(),
                     launcherClock = FakeLauncherClock(),
                     commandExecutor = commandExecutor(),
+                    packageMonitor = FakePackageMonitor(),
                 )
                 startCollecting(viewModel)
 
@@ -208,6 +217,7 @@ class HomeViewModelTest {
             preferencesRepository = RecordingPreferencesRepository(),
             launcherClock = clock,
             commandExecutor = commandExecutor(),
+            packageMonitor = FakePackageMonitor(),
         )
 
         runCurrent()
@@ -233,6 +243,7 @@ class HomeViewModelTest {
                 preferencesRepository = RecordingPreferencesRepository(),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
             )
             startCollecting(viewModel)
             advanceUntilIdle()
@@ -348,6 +359,7 @@ class HomeViewModelTest {
                 preferencesRepository = RecordingPreferencesRepository(),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps),
+                packageMonitor = FakePackageMonitor(),
             )
             startCollecting(viewModel)
             advanceUntilIdle()
@@ -371,6 +383,7 @@ class HomeViewModelTest {
                 preferencesRepository = RecordingPreferencesRepository(),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps),
+                packageMonitor = FakePackageMonitor(),
             )
             startCollecting(viewModel)
             advanceUntilIdle()
@@ -398,6 +411,7 @@ class HomeViewModelTest {
                 preferencesRepository = RecordingPreferencesRepository(),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps),
+                packageMonitor = FakePackageMonitor(),
             )
             startCollecting(viewModel)
             advanceUntilIdle()
@@ -483,6 +497,7 @@ class HomeViewModelTest {
                 preferencesRepository = preferencesRepository,
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps, clear),
+                packageMonitor = FakePackageMonitor(),
             )
             startCollecting(viewModel)
             advanceUntilIdle()
@@ -514,6 +529,7 @@ class HomeViewModelTest {
                 preferencesRepository = preferencesRepository,
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
             )
             startCollecting(first)
             advanceUntilIdle()
@@ -528,6 +544,7 @@ class HomeViewModelTest {
                 preferencesRepository = preferencesRepository,
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
             )
             startCollecting(restarted)
             advanceUntilIdle()
@@ -548,6 +565,7 @@ class HomeViewModelTest {
                 ),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps),
+                packageMonitor = FakePackageMonitor(),
             )
             startCollecting(viewModel)
             advanceUntilIdle()
@@ -563,6 +581,91 @@ class HomeViewModelTest {
         }
 
     @Test
+    fun `unpins a package the system reports as removed`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val packageMonitor = FakePackageMonitor()
+            val preferencesRepository = RecordingPreferencesRepository(
+                initialPreferences = LauncherPreferences(pinnedPackages = setOf(mail.packageName)),
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = preferencesRepository,
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = packageMonitor,
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            packageMonitor.report(PackageChange(packageName = mail.packageName, removed = true))
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf("unpinPackage(${mail.packageName})"),
+                preferencesRepository.writes,
+            )
+            assertEquals(emptyList<InstalledApp>(), viewModel.uiState.value.apps)
+        }
+
+    @Test
+    fun `keeps the pin while a package is only replaced by an update`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val packageMonitor = FakePackageMonitor()
+            val preferencesRepository = RecordingPreferencesRepository(
+                initialPreferences = LauncherPreferences(pinnedPackages = setOf(mail.packageName)),
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = preferencesRepository,
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = packageMonitor,
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            packageMonitor.report(PackageChange(packageName = mail.packageName, removed = false))
+            advanceUntilIdle()
+
+            assertEquals(emptyList<String>(), preferencesRepository.writes)
+            assertEquals(listOf(mail), viewModel.uiState.value.apps)
+        }
+
+    @Test
+    fun `keeps Home working when unpinning a removed package fails`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val packageMonitor = FakePackageMonitor()
+            val preferencesRepository = RecordingPreferencesRepository(
+                initialPreferences = LauncherPreferences(pinnedPackages = setOf(mail.packageName)),
+                writeFailure = IOException("storage unavailable"),
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = preferencesRepository,
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = packageMonitor,
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            packageMonitor.report(PackageChange(packageName = mail.packageName, removed = true))
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf("unpinPackage(${mail.packageName})"),
+                preferencesRepository.writes,
+            )
+
+            packageMonitor.report(PackageChange(packageName = mailbox.packageName, removed = true))
+            viewModel.updatePromptValue(PromptState(input = "mail"))
+            advanceUntilIdle()
+
+            assertEquals("mail", viewModel.uiState.value.prompt.input)
+            assertEquals(listOf(mail), viewModel.uiState.value.searchResults.map(SearchResult::app))
+        }
+
+    @Test
     fun `asks the launcher to open settings when a command requests it`() =
         runTest(mainDispatcherRule.dispatcher) {
             val settings = RecordingCommand(
@@ -574,6 +677,7 @@ class HomeViewModelTest {
                 preferencesRepository = RecordingPreferencesRepository(),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(settings),
+                packageMonitor = FakePackageMonitor(),
             )
             startCollecting(viewModel)
             advanceUntilIdle()
@@ -608,6 +712,7 @@ class HomeViewModelTest {
         preferencesRepository = RecordingPreferencesRepository(),
         launcherClock = FakeLauncherClock(),
         commandExecutor = commandExecutor(),
+        packageMonitor = FakePackageMonitor(),
     )
 
     private fun unixHomeState(apps: List<InstalledApp> = emptyList()): HomeUiState = HomeUiState(
