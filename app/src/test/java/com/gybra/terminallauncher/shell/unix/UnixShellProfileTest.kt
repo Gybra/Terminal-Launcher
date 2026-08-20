@@ -1,6 +1,7 @@
 package com.gybra.terminallauncher.shell.unix
 
 import com.gybra.terminallauncher.command.Command
+import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
@@ -39,6 +40,23 @@ class UnixShellProfileTest {
 
         assertEquals(listOf("camera", "telegram"), profile.formatAppList(apps))
         assertEquals(emptyList<String>(), profile.formatAppList(emptyList()))
+    }
+
+    @Test
+    fun `formats help from command metadata using primary Unix aliases`() {
+        val commands = listOf(
+            CommandSummary(id = Command.LIST_APPS, description = "List installed applications"),
+            CommandSummary(id = Command.HELP, description = "Show available commands"),
+        )
+
+        assertEquals(
+            listOf(
+                "ls        List installed applications",
+                "help      Show available commands",
+            ),
+            profile.formatHelp(commands),
+        )
+        assertEquals(emptyList<String>(), profile.formatHelp(emptyList()))
     }
 
     @Test

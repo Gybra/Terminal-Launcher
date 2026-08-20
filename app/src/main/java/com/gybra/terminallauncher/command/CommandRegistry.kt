@@ -16,6 +16,11 @@ public class CommandRegistry(
         }
     }
 
+    /** Metadata of every registered command, in registration order. */
+    public val summaries: List<CommandSummary> = commands.map { command ->
+        CommandSummary(id = command.id, description = command.description)
+    }
+
     /**
      * Returns the command [name] stands for in [shellProfile], comparing aliases without case,
      * or `null` when the shell knows no such command.
