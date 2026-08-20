@@ -4,9 +4,13 @@ import com.gybra.terminallauncher.command.CommandExecutor
 import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.launcherCommands
 import com.gybra.terminallauncher.launcher.FakeAppRepository
+import com.gybra.terminallauncher.launcher.FakeBatteryRepository
+import com.gybra.terminallauncher.launcher.FakeTorch
 import com.gybra.terminallauncher.launcher.FakeLauncherClock
 import com.gybra.terminallauncher.launcher.FakePackageMonitor
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.SystemScreen
+import com.gybra.terminallauncher.launcher.TorchState
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.RecordingPreferencesRepository
 import com.gybra.terminallauncher.search.SearchResult
@@ -96,7 +100,15 @@ class LauncherIntegrationTest {
                     "pin       Pin an application to Home",
                     "unpin     Remove an application from Home",
                     "alias     Name an application",
+                    "info      Open the Android details of an application",
+                    "uninstall Ask Android to uninstall an application",
+                    "battery   Report the battery level",
+                    "torch     Turn the torch on or off",
+                    "android   Open the Android settings",
+                    "wifi      Open the Wi-Fi settings",
+                    "bluetooth Open the Bluetooth settings",
                     "clear     Clear the terminal history",
+                    "restart   Restart the launcher",
                     "settings  Open the launcher settings",
                 ),
                 home.viewModel.uiState.value.history.single().output,
@@ -184,6 +196,49 @@ class LauncherIntegrationTest {
         }
 
     @Test
+    fun `runs the Android utility commands the launcher registers`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val home = launcherHome()
+
+            home.submit("battery")
+            assertEquals(
+                listOf("battery 42% on battery"),
+                home.viewModel.uiState.value.history.last().output,
+            )
+
+            home.submit("torch")
+            assertEquals(listOf("torch on"), home.viewModel.uiState.value.history.last().output)
+
+            home.submit("wifi")
+            home.submit("uninstall camera")
+
+            assertEquals(
+                listOf(
+                    SubmittedAction.OpenSystemScreen(SystemScreen.WifiSettings),
+                    SubmittedAction.OpenSystemScreen(
+                        SystemScreen.Uninstall("org.example.camera"),
+                    ),
+                ),
+                home.actions,
+            )
+        }
+
+    @Test
+    fun `writes the Android utility commands the DOS way`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val home = launcherHome(
+                preferences = LauncherPreferences(shellType = ShellType.DOS),
+            )
+
+            home.submit("BATTERY")
+
+            assertEquals(
+                listOf("BATTERY 42% ON BATTERY"),
+                home.viewModel.uiState.value.history.last().output,
+            )
+        }
+
+    @Test
     fun `opens settings from the prompt`() = runTest(mainDispatcherRule.dispatcher) {
         val home = launcherHome()
 
@@ -225,7 +280,13 @@ class LauncherIntegrationTest {
             preferencesRepository = preferencesRepository,
             launcherClock = FakeLauncherClock(),
             commandExecutor = CommandExecutor(
-                CommandRegistry(commands = launcherCommands(preferencesRepository)),
+                CommandRegistry(
+                    commands = launcherCommands(
+                        preferencesRepository = preferencesRepository,
+                        batteryRepository = FakeBatteryRepository(),
+                        torch = FakeTorch(TorchState.ON, TorchState.OFF),
+                    ),
+                ),
             ),
             packageMonitor = FakePackageMonitor(),
         )

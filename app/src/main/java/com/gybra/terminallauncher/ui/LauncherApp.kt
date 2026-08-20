@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.SystemScreen
 import com.gybra.terminallauncher.ui.home.HomeScreen
 import com.gybra.terminallauncher.ui.home.HomeUiState
 import com.gybra.terminallauncher.ui.home.PromptActions
@@ -27,15 +28,21 @@ public fun LauncherApp(
     promptActions: PromptActions,
     submittedActions: Flow<SubmittedAction>,
     onLaunchApp: (InstalledApp) -> Unit,
+    onOpenSystemScreen: (SystemScreen) -> Unit,
+    onRestartLauncher: () -> Unit,
 ) {
     var destination by rememberSaveable { mutableStateOf(LauncherDestination.HOME) }
     val launchApp by rememberUpdatedState(onLaunchApp)
+    val openSystemScreen by rememberUpdatedState(onOpenSystemScreen)
+    val restartLauncher by rememberUpdatedState(onRestartLauncher)
 
     LaunchedEffect(submittedActions) {
         submittedActions.collect { action ->
             when (action) {
                 is SubmittedAction.LaunchApp -> launchApp(action.app)
                 SubmittedAction.OpenSettings -> destination = LauncherDestination.SETTINGS
+                is SubmittedAction.OpenSystemScreen -> openSystemScreen(action.screen)
+                SubmittedAction.RestartLauncher -> restartLauncher()
             }
         }
     }

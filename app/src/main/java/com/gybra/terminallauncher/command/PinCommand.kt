@@ -13,7 +13,7 @@ public class PinCommand(
 
     override val outcome: String = "pinned"
 
-    override suspend fun apply(app: InstalledApp) {
+    override suspend fun changePinning(app: InstalledApp) {
         preferencesRepository.pinPackage(app.packageName)
     }
 }

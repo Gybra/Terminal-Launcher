@@ -39,6 +39,14 @@ public object DosShellProfile : ShellProfile {
         Command.UNPIN -> "UNPIN"
         Command.SETTINGS -> "SETTINGS"
         Command.ALIAS -> "ALIAS"
+        Command.BATTERY -> "BATTERY"
+        Command.TORCH -> "TORCH"
+        Command.APP_INFO -> "INFO"
+        Command.UNINSTALL -> "UNINSTALL"
+        Command.ANDROID_SETTINGS -> "ANDROID"
+        Command.WIFI_SETTINGS -> "WIFI"
+        Command.BLUETOOTH_SETTINGS -> "BLUETOOTH"
+        Command.RESTART -> "RESTART"
     }
 
     override fun formatAppList(apps: List<InstalledApp>): List<String> =

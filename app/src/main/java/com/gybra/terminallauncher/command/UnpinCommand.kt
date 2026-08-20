@@ -13,7 +13,7 @@ public class UnpinCommand(
 
     override val outcome: String = "unpinned"
 
-    override suspend fun apply(app: InstalledApp) {
+    override suspend fun changePinning(app: InstalledApp) {
         preferencesRepository.unpinPackage(app.packageName)
     }
 }
