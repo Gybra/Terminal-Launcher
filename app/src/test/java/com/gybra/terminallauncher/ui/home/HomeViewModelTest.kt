@@ -8,7 +8,8 @@ import com.gybra.terminallauncher.command.CommandResult
 import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.LauncherCommand
 import com.gybra.terminallauncher.command.RecordingCommand
-import com.gybra.terminallauncher.launcher.AppRepository
+import com.gybra.terminallauncher.launcher.FakeAppRepository
+import com.gybra.terminallauncher.launcher.FakeLauncherClock
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.FakePackageMonitor
 import com.gybra.terminallauncher.launcher.LauncherClock
@@ -334,21 +335,6 @@ class HomeViewModelTest {
     private val mail = InstalledApp(packageName = "com.example.mail", label = "Mail")
     private val mailbox = InstalledApp(packageName = "com.example.mailbox", label = "Mailbox")
     private val mailboxPro = InstalledApp(packageName = "com.example.pro", label = "Mailbox Pro")
-
-    private class FakeAppRepository(
-        private val apps: List<InstalledApp> = emptyList(),
-        private val failure: Throwable? = null,
-    ) : AppRepository {
-        override suspend fun getInstalledApps(): List<InstalledApp> {
-            failure?.let { throw it }
-            return apps
-        }
-
-        override fun observeInstalledApps(): Flow<List<InstalledApp>> = flow {
-            failure?.let { throw it }
-            emit(apps)
-        }
-    }
 
     @Test
     fun `runs a registered command instead of searching and clears the prompt`() =
@@ -732,10 +718,6 @@ class HomeViewModelTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect {}
         }
-    }
-
-    private class FakeLauncherClock : LauncherClock {
-        override fun observeTime(): Flow<String> = flowOf("22:10")
     }
 
     private class TrackingLauncherClock : LauncherClock {
