@@ -9,10 +9,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.SystemScreen
 import com.gybra.terminallauncher.shell.LauncherLocation
@@ -59,6 +61,7 @@ class LauncherAppTest {
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )
@@ -69,6 +72,30 @@ class LauncherAppTest {
 
         composeRule.onNodeWithText("< back").performClick()
         composeRule.onNodeWithText("user@android:~$", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `forwards a double tap on Home to the screen lock`() {
+        var locks = 0
+        composeRule.setContent {
+            LauncherApp(
+                homeState = homeState(),
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
+                onLaunchShortcut = {},
+                onLockScreen = { locks += 1 },
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+
+        composeRule.onNodeWithTag("home-list").performTouchInput { doubleClick(bottomCenter) }
+        composeRule.waitForIdle()
+
+        assertEquals(1, locks)
     }
 
     @Test
@@ -84,6 +111,7 @@ class LauncherAppTest {
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )
@@ -110,6 +138,7 @@ class LauncherAppTest {
                 submittedActions = submittedActions,
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )
@@ -134,6 +163,7 @@ class LauncherAppTest {
                 submittedActions = submittedActions,
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onLockScreen = {},
                 onOpenSystemScreen = { screen -> openedScreen = screen },
                 onRestartLauncher = {},
             )
@@ -160,6 +190,7 @@ class LauncherAppTest {
                 submittedActions = submittedActions,
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = { restarts += 1 },
             )
@@ -185,6 +216,7 @@ class LauncherAppTest {
                 submittedActions = submittedActions,
                 onLaunchApp = { launched -> launchedApp = launched },
                 onLaunchShortcut = {},
+                onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )
@@ -208,6 +240,7 @@ class LauncherAppTest {
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )
@@ -240,6 +273,7 @@ class LauncherAppTest {
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )
@@ -316,6 +350,7 @@ class LauncherAppTest {
         terminalTheme = terminalTheme,
         showClock = true,
         showBattery = true,
+        doubleTapToLock = false,
         username = "user",
         hostname = "android",
         promptSymbol = PromptSymbol.DOLLAR,
@@ -328,6 +363,7 @@ class LauncherAppTest {
         selectTheme = {},
         setShowClock = {},
         setShowBattery = {},
+        setDoubleTapToLock = {},
         setUsername = {},
         setHostname = {},
         selectPromptSymbol = {},

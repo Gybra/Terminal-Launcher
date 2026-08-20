@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.command.Command
@@ -28,6 +30,7 @@ public fun HomeScreen(
     onAppClick: (InstalledApp) -> Unit,
     onShortcutClick: (PinnedShortcut) -> Unit,
     onSettingsClick: () -> Unit,
+    onLockScreen: () -> Unit,
     promptActions: PromptActions,
     modifier: Modifier = Modifier,
 ) {
@@ -36,6 +39,9 @@ public fun HomeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(colors.background)
+            .pointerInput(onLockScreen) {
+                detectTapGestures(onDoubleTap = { onLockScreen() })
+            }
             .testTag("home-list"),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),

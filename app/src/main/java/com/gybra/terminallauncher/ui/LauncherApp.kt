@@ -30,6 +30,7 @@ public fun LauncherApp(
     submittedActions: Flow<SubmittedAction>,
     onLaunchApp: (InstalledApp) -> Unit,
     onLaunchShortcut: (PinnedShortcut) -> Unit,
+    onLockScreen: () -> Unit,
     onOpenSystemScreen: (SystemScreen) -> Unit,
     onRestartLauncher: () -> Unit,
 ) {
@@ -60,6 +61,7 @@ public fun LauncherApp(
                 onAppClick = onLaunchApp,
                 onShortcutClick = onLaunchShortcut,
                 onSettingsClick = { destination = LauncherDestination.SETTINGS },
+                onLockScreen = onLockScreen,
                 promptActions = promptActions,
             )
         } else {

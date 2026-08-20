@@ -2,6 +2,7 @@ package com.gybra.terminallauncher.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.gybra.terminallauncher.launcher.DeviceLock
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.DosDrive
@@ -19,6 +20,7 @@ import kotlinx.coroutines.sync.withLock
 
 public class SettingsViewModel(
     private val preferencesRepository: PreferencesRepository,
+    private val deviceLock: DeviceLock,
 ) : ViewModel() {
     private val mutableUiState = MutableStateFlow(LauncherPreferences().toUiState())
     private val writeMutex = Mutex()
@@ -56,6 +58,24 @@ public class SettingsViewModel(
             update = { state -> state.copy(showBattery = showBattery) },
             persist = { preferencesRepository.setShowBattery(showBattery) },
         )
+    }
+
+    /**
+     * Asks the user for the device admin that locking the screen needs, or gives it back. The
+     * toggle follows what Android answers, so a request the user declines leaves it off.
+     */
+    public fun setDoubleTapToLock(enabled: Boolean) {
+        if (enabled) {
+            deviceLock.requestEnable()
+        } else {
+            deviceLock.disable()
+        }
+        refreshDeviceLock()
+    }
+
+    /** Reads the device admin again, such as after the user answered the Android request. */
+    public fun refreshDeviceLock() {
+        mutableUiState.value = mutableUiState.value.copy(doubleTapToLock = deviceLock.enabled)
     }
 
     /** Stores [username] as a prompt token, so what is typed can always be written in a prompt. */
@@ -149,6 +169,7 @@ public class SettingsViewModel(
         terminalTheme = terminalTheme,
         showClock = showClock,
         showBattery = showBattery,
+        doubleTapToLock = deviceLock.enabled,
         username = username,
         hostname = hostname,
         promptSymbol = promptSymbol,

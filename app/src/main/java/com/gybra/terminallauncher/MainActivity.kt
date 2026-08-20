@@ -12,6 +12,8 @@ import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,6 +24,7 @@ import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.launcherCommands
 import com.gybra.terminallauncher.launcher.AppLauncher
 import com.gybra.terminallauncher.launcher.BroadcastPackageMonitor
+import com.gybra.terminallauncher.launcher.SystemDeviceLock
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
 import com.gybra.terminallauncher.launcher.SystemBatteryRepository
 import com.gybra.terminallauncher.launcher.ShortcutLauncher
@@ -55,6 +58,7 @@ public class MainActivity : ComponentActivity() {
         val systemScreenLauncher = SystemScreenLauncher(applicationContext)
         val shortcutLauncher = ShortcutLauncher(applicationContext)
         val batteryRepository = SystemBatteryRepository(applicationContext)
+        val deviceLock = SystemDeviceLock(applicationContext)
         val commandExecutor = CommandExecutor(
             CommandRegistry(
                 commands = launcherCommands(
@@ -75,7 +79,7 @@ public class MainActivity : ComponentActivity() {
                     packageMonitor = packageMonitor,
                 )
             }
-            initializer { SettingsViewModel(preferencesRepository) }
+            initializer { SettingsViewModel(preferencesRepository, deviceLock) }
         }
 
         setLauncherContent(
@@ -83,6 +87,7 @@ public class MainActivity : ComponentActivity() {
             appLauncher = appLauncher,
             shortcutLauncher = shortcutLauncher,
             systemScreenLauncher = systemScreenLauncher,
+            deviceLock = deviceLock,
         )
     }
 
@@ -91,6 +96,7 @@ public class MainActivity : ComponentActivity() {
         appLauncher: AppLauncher,
         shortcutLauncher: ShortcutLauncher,
         systemScreenLauncher: SystemScreenLauncher,
+        deviceLock: SystemDeviceLock,
     ) {
         setContent {
             val homeViewModel: HomeViewModel = viewModel(factory = viewModelFactory)
@@ -98,6 +104,9 @@ public class MainActivity : ComponentActivity() {
             val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
             val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
             val terminalColors = settingsState.terminalTheme.colors(isSystemInDarkTheme())
+            LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+                settingsViewModel.refreshDeviceLock()
+            }
             SideEffect {
                 updateSystemBarIconAppearance(
                     useDarkIcons = terminalColors.useDarkSystemBarIcons(),
@@ -111,6 +120,7 @@ public class MainActivity : ComponentActivity() {
                     selectTheme = settingsViewModel::selectTheme,
                     setShowClock = settingsViewModel::setShowClock,
                     setShowBattery = settingsViewModel::setShowBattery,
+                    setDoubleTapToLock = settingsViewModel::setDoubleTapToLock,
                     setUsername = settingsViewModel::setUsername,
                     setHostname = settingsViewModel::setHostname,
                     selectPromptSymbol = settingsViewModel::selectPromptSymbol,
@@ -125,6 +135,7 @@ public class MainActivity : ComponentActivity() {
                 submittedActions = homeViewModel.submittedActions,
                 onLaunchApp = appLauncher::launch,
                 onLaunchShortcut = shortcutLauncher::launch,
+                onLockScreen = { deviceLock.lock() },
                 onOpenSystemScreen = systemScreenLauncher::open,
                 onRestartLauncher = ::recreate,
             )
