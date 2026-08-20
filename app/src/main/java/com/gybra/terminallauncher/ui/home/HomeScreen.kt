@@ -61,6 +61,15 @@ public fun HomeScreen(
                 actions = promptActions,
             )
         }
+        items(
+            items = state.searchResults,
+            key = { result -> "search-${result.app.packageName}" },
+        ) { result ->
+            AppRow(
+                displayName = state.shellProfile.formatAppName(result.app),
+                onClick = { onAppClick(result.app) },
+            )
+        }
     }
 }
 

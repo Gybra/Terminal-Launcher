@@ -19,18 +19,6 @@ public class PackageManagerAppRepository(
             queryLaunchableApps()
         }
 
-    override suspend fun findApp(query: String): InstalledApp? {
-        val normalizedQuery = query.trim()
-        if (normalizedQuery.isEmpty()) {
-            return null
-        }
-
-        return getInstalledApps().firstOrNull { app ->
-            app.label.equals(normalizedQuery, ignoreCase = true) ||
-                app.packageName.equals(normalizedQuery, ignoreCase = true)
-        }
-    }
-
     override fun observeInstalledApps(): Flow<List<InstalledApp>> = flow {
         emit(getInstalledApps())
     }
