@@ -3,6 +3,7 @@ package com.gybra.terminallauncher.command
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
+import java.io.IOException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -85,6 +86,30 @@ class CommandExecutorTest {
             CommandResult.Output(listOf("help")),
             executor.execute(input = "help", shellProfile = UnixShellProfile, installedApps = apps),
         )
+    }
+
+    @Test
+    fun `reports a command that cannot reach storage instead of failing the launcher`() = runTest {
+        val pin = RecordingCommand(id = Command.PIN, failure = IOException("storage unavailable"))
+        val executor = CommandExecutor(CommandRegistry(commands = listOf(pin)))
+
+        assertEquals(
+            CommandResult.Output(listOf("pin failed")),
+            executor.execute(
+                input = "pin camera",
+                shellProfile = UnixShellProfile,
+                installedApps = apps,
+            ),
+        )
+        assertEquals(
+            CommandResult.Output(listOf("PIN FAILED")),
+            executor.execute(
+                input = "PIN camera",
+                shellProfile = DosShellProfile,
+                installedApps = apps,
+            ),
+        )
+        assertEquals(2, pin.executions)
     }
 
     private val apps = listOf(InstalledApp(packageName = "com.example.mail", label = "Mail"))
