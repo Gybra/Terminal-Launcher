@@ -8,6 +8,8 @@ import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.gybra.terminallauncher.launcher.AppUsage
+import com.gybra.terminallauncher.shell.DosDrive
+import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.File
@@ -52,6 +54,9 @@ class DataStorePreferencesRepositoryTest {
         firstRepository.setShowClock(false)
         firstRepository.setUsername("oreste")
         firstRepository.setHostname("phone")
+        firstRepository.setPromptSymbol(PromptSymbol.PERCENT)
+        firstRepository.setShowPromptPath(false)
+        firstRepository.setDosDrive(DosDrive.D)
         firstRepository.pinPackage("org.example.mail")
         firstRepository.setAlias(name = "browser", packageName = "org.example.firefox")
         firstRepository.recordLaunch(packageName = "org.example.mail", launchedAt = LAUNCHED_AT)
@@ -71,6 +76,9 @@ class DataStorePreferencesRepositoryTest {
                 showClock = false,
                 username = "oreste",
                 hostname = "phone",
+                promptSymbol = PromptSymbol.PERCENT,
+                showPromptPath = false,
+                dosDrive = DosDrive.D,
                 pinnedPackages = setOf("org.example.mail"),
                 aliases = mapOf("browser" to "org.example.firefox"),
                 usage = mapOf(
@@ -261,6 +269,20 @@ class DataStorePreferencesRepositoryTest {
         )
 
         assertEquals(TerminalTheme.SYSTEM, repository.preferences.first().terminalTheme)
+    }
+
+    @Test
+    fun `maps unknown persisted prompt options to their defaults`() = runTest {
+        val storedPreferences = mutablePreferencesOf(
+            stringPreferencesKey("prompt_symbol") to "UNKNOWN",
+            stringPreferencesKey("dos_drive") to "Z",
+        )
+        val preferences = DataStorePreferencesRepository(
+            FakePreferencesDataStore(initialPreferences = storedPreferences),
+        ).preferences.first()
+
+        assertEquals(PromptSymbol.DOLLAR, preferences.promptSymbol)
+        assertEquals(DosDrive.C, preferences.dosDrive)
     }
 
     private companion object {

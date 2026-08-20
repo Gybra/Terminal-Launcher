@@ -1,6 +1,8 @@
 package com.gybra.terminallauncher.preferences
 
 import com.gybra.terminallauncher.launcher.AppUsage
+import com.gybra.terminallauncher.shell.DosDrive
+import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
@@ -46,6 +48,24 @@ class RecordingPreferencesRepository(
 
     override suspend fun setHostname(hostname: String) {
         write("setHostname($hostname)") { preferences -> preferences.copy(hostname = hostname) }
+    }
+
+    override suspend fun setPromptSymbol(promptSymbol: PromptSymbol) {
+        write("setPromptSymbol($promptSymbol)") { preferences ->
+            preferences.copy(promptSymbol = promptSymbol)
+        }
+    }
+
+    override suspend fun setShowPromptPath(showPromptPath: Boolean) {
+        write("setShowPromptPath($showPromptPath)") { preferences ->
+            preferences.copy(showPromptPath = showPromptPath)
+        }
+    }
+
+    override suspend fun setDosDrive(dosDrive: DosDrive) {
+        write("setDosDrive($dosDrive)") { preferences ->
+            preferences.copy(dosDrive = dosDrive)
+        }
     }
 
     override suspend fun pinPackage(packageName: String) {

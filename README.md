@@ -11,13 +11,14 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 **Home and appearance**
 
 - registers as an Android Home application and renders full screen, edge to edge, in system monospace type;
-- persists every preference in DataStore: shell, terminal theme, clock, username, hostname, pinned applications, and how often and how recently each application is launched;
+- persists every preference in DataStore: shell, terminal theme, clock, username, hostname, prompt symbol, prompt path visibility, DOS drive letter, pinned applications, and how often and how recently each application is launched;
 - offers independent System, Green, Amber, and Monochrome terminal themes and an optional live clock;
-- offers a minimal settings screen for shell, theme, clock, username, and hostname.
+- offers a minimal settings screen for shell, theme, clock, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter.
 
 **Shell metaphor**
 
 - DOS and Unix shell profiles own prompts, paths, application names, lists, help, command aliases, and message style, so no DOS or Unix branch exists in Compose;
+- customizes the prompt cosmetically: Unix identity and end symbol, DOS drive letter, and path visibility in both shells;
 - shows a focusable prompt with keyboard input, Enter submission, and a focus-aware blinking cursor;
 - keeps an in-memory terminal history of the twenty most recent submitted lines with their output.
 
@@ -35,7 +36,7 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - builds, tests, lints, and packages from the command line without Android Studio;
 - enforces 100% line coverage for testable application logic on every pull request.
 
-Prompt customization is v0.2 and controlled Android utility commands are v0.3. Both are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues).
+Controlled Android utility commands are v0.3, tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues).
 
 ## Using the launcher
 
@@ -58,6 +59,10 @@ Anything that is not a registered command is treated as a search. Command names 
 `alias` names an application so submitting that name launches it, for example `alias browser firefox`. Aliases persist across restarts, are matched without case, and are replaced by defining the same name again. A registered command is always resolved before an alias, and a name any shell already uses for a command is refused rather than allowed to shadow it, so no alias can ever take over `ls`, `clear`, or any other command.
 
 `pin`, `unpin`, and `alias` accept an exact or unique application name; an ambiguous name is answered with the matching applications so a longer name can be given. Output, confirmations, and errors are written in the style of the selected shell: lowercase names on Unix, decorative `.EXE` names and uppercase messages on DOS.
+
+The prompt can be customized from the settings screen, and the customization is cosmetic only. The Unix prompt is written as `username@hostname:path$`, where the username and the hostname are kept usable as prompt tokens by dropping whitespace and control characters and keeping at most sixteen characters, and where the end symbol is `$`, `%`, or `>`. The DOS prompt is written as `C:\HOME>` on the chosen drive letter, `A`, `C`, or `D`. Hiding the path shortens the Unix prompt to `username@hostname$` and the DOS prompt to `C:\>`. A username or hostname cleared in the settings is left out of the prompt with its separator, so clearing both leaves `~$`.
+
+No drive, path, or symbol reaches a filesystem or grants a privilege: nothing exists behind them, and the launcher navigates no directories. The path shown is a fixed label for where the launcher is, not a working directory.
 
 The terminal history lives in memory only and starts empty after every process restart, by design.
 

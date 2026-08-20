@@ -25,6 +25,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.gybra.terminallauncher.shell.DosDrive
+import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.ui.terminalTextStyle
@@ -52,6 +54,7 @@ public fun SettingsScreen(
         }
         appearanceSettings(state = state, actions = actions)
         unixSettings(state = state, actions = actions)
+        dosSettings(state = state, actions = actions)
     }
 }
 
@@ -87,6 +90,13 @@ private fun LazyListScope.appearanceSettings(
             onCheckedChange = actions.setShowClock,
         )
     }
+    item(key = "prompt-path") {
+        ToggleOption(
+            label = "Show path in prompt",
+            checked = state.showPromptPath,
+            onCheckedChange = actions.setShowPromptPath,
+        )
+    }
 }
 
 private fun LazyListScope.unixSettings(
@@ -107,6 +117,33 @@ private fun LazyListScope.unixSettings(
             value = state.hostname,
             onValueChange = actions.setHostname,
         )
+    }
+    item(key = "prompt-symbol") { TerminalText("Prompt symbol") }
+    PromptSymbol.entries.forEach { promptSymbol ->
+        item(key = "prompt-symbol-${promptSymbol.name}") {
+            SelectionOption(
+                label = promptSymbol.text,
+                selected = state.promptSymbol == promptSymbol,
+                onClick = { actions.selectPromptSymbol(promptSymbol) },
+            )
+        }
+    }
+}
+
+private fun LazyListScope.dosSettings(
+    state: SettingsUiState,
+    actions: SettingsActions,
+) {
+    item(key = "dos") { SectionTitle("DOS") }
+    item(key = "drive") { TerminalText("Drive") }
+    DosDrive.entries.forEach { dosDrive ->
+        item(key = "drive-${dosDrive.name}") {
+            SelectionOption(
+                label = "${dosDrive.name}:",
+                selected = state.dosDrive == dosDrive,
+                onClick = { actions.selectDosDrive(dosDrive) },
+            )
+        }
     }
 }
 

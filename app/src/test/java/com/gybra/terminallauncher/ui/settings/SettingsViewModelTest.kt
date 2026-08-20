@@ -3,6 +3,8 @@ package com.gybra.terminallauncher.ui.settings
 import com.gybra.terminallauncher.MainDispatcherRule
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
+import com.gybra.terminallauncher.shell.DosDrive
+import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
@@ -36,6 +38,9 @@ class SettingsViewModelTest {
                 showClock = false,
                 username = "oreste",
                 hostname = "phone",
+                promptSymbol = PromptSymbol.PERCENT,
+                showPromptPath = false,
+                dosDrive = DosDrive.D,
             ),
         )
         advanceUntilIdle()
@@ -47,6 +52,9 @@ class SettingsViewModelTest {
                 showClock = false,
                 username = "oreste",
                 hostname = "phone",
+                promptSymbol = PromptSymbol.PERCENT,
+                showPromptPath = false,
+                dosDrive = DosDrive.D,
             ),
             viewModel.uiState.value,
         )
@@ -62,6 +70,9 @@ class SettingsViewModelTest {
         viewModel.setShowClock(false)
         viewModel.setUsername("oreste")
         viewModel.setHostname("phone")
+        viewModel.selectPromptSymbol(PromptSymbol.ARROW)
+        viewModel.setShowPromptPath(false)
+        viewModel.selectDosDrive(DosDrive.A)
         advanceUntilIdle()
 
         assertEquals(ShellType.DOS, repository.shellType)
@@ -69,7 +80,38 @@ class SettingsViewModelTest {
         assertEquals(false, repository.showClock)
         assertEquals("oreste", repository.username)
         assertEquals("phone", repository.hostname)
+        assertEquals(PromptSymbol.ARROW, repository.promptSymbol)
+        assertEquals(false, repository.showPromptPath)
+        assertEquals(DosDrive.A, repository.dosDrive)
     }
+
+    @Test
+    fun `keeps an identity usable in a prompt`() = runTest(mainDispatcherRule.dispatcher) {
+        val repository = FakePreferencesRepository()
+        val viewModel = SettingsViewModel(repository)
+
+        viewModel.setUsername(" or\teste\n")
+        viewModel.setHostname("a very long hostname indeed")
+        advanceUntilIdle()
+
+        assertEquals("oreste", viewModel.uiState.value.username)
+        assertEquals("averylonghostnam", viewModel.uiState.value.hostname)
+        assertEquals("oreste", repository.username)
+        assertEquals("averylonghostnam", repository.hostname)
+    }
+
+    @Test
+    fun `clears an identity made only of unusable characters`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repository = FakePreferencesRepository()
+            val viewModel = SettingsViewModel(repository)
+
+            viewModel.setUsername("  \t ")
+            advanceUntilIdle()
+
+            assertEquals("", viewModel.uiState.value.username)
+            assertEquals("", repository.username)
+        }
 
     @Test
     fun `keeps rapid controlled input updates in order`() = runTest(mainDispatcherRule.dispatcher) {
@@ -136,6 +178,9 @@ class SettingsViewModelTest {
         var showClock: Boolean? = null
         var username: String? = null
         var hostname: String? = null
+        var promptSymbol: PromptSymbol? = null
+        var showPromptPath: Boolean? = null
+        var dosDrive: DosDrive? = null
         val usernameWrites = mutableListOf<String>()
 
         fun emit(preferences: LauncherPreferences) {
@@ -171,6 +216,24 @@ class SettingsViewModelTest {
             writeFailure?.let { throw it }
             this.hostname = hostname
             emit(mutablePreferences.value.copy(hostname = hostname))
+        }
+
+        override suspend fun setPromptSymbol(promptSymbol: PromptSymbol) {
+            writeFailure?.let { throw it }
+            this.promptSymbol = promptSymbol
+            emit(mutablePreferences.value.copy(promptSymbol = promptSymbol))
+        }
+
+        override suspend fun setShowPromptPath(showPromptPath: Boolean) {
+            writeFailure?.let { throw it }
+            this.showPromptPath = showPromptPath
+            emit(mutablePreferences.value.copy(showPromptPath = showPromptPath))
+        }
+
+        override suspend fun setDosDrive(dosDrive: DosDrive) {
+            writeFailure?.let { throw it }
+            this.dosDrive = dosDrive
+            emit(mutablePreferences.value.copy(dosDrive = dosDrive))
         }
 
         override suspend fun pinPackage(packageName: String) = unsupported()
@@ -217,6 +280,12 @@ class SettingsViewModelTest {
         }
 
         override suspend fun setHostname(hostname: String) = unsupported()
+
+        override suspend fun setPromptSymbol(promptSymbol: PromptSymbol) = unsupported()
+
+        override suspend fun setShowPromptPath(showPromptPath: Boolean) = unsupported()
+
+        override suspend fun setDosDrive(dosDrive: DosDrive) = unsupported()
 
         override suspend fun pinPackage(packageName: String) = unsupported()
 

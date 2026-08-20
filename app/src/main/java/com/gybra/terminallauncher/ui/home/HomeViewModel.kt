@@ -224,6 +224,9 @@ public class HomeViewModel(
         username = username,
         hostname = hostname,
         location = LauncherLocation.HOME,
+        promptSymbol = promptSymbol,
+        showPath = showPromptPath,
+        dosDrive = dosDrive,
     )
 
     private companion object {

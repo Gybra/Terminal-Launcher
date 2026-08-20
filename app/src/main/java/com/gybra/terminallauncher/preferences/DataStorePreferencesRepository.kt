@@ -8,6 +8,8 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.gybra.terminallauncher.launcher.AppUsage
+import com.gybra.terminallauncher.shell.DosDrive
+import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
@@ -60,6 +62,24 @@ public class DataStorePreferencesRepository(
         }
     }
 
+    override suspend fun setPromptSymbol(promptSymbol: PromptSymbol) {
+        dataStore.edit { preferences ->
+            preferences[Keys.promptSymbol] = promptSymbol.name
+        }
+    }
+
+    override suspend fun setShowPromptPath(showPromptPath: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[Keys.showPromptPath] = showPromptPath
+        }
+    }
+
+    override suspend fun setDosDrive(dosDrive: DosDrive) {
+        dataStore.edit { preferences ->
+            preferences[Keys.dosDrive] = dosDrive.name
+        }
+    }
+
     override suspend fun pinPackage(packageName: String) {
         require(packageName.isNotBlank()) { "Package name must not be blank" }
         dataStore.edit { preferences ->
@@ -100,11 +120,16 @@ public class DataStorePreferencesRepository(
     }
 
     private fun mapPreferences(preferences: Preferences): LauncherPreferences = LauncherPreferences(
-        shellType = preferences[Keys.shellType].toShellType(),
-        terminalTheme = preferences[Keys.terminalTheme].toTerminalTheme(),
+        shellType = preferences[Keys.shellType].toEnum(ShellType.entries, defaults.shellType),
+        terminalTheme = preferences[Keys.terminalTheme]
+            .toEnum(TerminalTheme.entries, defaults.terminalTheme),
         showClock = preferences[Keys.showClock] ?: defaults.showClock,
         username = preferences[Keys.username] ?: defaults.username,
         hostname = preferences[Keys.hostname] ?: defaults.hostname,
+        promptSymbol = preferences[Keys.promptSymbol]
+            .toEnum(PromptSymbol.entries, defaults.promptSymbol),
+        showPromptPath = preferences[Keys.showPromptPath] ?: defaults.showPromptPath,
+        dosDrive = preferences[Keys.dosDrive].toEnum(DosDrive.entries, defaults.dosDrive),
         pinnedPackages = preferences[Keys.pinnedPackages] ?: defaults.pinnedPackages,
         aliases = preferences[Keys.aliases]?.toAliases() ?: defaults.aliases,
         usage = preferences[Keys.appUsage]?.toUsage() ?: defaults.usage,
@@ -146,11 +171,9 @@ public class DataStorePreferencesRepository(
     private fun String.aliasName(): String =
         substringBeforeLast(ENTRY_SEPARATOR, missingDelimiterValue = "")
 
-    private fun String?.toShellType(): ShellType =
-        ShellType.entries.firstOrNull { shellType -> shellType.name == this } ?: defaults.shellType
-
-    private fun String?.toTerminalTheme(): TerminalTheme =
-        TerminalTheme.entries.firstOrNull { theme -> theme.name == this } ?: defaults.terminalTheme
+    /** Reads a stored enum name, falling back to [default] when the stored value is unknown. */
+    private fun <T : Enum<T>> String?.toEnum(entries: List<T>, default: T): T =
+        entries.firstOrNull { entry -> entry.name == this } ?: default
 
     private object Keys {
         val shellType: Preferences.Key<String> = stringPreferencesKey("shell_type")
@@ -158,6 +181,9 @@ public class DataStorePreferencesRepository(
         val showClock: Preferences.Key<Boolean> = booleanPreferencesKey("show_clock")
         val username: Preferences.Key<String> = stringPreferencesKey("username")
         val hostname: Preferences.Key<String> = stringPreferencesKey("hostname")
+        val promptSymbol: Preferences.Key<String> = stringPreferencesKey("prompt_symbol")
+        val showPromptPath: Preferences.Key<Boolean> = booleanPreferencesKey("show_prompt_path")
+        val dosDrive: Preferences.Key<String> = stringPreferencesKey("dos_drive")
         val pinnedPackages: Preferences.Key<Set<String>> = stringSetPreferencesKey("pinned_packages")
         val aliases: Preferences.Key<Set<String>> = stringSetPreferencesKey("aliases")
         val appUsage: Preferences.Key<Set<String>> = stringSetPreferencesKey("app_usage")

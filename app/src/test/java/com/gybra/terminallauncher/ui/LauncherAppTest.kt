@@ -17,6 +17,8 @@ import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfile
+import com.gybra.terminallauncher.shell.DosDrive
+import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
@@ -246,6 +248,9 @@ class LauncherAppTest {
         showClock = true,
         username = "user",
         hostname = "android",
+        promptSymbol = PromptSymbol.DOLLAR,
+        showPromptPath = true,
+        dosDrive = DosDrive.C,
     )
 
     private fun emptySettingsActions(): SettingsActions = SettingsActions(
@@ -254,6 +259,9 @@ class LauncherAppTest {
         setShowClock = {},
         setUsername = {},
         setHostname = {},
+        selectPromptSymbol = {},
+        setShowPromptPath = {},
+        selectDosDrive = {},
     )
 
     private fun emptyPromptActions(): PromptActions = PromptActions(
