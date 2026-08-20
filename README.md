@@ -28,10 +28,12 @@ The current implementation provides:
 - unknown prompt input falling back to application search instead of reaching any unregistered code path;
 - `ls`, `dir`, and `DIR` listing installed applications with shell-owned formatting, lowercase on Unix and decorative `.EXE` names plus a file count on DOS;
 - `help` written from command metadata, showing only the primary alias of the active shell;
+- an in-memory terminal history that echoes each submitted line with its output and keeps the twenty most recent entries;
+- `clear` and `cls` erasing that history only, leaving preferences and pinned applications untouched;
 - command-line builds without Android Studio;
 - JVM tests and a mandatory 100% coverage gate for application logic.
 
-Command output is written by the active shell profile. Displaying it as an in-memory terminal history, together with the history, pinning, and settings commands, is tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and is intentionally deferred to those focused issues.
+The terminal history lives in memory only and is gone after a process restart, by design. The pinning and settings commands are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
 
 ## Safety model
 

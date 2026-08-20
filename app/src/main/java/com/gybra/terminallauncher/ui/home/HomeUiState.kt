@@ -10,6 +10,7 @@ public data class HomeUiState(
     public val shellContext: ShellContext,
     public val apps: List<InstalledApp> = emptyList(),
     public val searchResults: List<SearchResult> = emptyList(),
+    public val history: List<TerminalEntry> = emptyList(),
     public val clockText: String? = null,
     public val prompt: PromptState = PromptState(),
 )

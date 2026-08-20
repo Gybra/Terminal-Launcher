@@ -31,6 +31,7 @@ public class HomeViewModel(
 ) : ViewModel() {
     private val initialPreferences = LauncherPreferences()
     private val promptState = MutableStateFlow(PromptState())
+    private val history = MutableStateFlow<List<TerminalEntry>>(emptyList())
     private val installedApps: StateFlow<List<InstalledApp>> = appRepository
         .observeInstalledApps()
         .catch { failure ->
@@ -51,6 +52,7 @@ public class HomeViewModel(
         preferencesRepository.preferences,
         launcherClock.observeTime(),
         promptState,
+        history,
         ::createUiState,
     ).stateIn(
         scope = viewModelScope,
@@ -60,6 +62,7 @@ public class HomeViewModel(
             preferences = initialPreferences,
             clockText = "",
             prompt = PromptState(),
+            history = emptyList(),
         ),
     )
 
@@ -75,29 +78,54 @@ public class HomeViewModel(
 
     /**
      * Runs the submitted input as a registered command, and otherwise returns the application to
-     * launch when the query resolves to a single match. The prompt clears only once the input has
-     * been consumed, so ambiguous queries and their results stay on screen.
+     * launch when the query resolves to a single match. Consumed input joins the terminal history
+     * and clears the prompt, so only ambiguous queries and their results stay on screen.
      */
     public fun submitPrompt(): InstalledApp? {
         val state = uiState.value
+        val submittedInput = state.prompt.input
         val result = commandExecutor.execute(
-            input = state.prompt.input,
+            input = submittedInput,
             shellProfile = state.shellProfile,
             installedApps = installedApps.value,
         )
         return when (result) {
             is CommandResult.Output -> {
-                clearPrompt()
+                recordEntry(input = submittedInput, output = result.lines)
                 null
             }
-            CommandResult.Search -> resolveSearchedApp(state.searchResults)
+            CommandResult.ClearHistory -> {
+                eraseHistory()
+                null
+            }
+            CommandResult.Search -> resolveSearchedApp(submittedInput, state.searchResults)
         }
     }
 
-    private fun resolveSearchedApp(searchResults: List<SearchResult>): InstalledApp? {
+    private fun resolveSearchedApp(
+        submittedInput: String,
+        searchResults: List<SearchResult>,
+    ): InstalledApp? {
         val resolvedApp = AppSearchEngine.unambiguousMatch(searchResults) ?: return null
-        clearPrompt()
+        recordEntry(input = submittedInput, output = emptyList())
         return resolvedApp
+    }
+
+    private fun recordEntry(input: String, output: List<String>) {
+        history.update { entries ->
+            val entry = TerminalEntry(
+                id = (entries.lastOrNull()?.id ?: -1L) + 1L,
+                input = input,
+                output = output,
+            )
+            (entries + entry).takeLast(MAX_HISTORY_ENTRIES)
+        }
+        clearPrompt()
+    }
+
+    private fun eraseHistory() {
+        history.value = emptyList()
+        clearPrompt()
     }
 
     private fun clearPrompt() {
@@ -111,11 +139,13 @@ public class HomeViewModel(
         preferences: LauncherPreferences,
         clockText: String,
         prompt: PromptState,
+        history: List<TerminalEntry>,
     ): HomeUiState = HomeUiState(
         shellProfile = ShellProfiles.forType(preferences.shellType),
         shellContext = preferences.toShellContext(),
         apps = installedApps.filter { app -> app.packageName in preferences.pinnedPackages },
         searchResults = AppSearchEngine.search(query = prompt.input, apps = installedApps),
+        history = history,
         clockText = clockText.takeIf { preferences.showClock && it.isNotEmpty() },
         prompt = prompt,
     )
@@ -128,5 +158,6 @@ public class HomeViewModel(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val MAX_HISTORY_ENTRIES = 20
     }
 }

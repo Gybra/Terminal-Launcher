@@ -4,6 +4,7 @@ import androidx.compose.ui.text.TextRange
 import com.gybra.terminallauncher.MainDispatcherRule
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.command.CommandExecutor
+import com.gybra.terminallauncher.command.CommandResult
 import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.LauncherCommand
 import com.gybra.terminallauncher.command.RecordingCommand
@@ -376,6 +377,155 @@ class HomeViewModelTest {
 
             assertEquals(mail, viewModel.submitPrompt())
             assertEquals(0, listApps.executions)
+        }
+
+    @Test
+    fun `records submitted input and command output in the terminal history`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val listApps = RecordingCommand(
+                id = Command.LIST_APPS,
+                result = CommandResult.Output(listOf("mail", "mailbox")),
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail, mailbox)),
+                preferencesRepository = FakePreferencesRepository(),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(listApps),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "ls"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(TerminalEntry(id = 0L, input = "ls", output = listOf("mail", "mailbox"))),
+                viewModel.uiState.value.history,
+            )
+        }
+
+    @Test
+    fun `records launched applications without output`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = searchingViewModel()
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "mailbox"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(TerminalEntry(id = 0L, input = "mailbox", output = emptyList())),
+                viewModel.uiState.value.history,
+            )
+        }
+
+    @Test
+    fun `records nothing while the submitted query stays ambiguous`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = searchingViewModel()
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "mailb"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(emptyList<TerminalEntry>(), viewModel.uiState.value.history)
+        }
+
+    @Test
+    fun `retains only the twenty most recent entries`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = searchingViewModel()
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            repeat(22) { submission ->
+                viewModel.updatePromptValue(PromptState(input = "mailbox"))
+                advanceUntilIdle()
+                viewModel.submitPrompt()
+                advanceUntilIdle()
+                assertEquals(submission, viewModel.uiState.value.history.last().id.toInt())
+            }
+
+            val history = viewModel.uiState.value.history
+            assertEquals(20, history.size)
+            assertEquals(2L, history.first().id)
+            assertEquals(21L, history.last().id)
+        }
+
+    @Test
+    fun `erases the history without touching preferences when a command clears it`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val clear = RecordingCommand(id = Command.CLEAR, result = CommandResult.ClearHistory)
+            val listApps = RecordingCommand(
+                id = Command.LIST_APPS,
+                result = CommandResult.Output(listOf("mail")),
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = FakePreferencesRepository(
+                    initialPreferences = LauncherPreferences(
+                        pinnedPackages = setOf(mail.packageName),
+                    ),
+                ),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(listApps, clear),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "ls"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+            assertEquals(1, viewModel.uiState.value.history.size)
+
+            viewModel.updatePromptValue(PromptState(input = "clear"))
+            advanceUntilIdle()
+            assertNull(viewModel.submitPrompt())
+            advanceUntilIdle()
+
+            assertEquals(emptyList<TerminalEntry>(), viewModel.uiState.value.history)
+            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+            assertEquals(listOf(mail), viewModel.uiState.value.apps)
+        }
+
+    @Test
+    fun `starts a new launcher session with an empty history`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val appRepository = FakeAppRepository(apps = listOf(mailbox))
+            val preferencesRepository = FakePreferencesRepository()
+            val first = HomeViewModel(
+                appRepository = appRepository,
+                preferencesRepository = preferencesRepository,
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+            )
+            startCollecting(first)
+            advanceUntilIdle()
+            first.updatePromptValue(PromptState(input = "mailbox"))
+            advanceUntilIdle()
+            first.submitPrompt()
+            advanceUntilIdle()
+            assertEquals(1, first.uiState.value.history.size)
+
+            val restarted = HomeViewModel(
+                appRepository = appRepository,
+                preferencesRepository = preferencesRepository,
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+            )
+            startCollecting(restarted)
+            advanceUntilIdle()
+
+            assertEquals(emptyList<TerminalEntry>(), restarted.uiState.value.history)
         }
 
     @Test
