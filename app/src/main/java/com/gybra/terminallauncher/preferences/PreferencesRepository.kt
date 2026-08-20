@@ -20,4 +20,7 @@ public interface PreferencesRepository {
     public suspend fun pinPackage(packageName: String)
 
     public suspend fun unpinPackage(packageName: String)
+
+    /** Names [packageName] so the prompt launches it when [name] is submitted. */
+    public suspend fun setAlias(name: String, packageName: String)
 }

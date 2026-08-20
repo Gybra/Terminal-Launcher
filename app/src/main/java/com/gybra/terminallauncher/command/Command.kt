@@ -7,4 +7,5 @@ public enum class Command {
     PIN,
     UNPIN,
     SETTINGS,
+    ALIAS,
 }

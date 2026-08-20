@@ -10,4 +10,5 @@ public data class LauncherPreferences(
     public val username: String = "user",
     public val hostname: String = "android",
     public val pinnedPackages: Set<String> = emptySet(),
+    public val aliases: Map<String, String> = emptyMap(),
 )

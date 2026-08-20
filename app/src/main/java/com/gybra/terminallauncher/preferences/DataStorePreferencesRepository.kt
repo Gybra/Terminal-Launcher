@@ -75,6 +75,17 @@ public class DataStorePreferencesRepository(
         }
     }
 
+    override suspend fun setAlias(name: String, packageName: String) {
+        require(name.isNotBlank()) { "Alias name must not be blank" }
+        require(packageName.isNotBlank()) { "Package name must not be blank" }
+        dataStore.edit { preferences ->
+            val stored = preferences[Keys.aliases] ?: emptySet()
+            preferences[Keys.aliases] =
+                stored.filterNot { entry -> entry.aliasName() == name }.toSet() +
+                    "$name$ALIAS_SEPARATOR$packageName"
+        }
+    }
+
     private fun mapPreferences(preferences: Preferences): LauncherPreferences = LauncherPreferences(
         shellType = preferences[Keys.shellType].toShellType(),
         terminalTheme = preferences[Keys.terminalTheme].toTerminalTheme(),
@@ -82,7 +93,23 @@ public class DataStorePreferencesRepository(
         username = preferences[Keys.username] ?: defaults.username,
         hostname = preferences[Keys.hostname] ?: defaults.hostname,
         pinnedPackages = preferences[Keys.pinnedPackages] ?: defaults.pinnedPackages,
+        aliases = preferences[Keys.aliases]?.toAliases() ?: defaults.aliases,
     )
+
+    /**
+     * Reads the stored `name=package` entries, dropping anything malformed, and keeps them ordered
+     * by name so listings and tests stay deterministic.
+     */
+    private fun Set<String>.toAliases(): Map<String, String> = sorted()
+        .mapNotNull { entry ->
+            val name = entry.aliasName()
+            val packageName = entry.substringAfterLast(ALIAS_SEPARATOR, missingDelimiterValue = "")
+            if (name.isBlank() || packageName.isBlank()) null else name to packageName
+        }
+        .toMap()
+
+    private fun String.aliasName(): String =
+        substringBeforeLast(ALIAS_SEPARATOR, missingDelimiterValue = "")
 
     private fun String?.toShellType(): ShellType =
         ShellType.entries.firstOrNull { shellType -> shellType.name == this } ?: defaults.shellType
@@ -97,5 +124,14 @@ public class DataStorePreferencesRepository(
         val username: Preferences.Key<String> = stringPreferencesKey("username")
         val hostname: Preferences.Key<String> = stringPreferencesKey("hostname")
         val pinnedPackages: Preferences.Key<Set<String>> = stringSetPreferencesKey("pinned_packages")
+        val aliases: Preferences.Key<Set<String>> = stringSetPreferencesKey("aliases")
+    }
+
+    private companion object {
+        /**
+         * Separates an alias from its package. A package name never contains it, so reading the
+         * last one back apart keeps names that do.
+         */
+        const val ALIAS_SEPARATOR = '='
     }
 }
