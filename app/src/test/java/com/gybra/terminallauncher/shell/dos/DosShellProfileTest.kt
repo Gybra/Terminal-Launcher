@@ -2,6 +2,7 @@ package com.gybra.terminallauncher.shell.dos
 
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.command.CommandSummary
+import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.shell.DosDrive
@@ -129,5 +130,20 @@ class DosShellProfileTest {
         )
 
         assertEquals("NEW TAB.LNK", profile.formatShortcutName(shortcut))
+    }
+
+    @Test
+    fun `writes the status line in upper case, leaving out what is hidden`() {
+        val battery = BatteryStatus(percentage = 42, charging = true)
+
+        assertEquals(
+            "22:10 42% CHARGING",
+            profile.formatStatus(clockText = "22:10", battery = battery),
+        )
+        assertEquals(
+            "22:10 42%",
+            profile.formatStatus(clockText = "22:10", battery = battery.copy(charging = false)),
+        )
+        assertEquals("", profile.formatStatus(clockText = null, battery = null))
     }
 }

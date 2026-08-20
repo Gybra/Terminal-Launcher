@@ -11,6 +11,7 @@ public data class LauncherPreferences(
     public val shellType: ShellType = ShellType.UNIX,
     public val terminalTheme: TerminalTheme = TerminalTheme.SYSTEM,
     public val showClock: Boolean = true,
+    public val showBattery: Boolean = true,
     public val username: String = "user",
     public val hostname: String = "android",
     public val promptSymbol: PromptSymbol = PromptSymbol.DOLLAR,

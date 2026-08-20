@@ -40,8 +40,8 @@ public fun HomeScreen(
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        state.clockText?.let { clockText ->
-            item(key = "clock") { TerminalLine(text = clockText) }
+        state.statusText?.let { statusText ->
+            item(key = "status") { TerminalLine(text = statusText) }
         }
         pinnedItems(state = state, onAppClick = onAppClick, onShortcutClick = onShortcutClick)
         item(key = "settings") {

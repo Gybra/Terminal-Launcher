@@ -9,6 +9,7 @@ public data class SettingsUiState(
     public val shellType: ShellType,
     public val terminalTheme: TerminalTheme,
     public val showClock: Boolean,
+    public val showBattery: Boolean,
     public val username: String,
     public val hostname: String,
     public val promptSymbol: PromptSymbol,

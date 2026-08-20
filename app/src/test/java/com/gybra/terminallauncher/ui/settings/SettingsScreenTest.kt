@@ -116,6 +116,17 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `forwards the battery toggle`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+
+        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("[*] Show battery"))
+        composeRule.onNodeWithText("[*] Show battery").performClick()
+
+        assertFalse(harness.state.showBattery)
+    }
+
+    @Test
     fun `forwards the prompt path toggle`() {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
@@ -159,6 +170,7 @@ class SettingsScreenTest {
         shellType = ShellType.UNIX,
         terminalTheme = TerminalTheme.SYSTEM,
         showClock = true,
+        showBattery = true,
         username = "user",
         hostname = "android",
         promptSymbol = PromptSymbol.DOLLAR,
@@ -180,6 +192,7 @@ class SettingsScreenTest {
                     selectShell = { state = state.copy(shellType = it) },
                     selectTheme = { state = state.copy(terminalTheme = it) },
                     setShowClock = { state = state.copy(showClock = it) },
+                    setShowBattery = { state = state.copy(showBattery = it) },
                     setUsername = { state = state.copy(username = it) },
                     setHostname = { state = state.copy(hostname = it) },
                     selectPromptSymbol = { state = state.copy(promptSymbol = it) },

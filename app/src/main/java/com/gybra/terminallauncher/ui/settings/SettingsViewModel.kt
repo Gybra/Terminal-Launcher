@@ -51,6 +51,13 @@ public class SettingsViewModel(
         )
     }
 
+    public fun setShowBattery(showBattery: Boolean) {
+        updateSetting(
+            update = { state -> state.copy(showBattery = showBattery) },
+            persist = { preferencesRepository.setShowBattery(showBattery) },
+        )
+    }
+
     /** Stores [username] as a prompt token, so what is typed can always be written in a prompt. */
     public fun setUsername(username: String) {
         val token = username.asPromptToken()
@@ -141,6 +148,7 @@ public class SettingsViewModel(
         shellType = shellType,
         terminalTheme = terminalTheme,
         showClock = showClock,
+        showBattery = showBattery,
         username = username,
         hostname = hostname,
         promptSymbol = promptSymbol,

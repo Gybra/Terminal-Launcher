@@ -90,6 +90,13 @@ private fun LazyListScope.appearanceSettings(
             onCheckedChange = actions.setShowClock,
         )
     }
+    item(key = "battery") {
+        ToggleOption(
+            label = "Show battery",
+            checked = state.showBattery,
+            onCheckedChange = actions.setShowBattery,
+        )
+    }
     item(key = "prompt-path") {
         ToggleOption(
             label = "Show path in prompt",

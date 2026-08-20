@@ -11,9 +11,9 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 **Home and appearance**
 
 - registers as an Android Home application and renders full screen, edge to edge, in system monospace type;
-- persists every preference in DataStore: shell, terminal theme, clock, username, hostname, prompt symbol, prompt path visibility, DOS drive letter, pinned applications, pinned shortcuts, and how often and how recently each application is launched;
-- offers independent System, Green, Amber, and Monochrome terminal themes and an optional live clock;
-- offers a minimal settings screen for shell, theme, clock, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter;
+- persists every preference in DataStore: shell, terminal theme, clock, battery, username, hostname, prompt symbol, prompt path visibility, DOS drive letter, pinned applications, pinned shortcuts, and how often and how recently each application is launched;
+- offers independent System, Green, Amber, and Monochrome terminal themes, and a status line carrying an optional live clock and the battery level, which is shown by default;
+- offers a minimal settings screen for shell, theme, clock, battery, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter;
 - answers the requests applications make to pin one of their shortcuts to Home, such as a browser adding a website, and keeps nothing until the user accepts.
 
 **Shell metaphor**
@@ -76,9 +76,11 @@ The prompt can be customized from the settings screen, and the customization is 
 
 No drive, path, or symbol reaches a filesystem or grants a privilege: nothing exists behind them, and the launcher navigates no directories. The path shown is a fixed label for where the launcher is, not a working directory.
 
+Home keeps one status line above everything else, written in the style of the selected shell: `22:10 42% charging` on Unix and `22:10 42% CHARGING` on DOS. The clock and the battery are each turned off in the settings screen, both are shown by default, and hiding both leaves no line at all. The battery follows the device instead of being read once, and a device reporting no level shows none rather than a number the launcher made up.
+
 The terminal history lives in memory only and starts empty after every process restart, by design.
 
-The Android utility commands map to controlled Android functionality and nothing else. `battery` reads `BatteryManager`, which needs no permission, and says so when the device publishes no level. `torch` calls `CameraManager.setTorchMode`, which needs no camera permission and opens no camera, and says so on a device with no flash unit. `android`, `wifi`, `bluetooth`, and `info` start one documented `Settings` action each. `uninstall` starts `ACTION_DELETE`, so Android shows its own confirmation naming the application and the user answers it; the launcher removes nothing itself. `restart` recreates the launcher the way a configuration change does, killing no process and spawning none. A device without one of these destinations, or an Android that refuses one, leaves the prompt working instead of crashing.
+The Android utility commands map to controlled Android functionality and nothing else. `battery` reads `BatteryManager`, which needs no permission, and says so when the device publishes no level. The status line reads the same `BatteryManager`, on every battery broadcast the device sends, and listens only while Home is on screen. `torch` calls `CameraManager.setTorchMode`, which needs no camera permission and opens no camera, and says so on a device with no flash unit. `android`, `wifi`, `bluetooth`, and `info` start one documented `Settings` action each. `uninstall` starts `ACTION_DELETE`, so Android shows its own confirmation naming the application and the user answers it; the launcher removes nothing itself. `restart` recreates the launcher the way a configuration change does, killing no process and spawning none. A device without one of these destinations, or an Android that refuses one, leaves the prompt working instead of crashing.
 
 ## Safety model
 
@@ -144,7 +146,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
                           \-> ShellProfiles ---------> DOS / Unix formatting
                           \-> TerminalTheme ---------> shell-independent colors
                           \-> LauncherClock ---------> local system time
-                          \-> BatteryRepository -----> BatteryManager
+                          \-> BatteryRepository -----> BatteryManager and battery broadcasts
                           \-> Torch -----------------> CameraManager torch mode
   submitted line -> SystemScreenLauncher ----> documented Settings and package Intents
           tap or Enter -> AppLauncher ----------> explicit package launch Intent
@@ -152,7 +154,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
      pin request -> ShortcutPinRequests -------> LauncherApps pin item request
 ```
 
-- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery and torch boundaries, the named system destinations, and the pinned-shortcut model with its pin request and start boundaries;
+- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery reading and observation, torch boundary, the named system destinations, and the pinned-shortcut model with its pin request and start boundaries;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
 - `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the registered help, application-list, history-clearing, pinning, aliasing, settings, and Android utility commands;
 - `search`: Compose-independent label matching and deterministic result ranking;

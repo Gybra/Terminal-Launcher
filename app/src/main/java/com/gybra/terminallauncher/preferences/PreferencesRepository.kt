@@ -16,6 +16,8 @@ public interface PreferencesRepository {
 
     public suspend fun setShowClock(showClock: Boolean)
 
+    public suspend fun setShowBattery(showBattery: Boolean)
+
     public suspend fun setUsername(username: String)
 
     public suspend fun setHostname(hostname: String)

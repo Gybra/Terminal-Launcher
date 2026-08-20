@@ -8,7 +8,9 @@ import com.gybra.terminallauncher.command.CommandResult
 import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.LauncherCommand
 import com.gybra.terminallauncher.command.RecordingCommand
+import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.FakeAppRepository
+import com.gybra.terminallauncher.launcher.FakeBatteryRepository
 import com.gybra.terminallauncher.launcher.FakeLauncherClock
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.PinnedShortcut
@@ -43,6 +45,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -66,6 +69,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(apps = apps),
             preferencesRepository = preferencesRepository,
+            batteryRepository = FakeBatteryRepository(status = null),
             launcherClock = FakeLauncherClock(),
             commandExecutor = commandExecutor(),
             packageMonitor = FakePackageMonitor(),
@@ -84,6 +88,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(apps = listOf(app)),
             preferencesRepository = preferencesRepository,
+            batteryRepository = FakeBatteryRepository(status = null),
             launcherClock = FakeLauncherClock(),
             commandExecutor = commandExecutor(),
             packageMonitor = FakePackageMonitor(),
@@ -112,6 +117,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(apps = listOf(app)),
             preferencesRepository = preferencesRepository,
+            batteryRepository = FakeBatteryRepository(status = null),
             launcherClock = FakeLauncherClock(),
             commandExecutor = commandExecutor(),
             packageMonitor = FakePackageMonitor(),
@@ -132,7 +138,7 @@ class HomeViewModelTest {
                 apps = listOf(app),
                 shellProfile = DosShellProfile,
                 shellContext = defaultShellContext(),
-                clockText = "22:10",
+                statusText = "22:10",
             ),
             viewModel.uiState.value,
         )
@@ -144,6 +150,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(),
             preferencesRepository = preferencesRepository,
+            batteryRepository = FakeBatteryRepository(status = null),
             launcherClock = FakeLauncherClock(),
             commandExecutor = commandExecutor(),
             packageMonitor = FakePackageMonitor(),
@@ -168,11 +175,71 @@ class HomeViewModelTest {
                     hostname = "phone",
                     location = LauncherLocation.HOME,
                 ),
-                clockText = null,
+                statusText = null,
             ),
             viewModel.uiState.value,
         )
     }
+
+    @Test
+    fun `writes the clock and the battery on one status line`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(),
+                preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(
+                    status = BatteryStatus(percentage = 42, charging = true),
+                ),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            assertEquals("22:10 42% charging", viewModel.uiState.value.statusText)
+        }
+
+    @Test
+    fun `follows the battery and leaves out what the preferences hide`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val batteryRepository = FakeBatteryRepository(
+                status = BatteryStatus(percentage = 42, charging = false),
+            )
+            val preferencesRepository = RecordingPreferencesRepository()
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(),
+                preferencesRepository = preferencesRepository,
+                batteryRepository = batteryRepository,
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            assertEquals("22:10 42%", viewModel.uiState.value.statusText)
+
+            batteryRepository.emit(BatteryStatus(percentage = 41, charging = false))
+            advanceUntilIdle()
+
+            assertEquals("22:10 41%", viewModel.uiState.value.statusText)
+
+            preferencesRepository.emit(LauncherPreferences(showBattery = false))
+            advanceUntilIdle()
+
+            assertEquals("22:10", viewModel.uiState.value.statusText)
+
+            preferencesRepository.emit(LauncherPreferences(showClock = false))
+            advanceUntilIdle()
+
+            assertEquals("41%", viewModel.uiState.value.statusText)
+
+            batteryRepository.emit(null)
+            advanceUntilIdle()
+
+            assertNull(viewModel.uiState.value.statusText)
+        }
 
     @Test
     fun `carries the cosmetic prompt preferences into the shell context`() =
@@ -181,6 +248,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(),
                 preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
                 packageMonitor = FakePackageMonitor(),
@@ -221,6 +289,7 @@ class HomeViewModelTest {
                     pinnedPackages = setOf("com.example.mail"),
                 ),
             ),
+            batteryRepository = FakeBatteryRepository(status = null),
             launcherClock = FakeLauncherClock(),
             commandExecutor = commandExecutor(),
             packageMonitor = FakePackageMonitor(),
@@ -241,6 +310,7 @@ class HomeViewModelTest {
                         failure = IllegalStateException("broken repository"),
                     ),
                     preferencesRepository = RecordingPreferencesRepository(),
+                    batteryRepository = FakeBatteryRepository(status = null),
                     launcherClock = FakeLauncherClock(),
                     commandExecutor = commandExecutor(),
                     packageMonitor = FakePackageMonitor(),
@@ -258,6 +328,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(),
             preferencesRepository = RecordingPreferencesRepository(),
+            batteryRepository = FakeBatteryRepository(status = null),
             launcherClock = clock,
             commandExecutor = commandExecutor(),
             packageMonitor = FakePackageMonitor(),
@@ -284,6 +355,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(),
                 preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
                 packageMonitor = FakePackageMonitor(),
@@ -390,6 +462,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
                 preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps),
                 packageMonitor = FakePackageMonitor(),
@@ -414,6 +487,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
                 preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps),
                 packageMonitor = FakePackageMonitor(),
@@ -442,6 +516,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail, mailbox)),
                 preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps),
                 packageMonitor = FakePackageMonitor(),
@@ -528,6 +603,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
                 preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps, clear),
                 packageMonitor = FakePackageMonitor(),
@@ -560,6 +636,7 @@ class HomeViewModelTest {
             val first = HomeViewModel(
                 appRepository = appRepository,
                 preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
                 packageMonitor = FakePackageMonitor(),
@@ -575,6 +652,7 @@ class HomeViewModelTest {
             val restarted = HomeViewModel(
                 appRepository = appRepository,
                 preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
                 packageMonitor = FakePackageMonitor(),
@@ -596,6 +674,7 @@ class HomeViewModelTest {
                         pinnedPackages = setOf(mail.packageName),
                     ),
                 ),
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps),
                 packageMonitor = FakePackageMonitor(),
@@ -623,6 +702,7 @@ class HomeViewModelTest {
                         aliases = mapOf("m" to mailbox.packageName),
                     ),
                 ),
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
                 packageMonitor = FakePackageMonitor(),
@@ -649,6 +729,7 @@ class HomeViewModelTest {
                         aliases = mapOf("mail" to "com.example.removed"),
                     ),
                 ),
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
                 packageMonitor = FakePackageMonitor(),
@@ -672,6 +753,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail, mailbox)),
                 preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(epochMillis = 1_234L),
                 commandExecutor = commandExecutor(),
                 packageMonitor = FakePackageMonitor(),
@@ -701,6 +783,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail, mailbox)),
                 preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
                 packageMonitor = FakePackageMonitor(),
@@ -731,6 +814,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
                 preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(wifi, restart),
                 packageMonitor = FakePackageMonitor(),
@@ -774,6 +858,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
                 preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
                 packageMonitor = packageMonitor,
@@ -801,6 +886,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
                 preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
                 packageMonitor = FakePackageMonitor(),
@@ -821,6 +907,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
                 preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
                 packageMonitor = packageMonitor,
@@ -846,6 +933,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
                 preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
                 packageMonitor = packageMonitor,
@@ -879,6 +967,7 @@ class HomeViewModelTest {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
                 preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(settings),
                 packageMonitor = FakePackageMonitor(),
@@ -914,6 +1003,7 @@ class HomeViewModelTest {
     private fun searchingViewModel(): HomeViewModel = HomeViewModel(
         appRepository = FakeAppRepository(apps = listOf(mailboxPro, mailbox, mail)),
         preferencesRepository = RecordingPreferencesRepository(),
+        batteryRepository = FakeBatteryRepository(status = null),
         launcherClock = FakeLauncherClock(),
         commandExecutor = commandExecutor(),
         packageMonitor = FakePackageMonitor(),
@@ -923,7 +1013,7 @@ class HomeViewModelTest {
         shellProfile = UnixShellProfile,
         shellContext = defaultShellContext(),
         apps = apps,
-        clockText = "22:10",
+        statusText = "22:10",
     )
 
     private fun defaultShellContext(): ShellContext = ShellContext(
