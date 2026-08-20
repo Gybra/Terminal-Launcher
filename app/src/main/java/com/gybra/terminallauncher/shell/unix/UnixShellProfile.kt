@@ -30,6 +30,7 @@ public object UnixShellProfile : ShellProfile {
         Command.PIN -> "pin"
         Command.UNPIN -> "unpin"
         Command.SETTINGS -> "settings"
+        Command.ALIAS -> "alias"
     }
 
     override fun aliasesFor(command: Command): Set<String> = when (command) {

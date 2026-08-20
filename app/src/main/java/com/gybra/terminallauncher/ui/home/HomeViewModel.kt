@@ -17,6 +17,7 @@ import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfiles
 import java.io.IOException
+import java.util.Locale
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,10 +59,16 @@ public class HomeViewModel(
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_TIMEOUT_MILLIS),
             initialValue = emptyList(),
         )
+    private val preferences: StateFlow<LauncherPreferences> = preferencesRepository.preferences
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_TIMEOUT_MILLIS),
+            initialValue = initialPreferences,
+        )
 
     public val uiState: StateFlow<HomeUiState> = combine(
         installedApps,
-        preferencesRepository.preferences,
+        preferences,
         launcherClock.observeTime(),
         promptState,
         history,
@@ -111,17 +118,31 @@ public class HomeViewModel(
                 CommandResult.ClearHistory -> eraseHistory()
                 CommandResult.OpenSettings ->
                     completeSubmission(submittedInput, SubmittedAction.OpenSettings)
-                CommandResult.Search -> launchSearchedApp(submittedInput, state.searchResults)
+                CommandResult.Search -> launchSubmittedApp(submittedInput, state.searchResults)
             }
         }
     }
 
-    private suspend fun launchSearchedApp(
+    private suspend fun launchSubmittedApp(
         submittedInput: String,
         searchResults: List<SearchResult>,
     ) {
-        val resolvedApp = AppSearchEngine.unambiguousMatch(searchResults) ?: return
+        val resolvedApp = aliasedApp(submittedInput)
+            ?: AppSearchEngine.unambiguousMatch(searchResults)
+            ?: return
         completeSubmission(submittedInput, SubmittedAction.LaunchApp(resolvedApp))
+    }
+
+    /**
+     * Returns the application named by an alias. Registered commands are resolved before this, so
+     * an alias can never take over a command, and an alias left pointing at an application that is
+     * no longer installed simply falls back to search.
+     */
+    private fun aliasedApp(submittedInput: String): InstalledApp? {
+        val aliasedPackage = preferences.value.aliases[submittedInput.trim().lowercase(Locale.ROOT)]
+            ?: return null
+
+        return installedApps.value.firstOrNull { app -> app.packageName == aliasedPackage }
     }
 
     private suspend fun completeSubmission(submittedInput: String, action: SubmittedAction) {

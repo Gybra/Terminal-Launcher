@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.File
@@ -51,6 +52,7 @@ class DataStorePreferencesRepositoryTest {
         firstRepository.setUsername("oreste")
         firstRepository.setHostname("phone")
         firstRepository.pinPackage("org.example.mail")
+        firstRepository.setAlias(name = "browser", packageName = "org.example.firefox")
         firstJob.cancelAndJoin()
 
         val secondJob = SupervisorJob()
@@ -68,9 +70,67 @@ class DataStorePreferencesRepositoryTest {
                 username = "oreste",
                 hostname = "phone",
                 pinnedPackages = setOf("org.example.mail"),
+                aliases = mapOf("browser" to "org.example.firefox"),
             ),
             restoredPreferences,
         )
+    }
+
+    @Test
+    fun `keeps one package per alias name and orders aliases by name`() = runTest {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+
+        repository.setAlias(name = "browser", packageName = "org.example.firefox")
+        repository.setAlias(name = "mail", packageName = "org.example.mail")
+        repository.setAlias(name = "browser", packageName = "org.example.chrome")
+
+        assertEquals(
+            listOf("browser" to "org.example.chrome", "mail" to "org.example.mail"),
+            repository.preferences.first().aliases.toList(),
+        )
+    }
+
+    @Test
+    fun `keeps alias names that contain the stored separator`() = runTest {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+
+        repository.setAlias(name = "a=b", packageName = "org.example.firefox")
+
+        assertEquals(
+            mapOf("a=b" to "org.example.firefox"),
+            repository.preferences.first().aliases,
+        )
+    }
+
+    @Test
+    fun `ignores stored aliases that are not readable`() = runTest {
+        val storedPreferences = mutablePreferencesOf(
+            stringSetPreferencesKey("aliases") to setOf(
+                "browser=org.example.firefox",
+                "missing-separator",
+                "=org.example.orphan",
+                "orphan=",
+            ),
+        )
+
+        val aliases = DataStorePreferencesRepository(FakePreferencesDataStore(storedPreferences))
+            .preferences
+            .first()
+            .aliases
+
+        assertEquals(mapOf("browser" to "org.example.firefox"), aliases)
+    }
+
+    @Test
+    fun `refuses to store a blank alias`() {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+
+        assertThrows(IllegalArgumentException::class.java) {
+            runTest { repository.setAlias(name = "  ", packageName = "org.example.firefox") }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            runTest { repository.setAlias(name = "browser", packageName = "  ") }
+        }
     }
 
     @Test

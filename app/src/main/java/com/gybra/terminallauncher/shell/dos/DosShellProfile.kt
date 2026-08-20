@@ -31,6 +31,7 @@ public object DosShellProfile : ShellProfile {
         Command.PIN -> "PIN"
         Command.UNPIN -> "UNPIN"
         Command.SETTINGS -> "SETTINGS"
+        Command.ALIAS -> "ALIAS"
     }
 
     override fun formatAppList(apps: List<InstalledApp>): List<String> =

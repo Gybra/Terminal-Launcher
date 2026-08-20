@@ -567,6 +567,58 @@ class HomeViewModelTest {
         }
 
     @Test
+    fun `launches the application an alias names`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail, mailbox)),
+                preferencesRepository = RecordingPreferencesRepository(
+                    initialPreferences = LauncherPreferences(
+                        aliases = mapOf("m" to mailbox.packageName),
+                    ),
+                ),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+            val actions = collectSubmittedActions(viewModel)
+
+            viewModel.updatePromptValue(PromptState(input = " M "))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(listOf(SubmittedAction.LaunchApp(mailbox)), actions)
+        }
+
+    @Test
+    fun `searches instead when an alias names an application that is gone`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = RecordingPreferencesRepository(
+                    initialPreferences = LauncherPreferences(
+                        aliases = mapOf("mail" to "com.example.removed"),
+                    ),
+                ),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+            val actions = collectSubmittedActions(viewModel)
+
+            viewModel.updatePromptValue(PromptState(input = "mail"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(listOf(SubmittedAction.LaunchApp(mail)), actions)
+        }
+
+    @Test
     fun `unpins a package the system reports as removed`() =
         runTest(mainDispatcherRule.dispatcher) {
             val packageMonitor = FakePackageMonitor()

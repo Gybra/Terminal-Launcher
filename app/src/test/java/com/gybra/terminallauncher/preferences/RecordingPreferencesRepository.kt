@@ -59,6 +59,12 @@ class RecordingPreferencesRepository(
         }
     }
 
+    override suspend fun setAlias(name: String, packageName: String) {
+        write("setAlias($name, $packageName)") { preferences ->
+            preferences.copy(aliases = preferences.aliases + (name to packageName))
+        }
+    }
+
     private fun write(call: String, update: (LauncherPreferences) -> LauncherPreferences) {
         writes += call
         writeFailure?.let { failure -> throw failure }

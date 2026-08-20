@@ -26,6 +26,7 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - searches installed applications while you type, ranking exact, then prefix, then substring label matches, at most five at a time;
 - launches on Enter only when the query is unambiguous, and keeps every other match listed;
 - runs explicitly registered commands only, resolving each shell alias to a stable command identifier;
+- launches persisted application aliases, which never shadow a registered command;
 - refreshes the application list when packages are added, changed, or removed, and drops an uninstalled package from the pinned ones while a package being updated keeps its pin.
 
 **Quality**
@@ -33,7 +34,7 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - builds, tests, lints, and packages from the command line without Android Studio;
 - enforces 100% line coverage for testable application logic on every pull request.
 
-Persistent application aliases, fuzzy search with usage-aware ranking, and prompt customization are v0.2; controlled Android utility commands are v0.3. Both are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally outside v0.1.
+Fuzzy search with usage-aware ranking and prompt customization are v0.2; controlled Android utility commands are v0.3. Both are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally outside v0.1.
 
 ## Using the launcher
 
@@ -48,9 +49,12 @@ Anything that is not a registered command is treated as a search. Command names 
 | Pin an application to Home | `pin <application>` | `PIN <APPLICATION>` |
 | Remove an application from Home | `unpin <application>` | `UNPIN <APPLICATION>` |
 | Clear the terminal history | `clear`, `cls` | `CLS` |
+| Name an application | `alias <name> <application>` | `ALIAS <NAME> <APPLICATION>` |
 | Open the settings screen | `settings` | `SETTINGS` |
 
-`pin` and `unpin` accept an exact or unique application name; an ambiguous name is answered with the matching applications so a longer name can be given. Output, confirmations, and errors are written in the style of the selected shell: lowercase names on Unix, decorative `.EXE` names and uppercase messages on DOS.
+`alias` names an application so submitting that name launches it, for example `alias browser firefox`. Aliases persist across restarts, are matched without case, and are replaced by defining the same name again. A registered command is always resolved before an alias, and a name any shell already uses for a command is refused rather than allowed to shadow it, so no alias can ever take over `ls`, `clear`, or any other command.
+
+`pin`, `unpin`, and `alias` accept an exact or unique application name; an ambiguous name is answered with the matching applications so a longer name can be given. Output, confirmations, and errors are written in the style of the selected shell: lowercase names on Unix, decorative `.EXE` names and uppercase messages on DOS.
 
 The terminal history lives in memory only and starts empty after every process restart, by design.
 

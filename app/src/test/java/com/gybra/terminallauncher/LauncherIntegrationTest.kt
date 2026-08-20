@@ -94,6 +94,7 @@ class LauncherIntegrationTest {
                     "help      Show available commands",
                     "pin       Pin an application to Home",
                     "unpin     Remove an application from Home",
+                    "alias     Name an application",
                     "clear     Clear the terminal history",
                     "settings  Open the launcher settings",
                 ),
@@ -125,6 +126,40 @@ class LauncherIntegrationTest {
                 listOf(TerminalEntry(id = 0L, input = "camera", output = emptyList())),
                 home.viewModel.uiState.value.history,
             )
+        }
+
+    @Test
+    fun `launches an application through the alias it was given`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val home = launcherHome()
+
+            home.submit("alias c camera")
+            home.submit("c")
+
+            assertEquals(listOf("setAlias(c, org.example.camera)"), home.preferences.writes)
+            assertEquals(listOf(SubmittedAction.LaunchApp(camera)), home.actions)
+        }
+
+    @Test
+    fun `keeps a command name out of reach of aliases`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val home = launcherHome()
+
+            home.submit("alias ls camera")
+
+            assertEquals(
+                listOf("ls is a command name"),
+                home.viewModel.uiState.value.history.single().output,
+            )
+            assertEquals(emptyList<String>(), home.preferences.writes)
+
+            home.submit("ls")
+
+            assertEquals(
+                listOf("camera", "mail"),
+                home.viewModel.uiState.value.history.last().output,
+            )
+            assertEquals(emptyList<SubmittedAction>(), home.actions)
         }
 
     @Test

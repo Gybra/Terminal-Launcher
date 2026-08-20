@@ -13,6 +13,7 @@ public fun launcherCommands(
     HelpCommand,
     PinCommand(preferencesRepository),
     UnpinCommand(preferencesRepository),
+    AliasCommand(preferencesRepository),
     ClearCommand,
     SettingsCommand,
 )
