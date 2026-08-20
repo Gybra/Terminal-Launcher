@@ -11,7 +11,7 @@ class RecordingCommand(
     var lastContext: CommandContext? = null
         private set
 
-    override fun execute(context: CommandContext): CommandResult {
+    override suspend fun execute(context: CommandContext): CommandResult {
         executions += 1
         lastContext = context
         return result

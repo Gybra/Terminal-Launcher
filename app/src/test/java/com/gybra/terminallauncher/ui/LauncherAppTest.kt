@@ -24,8 +24,12 @@ import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.theme.colors
 import com.gybra.terminallauncher.ui.home.HomeUiState
 import com.gybra.terminallauncher.ui.home.PromptActions
+import com.gybra.terminallauncher.ui.home.SubmittedAction
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.emptyFlow
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -49,7 +53,8 @@ class LauncherAppTest {
                 settingsState = settingsState(),
                 settingsActions = emptySettingsActions(),
                 promptActions = emptyPromptActions(),
-                onAppClick = {},
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
             )
         }
 
@@ -70,7 +75,8 @@ class LauncherAppTest {
                 settingsState = settingsState(),
                 settingsActions = emptySettingsActions(),
                 promptActions = emptyPromptActions(),
-                onAppClick = {},
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
             )
         }
         composeRule.onNodeWithText("settings").performClick()
@@ -84,6 +90,48 @@ class LauncherAppTest {
     }
 
     @Test
+    fun `opens settings when a submitted line asks for it`() {
+        val submittedActions = MutableSharedFlow<SubmittedAction>(extraBufferCapacity = 1)
+        composeRule.setContent {
+            LauncherApp(
+                homeState = homeState(),
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
+                submittedActions = submittedActions,
+                onLaunchApp = {},
+            )
+        }
+
+        composeRule.runOnIdle { submittedActions.tryEmit(SubmittedAction.OpenSettings) }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Appearance").assertIsDisplayed()
+    }
+
+    @Test
+    fun `launches the application a submitted line resolved`() {
+        val app = InstalledApp(packageName = "org.example.mail", label = "Mail")
+        val submittedActions = MutableSharedFlow<SubmittedAction>(extraBufferCapacity = 1)
+        var launchedApp: InstalledApp? = null
+        composeRule.setContent {
+            LauncherApp(
+                homeState = homeState(),
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
+                submittedActions = submittedActions,
+                onLaunchApp = { launched -> launchedApp = launched },
+            )
+        }
+
+        composeRule.runOnIdle { submittedActions.tryEmit(SubmittedAction.LaunchApp(app)) }
+        composeRule.waitForIdle()
+
+        assertEquals(app, launchedApp)
+    }
+
+    @Test
     fun `theme changes immediately recolor Home content`() {
         var settingsState by mutableStateOf(settingsState(TerminalTheme.GREEN))
         composeRule.setContent {
@@ -92,7 +140,8 @@ class LauncherAppTest {
                 settingsState = settingsState,
                 settingsActions = emptySettingsActions(),
                 promptActions = emptyPromptActions(),
-                onAppClick = {},
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
             )
         }
 
@@ -120,7 +169,8 @@ class LauncherAppTest {
                 settingsState = settingsState,
                 settingsActions = emptySettingsActions(),
                 promptActions = emptyPromptActions(),
-                onAppClick = {},
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
             )
         }
 

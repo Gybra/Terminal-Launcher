@@ -6,6 +6,6 @@ public object HelpCommand : LauncherCommand {
 
     override val description: String = "Show available commands"
 
-    override fun execute(context: CommandContext): CommandResult =
+    override suspend fun execute(context: CommandContext): CommandResult =
         CommandResult.Output(context.shellProfile.formatHelp(context.registeredCommands))
 }

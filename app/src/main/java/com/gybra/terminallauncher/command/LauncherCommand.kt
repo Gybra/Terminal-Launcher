@@ -11,5 +11,5 @@ public interface LauncherCommand {
     /** Shell-independent metadata the help command turns into a description line. */
     public val description: String
 
-    public fun execute(context: CommandContext): CommandResult
+    public suspend fun execute(context: CommandContext): CommandResult
 }

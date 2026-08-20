@@ -12,7 +12,7 @@ import com.gybra.terminallauncher.launcher.AppRepository
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.LauncherClock
 import com.gybra.terminallauncher.preferences.LauncherPreferences
-import com.gybra.terminallauncher.preferences.PreferencesRepository
+import com.gybra.terminallauncher.preferences.RecordingPreferencesRepository
 import com.gybra.terminallauncher.search.SearchResult
 import com.gybra.terminallauncher.search.SearchResult.Match
 import com.gybra.terminallauncher.shell.ShellType
@@ -35,7 +35,6 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +50,7 @@ class HomeViewModelTest {
             InstalledApp(packageName = "com.example.browser", label = "Browser"),
             InstalledApp(packageName = "com.example.mail", label = "Mail"),
         )
-        val preferencesRepository = FakePreferencesRepository(
+        val preferencesRepository = RecordingPreferencesRepository(
             initialPreferences = LauncherPreferences(
                 pinnedPackages = setOf("com.example.mail", "com.example.removed"),
             ),
@@ -72,7 +71,7 @@ class HomeViewModelTest {
     @Test
     fun `reacts when pinned package preferences change`() = runTest(mainDispatcherRule.dispatcher) {
         val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
-        val preferencesRepository = FakePreferencesRepository()
+        val preferencesRepository = RecordingPreferencesRepository()
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(apps = listOf(app)),
             preferencesRepository = preferencesRepository,
@@ -95,7 +94,7 @@ class HomeViewModelTest {
     @Test
     fun `reacts when the selected shell changes`() = runTest(mainDispatcherRule.dispatcher) {
         val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
-        val preferencesRepository = FakePreferencesRepository(
+        val preferencesRepository = RecordingPreferencesRepository(
             initialPreferences = LauncherPreferences(
                 pinnedPackages = setOf(app.packageName),
             ),
@@ -130,7 +129,7 @@ class HomeViewModelTest {
 
     @Test
     fun `reacts when clock visibility and prompt identity change`() = runTest(mainDispatcherRule.dispatcher) {
-        val preferencesRepository = FakePreferencesRepository()
+        val preferencesRepository = RecordingPreferencesRepository()
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(),
             preferencesRepository = preferencesRepository,
@@ -167,7 +166,7 @@ class HomeViewModelTest {
     fun `keeps an empty state when package access is denied`() = runTest(mainDispatcherRule.dispatcher) {
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(failure = SecurityException("denied")),
-            preferencesRepository = FakePreferencesRepository(
+            preferencesRepository = RecordingPreferencesRepository(
                 initialPreferences = LauncherPreferences(
                     pinnedPackages = setOf("com.example.mail"),
                 ),
@@ -190,7 +189,7 @@ class HomeViewModelTest {
                     appRepository = FakeAppRepository(
                         failure = IllegalStateException("broken repository"),
                     ),
-                    preferencesRepository = FakePreferencesRepository(),
+                    preferencesRepository = RecordingPreferencesRepository(),
                     launcherClock = FakeLauncherClock(),
                     commandExecutor = commandExecutor(),
                 )
@@ -206,7 +205,7 @@ class HomeViewModelTest {
         val clock = TrackingLauncherClock()
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(),
-            preferencesRepository = FakePreferencesRepository(),
+            preferencesRepository = RecordingPreferencesRepository(),
             launcherClock = clock,
             commandExecutor = commandExecutor(),
         )
@@ -231,7 +230,7 @@ class HomeViewModelTest {
         runTest(mainDispatcherRule.dispatcher) {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(),
-                preferencesRepository = FakePreferencesRepository(),
+                preferencesRepository = RecordingPreferencesRepository(),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
             )
@@ -290,9 +289,11 @@ class HomeViewModelTest {
             viewModel.updatePromptFocus(focused = true)
             advanceUntilIdle()
 
-            assertEquals(mailbox, viewModel.submitPrompt())
+            val actions = collectSubmittedActions(viewModel)
+            viewModel.submitPrompt()
             advanceUntilIdle()
 
+            assertEquals(listOf(SubmittedAction.LaunchApp(mailbox)), actions)
             assertEquals(PromptState(focused = true), viewModel.uiState.value.prompt)
             assertEquals(emptyList<SearchResult>(), viewModel.uiState.value.searchResults)
         }
@@ -307,9 +308,11 @@ class HomeViewModelTest {
             viewModel.updatePromptValue(PromptState(input = "mailb"))
             advanceUntilIdle()
 
-            assertNull(viewModel.submitPrompt())
+            val actions = collectSubmittedActions(viewModel)
+            viewModel.submitPrompt()
             advanceUntilIdle()
 
+            assertEquals(emptyList<SubmittedAction>(), actions)
             assertEquals(PromptState(input = "mailb"), viewModel.uiState.value.prompt)
             assertEquals(
                 listOf(mailbox, mailboxPro),
@@ -342,7 +345,7 @@ class HomeViewModelTest {
             val listApps = RecordingCommand(id = Command.LIST_APPS)
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
-                preferencesRepository = FakePreferencesRepository(),
+                preferencesRepository = RecordingPreferencesRepository(),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps),
             )
@@ -352,7 +355,7 @@ class HomeViewModelTest {
             viewModel.updatePromptValue(PromptState(input = "ls"))
             advanceUntilIdle()
 
-            assertNull(viewModel.submitPrompt())
+            viewModel.submitPrompt()
             advanceUntilIdle()
 
             assertEquals(1, listApps.executions)
@@ -365,7 +368,7 @@ class HomeViewModelTest {
             val listApps = RecordingCommand(id = Command.LIST_APPS)
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
-                preferencesRepository = FakePreferencesRepository(),
+                preferencesRepository = RecordingPreferencesRepository(),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps),
             )
@@ -375,7 +378,11 @@ class HomeViewModelTest {
             viewModel.updatePromptValue(PromptState(input = "mail"))
             advanceUntilIdle()
 
-            assertEquals(mail, viewModel.submitPrompt())
+            val actions = collectSubmittedActions(viewModel)
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(listOf(SubmittedAction.LaunchApp(mail)), actions)
             assertEquals(0, listApps.executions)
         }
 
@@ -388,7 +395,7 @@ class HomeViewModelTest {
             )
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail, mailbox)),
-                preferencesRepository = FakePreferencesRepository(),
+                preferencesRepository = RecordingPreferencesRepository(),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps),
             )
@@ -468,13 +475,12 @@ class HomeViewModelTest {
                 id = Command.LIST_APPS,
                 result = CommandResult.Output(listOf("mail")),
             )
+            val preferencesRepository = RecordingPreferencesRepository(
+                initialPreferences = LauncherPreferences(pinnedPackages = setOf(mail.packageName)),
+            )
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
-                preferencesRepository = FakePreferencesRepository(
-                    initialPreferences = LauncherPreferences(
-                        pinnedPackages = setOf(mail.packageName),
-                    ),
-                ),
+                preferencesRepository = preferencesRepository,
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(listApps, clear),
             )
@@ -489,19 +495,20 @@ class HomeViewModelTest {
 
             viewModel.updatePromptValue(PromptState(input = "clear"))
             advanceUntilIdle()
-            assertNull(viewModel.submitPrompt())
+            viewModel.submitPrompt()
             advanceUntilIdle()
 
             assertEquals(emptyList<TerminalEntry>(), viewModel.uiState.value.history)
             assertEquals(PromptState(), viewModel.uiState.value.prompt)
             assertEquals(listOf(mail), viewModel.uiState.value.apps)
+            assertEquals(emptyList<String>(), preferencesRepository.writes)
         }
 
     @Test
     fun `starts a new launcher session with an empty history`() =
         runTest(mainDispatcherRule.dispatcher) {
             val appRepository = FakeAppRepository(apps = listOf(mailbox))
-            val preferencesRepository = FakePreferencesRepository()
+            val preferencesRepository = RecordingPreferencesRepository()
             val first = HomeViewModel(
                 appRepository = appRepository,
                 preferencesRepository = preferencesRepository,
@@ -534,7 +541,7 @@ class HomeViewModelTest {
             val listApps = RecordingCommand(id = Command.LIST_APPS)
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail, mailbox)),
-                preferencesRepository = FakePreferencesRepository(
+                preferencesRepository = RecordingPreferencesRepository(
                     initialPreferences = LauncherPreferences(
                         pinnedPackages = setOf(mail.packageName),
                     ),
@@ -548,18 +555,57 @@ class HomeViewModelTest {
             viewModel.updatePromptValue(PromptState(input = "ls"))
             advanceUntilIdle()
             viewModel.submitPrompt()
+            advanceUntilIdle()
 
             assertEquals(listOf(mail), viewModel.uiState.value.apps)
             assertEquals(listOf(mail, mailbox), listApps.lastContext?.installedApps)
             assertEquals(UnixShellProfile, listApps.lastContext?.shellProfile)
         }
 
+    @Test
+    fun `asks the launcher to open settings when a command requests it`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val settings = RecordingCommand(
+                id = Command.SETTINGS,
+                result = CommandResult.OpenSettings,
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = RecordingPreferencesRepository(),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(settings),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+            val actions = collectSubmittedActions(viewModel)
+
+            viewModel.updatePromptValue(PromptState(input = "settings"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(listOf(SubmittedAction.OpenSettings), actions)
+            assertEquals(
+                listOf(TerminalEntry(id = 0L, input = "settings", output = emptyList())),
+                viewModel.uiState.value.history,
+            )
+            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+        }
+
+    private fun TestScope.collectSubmittedActions(viewModel: HomeViewModel): List<SubmittedAction> {
+        val actions = mutableListOf<SubmittedAction>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.submittedActions.collect { action -> actions += action }
+        }
+        return actions
+    }
+
     private fun commandExecutor(vararg commands: LauncherCommand): CommandExecutor =
         CommandExecutor(CommandRegistry(commands = commands.toList()))
 
     private fun searchingViewModel(): HomeViewModel = HomeViewModel(
         appRepository = FakeAppRepository(apps = listOf(mailboxPro, mailbox, mail)),
-        preferencesRepository = FakePreferencesRepository(),
+        preferencesRepository = RecordingPreferencesRepository(),
         launcherClock = FakeLauncherClock(),
         commandExecutor = commandExecutor(),
     )
@@ -601,30 +647,4 @@ class HomeViewModelTest {
         }
     }
 
-    private class FakePreferencesRepository(
-        initialPreferences: LauncherPreferences = LauncherPreferences(),
-    ) : PreferencesRepository {
-        private val mutablePreferences = MutableStateFlow(initialPreferences)
-        override val preferences: Flow<LauncherPreferences> = mutablePreferences
-
-        fun emit(preferences: LauncherPreferences) {
-            mutablePreferences.value = preferences
-        }
-
-        override suspend fun setShellType(shellType: ShellType) = unsupported()
-
-        override suspend fun setTerminalTheme(terminalTheme: TerminalTheme) = unsupported()
-
-        override suspend fun setShowClock(showClock: Boolean) = unsupported()
-
-        override suspend fun setUsername(username: String) = unsupported()
-
-        override suspend fun setHostname(hostname: String) = unsupported()
-
-        override suspend fun pinPackage(packageName: String) = unsupported()
-
-        override suspend fun unpinPackage(packageName: String) = unsupported()
-
-        private fun unsupported(): Nothing = error("Not required by this test")
-    }
 }

@@ -3,13 +3,14 @@ package com.gybra.terminallauncher.command
 import com.gybra.terminallauncher.shell.ShellProfile
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class HelpCommandTest {
     @Test
-    fun `describes every registered command with its Unix alias`() {
+    fun `describes every registered command with its Unix alias`() = runTest {
         val result = HelpCommand.execute(contextFor(UnixShellProfile))
 
         assertEquals(
@@ -24,14 +25,14 @@ class HelpCommandTest {
     }
 
     @Test
-    fun `hides the optional DOS aliases Unix only accepts for compatibility`() {
+    fun `hides the optional DOS aliases Unix only accepts for compatibility`() = runTest {
         val lines = outputLines(HelpCommand.execute(contextFor(UnixShellProfile)))
 
         assertTrue(lines.none { line -> line.startsWith("dir") })
     }
 
     @Test
-    fun `describes every registered command with its DOS alias and a command count`() {
+    fun `describes every registered command with its DOS alias and a command count`() = runTest {
         val result = HelpCommand.execute(contextFor(DosShellProfile))
 
         assertEquals(

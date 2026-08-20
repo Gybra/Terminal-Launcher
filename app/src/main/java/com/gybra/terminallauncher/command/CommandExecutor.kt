@@ -11,7 +11,7 @@ public class CommandExecutor(
      * Runs the command [input] names in [shellProfile] and returns its result. Blank input and
      * unregistered names resolve to [CommandResult.Search] instead of running anything.
      */
-    public fun execute(
+    public suspend fun execute(
         input: String,
         shellProfile: ShellProfile,
         installedApps: List<InstalledApp>,

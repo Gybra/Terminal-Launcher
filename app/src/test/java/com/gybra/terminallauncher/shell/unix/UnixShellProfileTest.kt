@@ -43,6 +43,12 @@ class UnixShellProfileTest {
     }
 
     @Test
+    fun `writes command messages in lowercase`() {
+        assertEquals("pinned mail", profile.formatMessage("Pinned Mail"))
+        assertEquals("", profile.formatMessage(""))
+    }
+
+    @Test
     fun `formats help from command metadata using primary Unix aliases`() {
         val commands = listOf(
             CommandSummary(id = Command.LIST_APPS, description = "List installed applications"),
