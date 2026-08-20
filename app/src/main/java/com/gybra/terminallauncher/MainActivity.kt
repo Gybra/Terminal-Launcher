@@ -17,14 +17,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.gybra.terminallauncher.command.ClearCommand
 import com.gybra.terminallauncher.command.CommandExecutor
 import com.gybra.terminallauncher.command.CommandRegistry
-import com.gybra.terminallauncher.command.HelpCommand
-import com.gybra.terminallauncher.command.ListAppsCommand
-import com.gybra.terminallauncher.command.PinCommand
-import com.gybra.terminallauncher.command.SettingsCommand
-import com.gybra.terminallauncher.command.UnpinCommand
+import com.gybra.terminallauncher.command.launcherCommands
 import com.gybra.terminallauncher.launcher.AppLauncher
 import com.gybra.terminallauncher.launcher.BroadcastPackageMonitor
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
@@ -54,16 +49,7 @@ public class MainActivity : ComponentActivity() {
         val appLauncher = AppLauncher(applicationContext)
         val launcherClock = SystemLauncherClock()
         val commandExecutor = CommandExecutor(
-            CommandRegistry(
-                commands = listOf(
-                    ListAppsCommand,
-                    ClearCommand,
-                    HelpCommand,
-                    PinCommand(preferencesRepository),
-                    UnpinCommand(preferencesRepository),
-                    SettingsCommand,
-                ),
-            ),
+            CommandRegistry(commands = launcherCommands(preferencesRepository)),
         )
         val launcherViewModelFactory = viewModelFactory {
             initializer {
