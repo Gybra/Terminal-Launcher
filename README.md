@@ -4,41 +4,55 @@ Android reduced to a prompt.
 
 Terminal Launcher is a minimal, open-source Android Home application written in Kotlin and Jetpack Compose. It presents installed applications as text and launches only Android activities discovered through `PackageManager`. It is a terminal metaphor, not a real shell.
 
-## Current status
+## Features
 
-The current implementation provides:
+Terminal Launcher v0.1 is a complete, self-contained Home application.
 
-- Android Home registration;
-- a text-only list of launchable applications;
-- tap-to-launch behavior;
-- a full-screen, edge-to-edge Compose UI;
-- system monospace typography;
-- DataStore-backed launcher preferences;
-- persisted shell, terminal theme, clock, username, hostname, and pinned-package settings;
-- a Home screen that reacts to preference changes and shows only installed pinned apps;
-- DOS and Unix shell profiles for prompts, paths, application names, lists, and command aliases;
-- reactive shell-specific application naming without DOS/Unix branches in Compose;
-- an optional live clock and shell-formatted static prompt on Home;
-- independent System, Green, Amber, and Monochrome terminal color themes;
-- a minimal settings screen for shell, theme, clock, username, and hostname preferences;
-- a focusable prompt with keyboard input, Enter submission, and a focus-aware blinking cursor;
-- live application search ranking exact, prefix, and substring label matches, limited to five results;
-- Enter launching only an unambiguous match, keeping every other match listed under the prompt;
-- an explicitly registered command engine that tokenizes prompt input and resolves DOS and Unix aliases to stable command identifiers;
-- unknown prompt input falling back to application search instead of reaching any unregistered code path;
-- `ls`, `dir`, and `DIR` listing installed applications with shell-owned formatting, lowercase on Unix and decorative `.EXE` names plus a file count on DOS;
-- `help` written from command metadata, showing only the primary alias of the active shell;
-- an in-memory terminal history that echoes each submitted line with its output and keeps the twenty most recent entries;
-- `clear` and `cls` erasing that history only, leaving preferences and pinned applications untouched;
-- `pin` and `unpin` changing the pinned applications from the prompt, accepting only an exact or unique match and listing ambiguous ones instead of guessing;
-- `settings` opening the settings destination the Home list already links to;
-- command confirmations and errors written in the style of the active shell, lowercase on Unix and uppercase on DOS;
-- installed applications refreshed whenever a package is added, changed, or removed;
-- a removed package dropped from the pinned applications, while a package replaced by an update keeps its pin;
-- command-line builds without Android Studio;
-- JVM tests and a mandatory 100% coverage gate for application logic.
+**Home and appearance**
 
-The terminal history lives in memory only and is gone after a process restart, by design. Persistent aliases, fuzzy search, prompt customization, and the controlled Android utility commands are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
+- registers as an Android Home application and renders full screen, edge to edge, in system monospace type;
+- persists every preference in DataStore: shell, terminal theme, clock, username, hostname, and pinned applications;
+- offers independent System, Green, Amber, and Monochrome terminal themes and an optional live clock;
+- offers a minimal settings screen for shell, theme, clock, username, and hostname.
+
+**Shell metaphor**
+
+- DOS and Unix shell profiles own prompts, paths, application names, lists, help, command aliases, and message style, so no DOS or Unix branch exists in Compose;
+- shows a focusable prompt with keyboard input, Enter submission, and a focus-aware blinking cursor;
+- keeps an in-memory terminal history of the twenty most recent submitted lines with their output.
+
+**Search and commands**
+
+- searches installed applications while you type, ranking exact, then prefix, then substring label matches, at most five at a time;
+- launches on Enter only when the query is unambiguous, and keeps every other match listed;
+- runs explicitly registered commands only, resolving each shell alias to a stable command identifier;
+- refreshes the application list when packages are added, changed, or removed, and drops an uninstalled package from the pinned ones while a package being updated keeps its pin.
+
+**Quality**
+
+- builds, tests, lints, and packages from the command line without Android Studio;
+- enforces 100% line coverage for testable application logic on every pull request.
+
+Persistent application aliases, fuzzy search with usage-aware ranking, and prompt customization are v0.2; controlled Android utility commands are v0.3. Both are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally outside v0.1.
+
+## Using the launcher
+
+Type at the prompt. Matching applications appear under it as you type; tap one to launch it, or press Enter when a single application matches. Ambiguous input stays on screen with its matches rather than launching something arbitrary.
+
+Anything that is not a registered command is treated as a search. Command names are matched without case, and each shell accepts its own aliases:
+
+| What it does | Unix | DOS |
+| --- | --- | --- |
+| List installed applications | `ls`, `dir` | `DIR` |
+| Describe the available commands | `help` | `HELP` |
+| Pin an application to Home | `pin <application>` | `PIN <APPLICATION>` |
+| Remove an application from Home | `unpin <application>` | `UNPIN <APPLICATION>` |
+| Clear the terminal history | `clear`, `cls` | `CLS` |
+| Open the settings screen | `settings` | `SETTINGS` |
+
+`pin` and `unpin` accept an exact or unique application name; an ambiguous name is answered with the matching applications so a longer name can be given. Output, confirmations, and errors are written in the style of the selected shell: lowercase names on Unix, decorative `.EXE` names and uppercase messages on DOS.
+
+The terminal history lives in memory only and starts empty after every process restart, by design.
 
 ## Safety model
 
@@ -87,7 +101,9 @@ Install it on a USB-connected device with platform tools:
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Then choose Terminal Launcher when Android asks for the default Home application, or change the Home app in Android system settings.
+## Select Terminal Launcher as Home
+
+Press the Home button once and choose Terminal Launcher when Android asks which Home application to use, or open the Android system settings and change the default Home application there. Android also offers to make the choice permanent; picking "Always" keeps Terminal Launcher as Home until it is changed back in the system settings.
 
 ## Architecture
 
@@ -102,7 +118,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
                           \-> ShellProfiles ---------> DOS / Unix formatting
                           \-> TerminalTheme ---------> shell-independent colors
                           \-> LauncherClock ---------> local system time
-                         tap -> AppLauncher ----------> explicit package launch Intent
+          tap or Enter -> AppLauncher ----------> explicit package launch Intent
 ```
 
 - `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, and app launcher;
@@ -111,11 +127,12 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
 - `search`: Compose-independent label matching and deterministic result ranking;
 - `shell`: shell context, locations, profile selection, and all DOS/Unix presentation rules;
 - `theme`: shell-independent terminal theme and color definitions;
-- `ui/home`: immutable UI state, screen-level ViewModel, and stateless Compose rendering;
+- `ui`: terminal typography, theme provider, and the destination the launcher renders;
+- `ui/home`: immutable UI state, screen-level ViewModel, terminal history, and stateless Compose rendering;
 - `ui/settings`: immutable settings state, preference coordination, and stateless controls;
 - `MainActivity`: Android composition root only.
 
-The repository and launcher own Android integration. Compose receives immutable state and emits user events. Later shell and command behavior must remain independent from Compose.
+The repository, the package monitor, and the launcher own Android integration. Compose receives immutable state and emits user events, and what a submitted line asks the launcher to do travels back as a typed action. The command engine and the search engine never depend on Compose, so a new command registers through the command registry without touching Home.
 
 ## Coverage policy
 
