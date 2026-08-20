@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import com.gybra.terminallauncher.launcher.AppUsage
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
@@ -82,7 +83,19 @@ public class DataStorePreferencesRepository(
             val stored = preferences[Keys.aliases] ?: emptySet()
             preferences[Keys.aliases] =
                 stored.filterNot { entry -> entry.aliasName() == name }.toSet() +
-                    "$name$ALIAS_SEPARATOR$packageName"
+                    "$name$ENTRY_SEPARATOR$packageName"
+        }
+    }
+
+    override suspend fun recordLaunch(packageName: String, launchedAt: Long) {
+        require(packageName.isNotBlank()) { "Package name must not be blank" }
+        dataStore.edit { preferences ->
+            val stored = preferences[Keys.appUsage]?.toUsage() ?: defaults.usage
+            val launched = AppUsage(
+                launchCount = (stored[packageName]?.launchCount ?: 0) + 1,
+                lastLaunchedAt = launchedAt,
+            )
+            preferences[Keys.appUsage] = (stored + (packageName to launched)).toStoredEntries()
         }
     }
 
@@ -94,6 +107,7 @@ public class DataStorePreferencesRepository(
         hostname = preferences[Keys.hostname] ?: defaults.hostname,
         pinnedPackages = preferences[Keys.pinnedPackages] ?: defaults.pinnedPackages,
         aliases = preferences[Keys.aliases]?.toAliases() ?: defaults.aliases,
+        usage = preferences[Keys.appUsage]?.toUsage() ?: defaults.usage,
     )
 
     /**
@@ -103,13 +117,34 @@ public class DataStorePreferencesRepository(
     private fun Set<String>.toAliases(): Map<String, String> = sorted()
         .mapNotNull { entry ->
             val name = entry.aliasName()
-            val packageName = entry.substringAfterLast(ALIAS_SEPARATOR, missingDelimiterValue = "")
+            val packageName = entry.substringAfterLast(ENTRY_SEPARATOR, missingDelimiterValue = "")
             if (name.isBlank() || packageName.isBlank()) null else name to packageName
         }
         .toMap()
 
+    /**
+     * Reads the stored `package=count=timestamp` entries, dropping anything malformed so one
+     * unreadable entry never costs the launcher the rest of its ranking history.
+     */
+    private fun Set<String>.toUsage(): Map<String, AppUsage> = mapNotNull { entry ->
+        val fields = entry.split(ENTRY_SEPARATOR)
+        if (fields.size != USAGE_FIELD_COUNT) return@mapNotNull null
+        val (packageName, launchCount, lastLaunchedAt) = fields
+        if (packageName.isBlank()) return@mapNotNull null
+        packageName to AppUsage(
+            launchCount = launchCount.toIntOrNull() ?: return@mapNotNull null,
+            lastLaunchedAt = lastLaunchedAt.toLongOrNull() ?: return@mapNotNull null,
+        )
+    }.toMap()
+
+    private fun Map<String, AppUsage>.toStoredEntries(): Set<String> =
+        map { (packageName, usage) ->
+            listOf(packageName, usage.launchCount, usage.lastLaunchedAt)
+                .joinToString(separator = ENTRY_SEPARATOR.toString())
+        }.toSet()
+
     private fun String.aliasName(): String =
-        substringBeforeLast(ALIAS_SEPARATOR, missingDelimiterValue = "")
+        substringBeforeLast(ENTRY_SEPARATOR, missingDelimiterValue = "")
 
     private fun String?.toShellType(): ShellType =
         ShellType.entries.firstOrNull { shellType -> shellType.name == this } ?: defaults.shellType
@@ -125,13 +160,17 @@ public class DataStorePreferencesRepository(
         val hostname: Preferences.Key<String> = stringPreferencesKey("hostname")
         val pinnedPackages: Preferences.Key<Set<String>> = stringSetPreferencesKey("pinned_packages")
         val aliases: Preferences.Key<Set<String>> = stringSetPreferencesKey("aliases")
+        val appUsage: Preferences.Key<Set<String>> = stringSetPreferencesKey("app_usage")
     }
 
     private companion object {
         /**
-         * Separates an alias from its package. A package name never contains it, so reading the
-         * last one back apart keeps names that do.
+         * Separates the fields of a stored entry. A package name never contains it, so an alias
+         * is read back from the last one and keeps names that do.
          */
-        const val ALIAS_SEPARATOR = '='
+        const val ENTRY_SEPARATOR = '='
+
+        /** Package name, launch count, and last launch time. */
+        const val USAGE_FIELD_COUNT = 3
     }
 }

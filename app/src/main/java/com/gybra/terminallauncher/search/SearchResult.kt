@@ -15,5 +15,6 @@ public data class SearchResult(
         EXACT,
         PREFIX,
         SUBSTRING,
+        FUZZY,
     }
 }

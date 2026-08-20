@@ -11,6 +11,7 @@ import kotlinx.coroutines.isActive
 
 public class SystemLauncherClock(
     private val currentTime: () -> LocalTime = LocalTime::now,
+    private val currentEpochMillis: () -> Long = System::currentTimeMillis,
 ) : LauncherClock {
     override fun observeTime(): Flow<String> = flow {
         while (currentCoroutineContext().isActive) {
@@ -19,6 +20,8 @@ public class SystemLauncherClock(
             delay(time.millisUntilNextMinute())
         }
     }
+
+    override fun now(): Long = currentEpochMillis()
 
     private fun LocalTime.millisUntilNextMinute(): Long =
         MILLIS_PER_MINUTE - (second * MILLIS_PER_SECOND) - (nano / NANOS_PER_MILLI)

@@ -11,7 +11,7 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 **Home and appearance**
 
 - registers as an Android Home application and renders full screen, edge to edge, in system monospace type;
-- persists every preference in DataStore: shell, terminal theme, clock, username, hostname, and pinned applications;
+- persists every preference in DataStore: shell, terminal theme, clock, username, hostname, pinned applications, and how often and how recently each application is launched;
 - offers independent System, Green, Amber, and Monochrome terminal themes and an optional live clock;
 - offers a minimal settings screen for shell, theme, clock, username, and hostname.
 
@@ -23,7 +23,8 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 
 **Search and commands**
 
-- searches installed applications while you type, ranking exact, then prefix, then substring label matches, at most five at a time;
+- searches installed applications while you type, ranking exact, then prefix, then substring, then fuzzy label matches, at most five at a time;
+- orders equally strong matches by a documented score: pinned applications first, then the most launched, then the most recently launched;
 - launches on Enter only when the query is unambiguous, and keeps every other match listed;
 - runs explicitly registered commands only, resolving each shell alias to a stable command identifier;
 - launches persisted application aliases, which never shadow a registered command;
@@ -34,11 +35,13 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - builds, tests, lints, and packages from the command line without Android Studio;
 - enforces 100% line coverage for testable application logic on every pull request.
 
-Fuzzy search with usage-aware ranking and prompt customization are v0.2; controlled Android utility commands are v0.3. Both are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally outside v0.1.
+Prompt customization is v0.2 and controlled Android utility commands are v0.3. Both are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues).
 
 ## Using the launcher
 
 Type at the prompt. Matching applications appear under it as you type; tap one to launch it, or press Enter when a single application matches. Ambiguous input stays on screen with its matches rather than launching something arbitrary.
+
+A label matches exactly, by prefix, by substring, or fuzzily when the typed characters appear in it in order, and a literal match always outranks a fuzzy one. Matches of the same strength are ordered by a score worth 50 for a pinned application plus one point per launch up to 20, then by the most recent launch, then by name. Ranking reads only the installed applications and the stored launch history, so the same input always produces the same list.
 
 Anything that is not a registered command is treated as a search. Command names are matched without case, and each shell accepts its own aliases:
 

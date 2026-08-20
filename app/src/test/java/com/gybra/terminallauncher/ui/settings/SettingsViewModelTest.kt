@@ -179,6 +179,8 @@ class SettingsViewModelTest {
 
         override suspend fun setAlias(name: String, packageName: String) = unsupported()
 
+        override suspend fun recordLaunch(packageName: String, launchedAt: Long) = unsupported()
+
         private fun unsupported(): Nothing = error("Not required by this test")
     }
 
@@ -221,6 +223,8 @@ class SettingsViewModelTest {
         override suspend fun unpinPackage(packageName: String) = unsupported()
 
         override suspend fun setAlias(name: String, packageName: String) = unsupported()
+
+        override suspend fun recordLaunch(packageName: String, launchedAt: Long) = unsupported()
 
         private fun unsupported(): Nothing = error("Not required by this test")
     }

@@ -9,6 +9,7 @@ import com.gybra.terminallauncher.launcher.FakePackageMonitor
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.RecordingPreferencesRepository
+import com.gybra.terminallauncher.search.SearchResult
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.ui.home.HomeViewModel
 import com.gybra.terminallauncher.ui.home.PromptState
@@ -136,8 +137,28 @@ class LauncherIntegrationTest {
             home.submit("alias c camera")
             home.submit("c")
 
-            assertEquals(listOf("setAlias(c, org.example.camera)"), home.preferences.writes)
+            assertEquals(
+                listOf(
+                    "setAlias(c, org.example.camera)",
+                    "recordLaunch(org.example.camera, 1700000000000)",
+                ),
+                home.preferences.writes,
+            )
             assertEquals(listOf(SubmittedAction.LaunchApp(camera)), home.actions)
+        }
+
+    @Test
+    fun `ranks a launched application above an equally matching one`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val home = launcherHome()
+
+            home.submit("mail")
+            home.type("a")
+
+            assertEquals(
+                listOf(mail, camera),
+                home.viewModel.uiState.value.searchResults.map(SearchResult::app),
+            )
         }
 
     @Test
@@ -226,9 +247,13 @@ class LauncherIntegrationTest {
         val actions: List<SubmittedAction>,
     ) {
         fun submit(input: String) {
-            viewModel.updatePromptValue(PromptState(input = input))
-            scope.advanceUntilIdle()
+            type(input)
             viewModel.submitPrompt()
+            scope.advanceUntilIdle()
+        }
+
+        fun type(input: String) {
+            viewModel.updatePromptValue(PromptState(input = input))
             scope.advanceUntilIdle()
         }
     }
