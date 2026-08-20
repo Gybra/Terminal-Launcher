@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import com.gybra.terminallauncher.launcher.AppUsage
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.File
@@ -53,6 +54,7 @@ class DataStorePreferencesRepositoryTest {
         firstRepository.setHostname("phone")
         firstRepository.pinPackage("org.example.mail")
         firstRepository.setAlias(name = "browser", packageName = "org.example.firefox")
+        firstRepository.recordLaunch(packageName = "org.example.mail", launchedAt = LAUNCHED_AT)
         firstJob.cancelAndJoin()
 
         val secondJob = SupervisorJob()
@@ -71,6 +73,9 @@ class DataStorePreferencesRepositoryTest {
                 hostname = "phone",
                 pinnedPackages = setOf("org.example.mail"),
                 aliases = mapOf("browser" to "org.example.firefox"),
+                usage = mapOf(
+                    "org.example.mail" to AppUsage(launchCount = 1, lastLaunchedAt = LAUNCHED_AT),
+                ),
             ),
             restoredPreferences,
         )
@@ -134,6 +139,46 @@ class DataStorePreferencesRepositoryTest {
     }
 
     @Test
+    fun `counts every launch and keeps the last launch time`() = runTest {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+
+        repository.recordLaunch(packageName = "org.example.mail", launchedAt = LAUNCHED_AT)
+        repository.recordLaunch(packageName = "org.example.browser", launchedAt = LAUNCHED_AT)
+        repository.recordLaunch(packageName = "org.example.mail", launchedAt = RELAUNCHED_AT)
+
+        assertEquals(
+            mapOf(
+                "org.example.mail" to AppUsage(launchCount = 2, lastLaunchedAt = RELAUNCHED_AT),
+                "org.example.browser" to AppUsage(launchCount = 1, lastLaunchedAt = LAUNCHED_AT),
+            ),
+            repository.preferences.first().usage,
+        )
+    }
+
+    @Test
+    fun `ignores stored application usage that is not readable`() = runTest {
+        val storedPreferences = mutablePreferencesOf(
+            stringSetPreferencesKey("app_usage") to setOf(
+                "org.example.mail=2=1700000000000",
+                "org.example.missing-fields",
+                "org.example.browser=often=1700000000000",
+                "org.example.clock=2=recently",
+                "=2=1700000000000",
+            ),
+        )
+
+        val usage = DataStorePreferencesRepository(FakePreferencesDataStore(storedPreferences))
+            .preferences
+            .first()
+            .usage
+
+        assertEquals(
+            mapOf("org.example.mail" to AppUsage(launchCount = 2, lastLaunchedAt = LAUNCHED_AT)),
+            usage,
+        )
+    }
+
+    @Test
     fun `pin and unpin operations are idempotent`() = runTest {
         val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
 
@@ -168,6 +213,9 @@ class DataStorePreferencesRepositoryTest {
         }
         assertThrows(IllegalArgumentException::class.java) {
             runTest { repository.unpinPackage("") }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            runTest { repository.recordLaunch(packageName = " ", launchedAt = LAUNCHED_AT) }
         }
     }
 
@@ -213,6 +261,11 @@ class DataStorePreferencesRepositoryTest {
         )
 
         assertEquals(TerminalTheme.SYSTEM, repository.preferences.first().terminalTheme)
+    }
+
+    private companion object {
+        const val LAUNCHED_AT = 1_700_000_000_000L
+        const val RELAUNCHED_AT = LAUNCHED_AT + 60_000L
     }
 
     private fun fileBackedRepository(

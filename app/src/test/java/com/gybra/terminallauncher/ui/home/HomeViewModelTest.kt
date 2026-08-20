@@ -619,6 +619,58 @@ class HomeViewModelTest {
         }
 
     @Test
+    fun `records the launch of the application it resolves`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val preferencesRepository = RecordingPreferencesRepository()
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail, mailbox)),
+                preferencesRepository = preferencesRepository,
+                launcherClock = FakeLauncherClock(epochMillis = 1_234L),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+            val actions = collectSubmittedActions(viewModel)
+
+            viewModel.updatePromptValue(PromptState(input = "mailbox"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf("recordLaunch(${mailbox.packageName}, 1234)"),
+                preferencesRepository.writes,
+            )
+            assertEquals(listOf(SubmittedAction.LaunchApp(mailbox)), actions)
+        }
+
+    @Test
+    fun `launches the application even when recording the launch fails`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val preferencesRepository = RecordingPreferencesRepository(
+                writeFailure = IOException("storage unavailable"),
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail, mailbox)),
+                preferencesRepository = preferencesRepository,
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+            val actions = collectSubmittedActions(viewModel)
+
+            viewModel.updatePromptValue(PromptState(input = "mailbox"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(listOf(SubmittedAction.LaunchApp(mailbox)), actions)
+        }
+
+    @Test
     fun `unpins a package the system reports as removed`() =
         runTest(mainDispatcherRule.dispatcher) {
             val packageMonitor = FakePackageMonitor()
@@ -784,6 +836,8 @@ class HomeViewModelTest {
                 activeCollectors -= 1
             }
         }
+
+        override fun now(): Long = 1_700_000_000_000L
     }
 
 }

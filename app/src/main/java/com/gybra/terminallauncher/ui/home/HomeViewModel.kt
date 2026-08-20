@@ -130,7 +130,16 @@ public class HomeViewModel(
         val resolvedApp = aliasedApp(submittedInput)
             ?: AppSearchEngine.unambiguousMatch(searchResults)
             ?: return
+        recordLaunch(resolvedApp.packageName)
         completeSubmission(submittedInput, SubmittedAction.LaunchApp(resolvedApp))
+    }
+
+    private suspend fun recordLaunch(packageName: String) {
+        try {
+            preferencesRepository.recordLaunch(packageName, launchedAt = launcherClock.now())
+        } catch (_: IOException) {
+            // A lost launch only costs the application some rank, so it must not stop the launch.
+        }
     }
 
     /**
@@ -200,7 +209,12 @@ public class HomeViewModel(
         shellProfile = ShellProfiles.forType(preferences.shellType),
         shellContext = preferences.toShellContext(),
         apps = installedApps.filter { app -> app.packageName in preferences.pinnedPackages },
-        searchResults = AppSearchEngine.search(query = prompt.input, apps = installedApps),
+        searchResults = AppSearchEngine.search(
+            query = prompt.input,
+            apps = installedApps,
+            usage = preferences.usage,
+            pinnedPackages = preferences.pinnedPackages,
+        ),
         history = history,
         clockText = clockText.takeIf { preferences.showClock && it.isNotEmpty() },
         prompt = prompt,

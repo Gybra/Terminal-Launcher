@@ -43,6 +43,18 @@ class SystemLauncherClockTest {
     }
 
     @Test
+    fun `reports the epoch time a launch is recorded at`() {
+        val clock = SystemLauncherClock(currentEpochMillis = { 1_700_000_000_000L })
+
+        assertEquals(1_700_000_000_000L, clock.now())
+    }
+
+    @Test
+    fun `default clock reports a positive epoch time`() {
+        assertTrue(SystemLauncherClock().now() > 0L)
+    }
+
+    @Test
     fun `formats midnight as zero hours`() = runTest {
         val value = SystemLauncherClock(
             currentTime = { LocalTime.MIDNIGHT },

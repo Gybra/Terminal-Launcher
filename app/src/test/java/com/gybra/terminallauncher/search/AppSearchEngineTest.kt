@@ -1,5 +1,6 @@
 package com.gybra.terminallauncher.search
 
+import com.gybra.terminallauncher.launcher.AppUsage
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.search.SearchResult.Match
 import org.junit.Assert.assertEquals
@@ -100,10 +101,107 @@ class AppSearchEngineTest {
         assertNull(AppSearchEngine.unambiguousMatch(emptyList()))
     }
 
+    @Test
+    fun `matches labels whose characters appear in order`() {
+        val results = AppSearchEngine.search(query = "mlb", apps = apps)
+
+        assertEquals(listOf(SearchResult(app = mailbox, match = Match.FUZZY)), results)
+    }
+
+    @Test
+    fun `ignores labels holding the query characters out of order`() {
+        assertEquals(
+            emptyList<SearchResult>(),
+            AppSearchEngine.search(query = "bm", apps = listOf(mailbox)),
+        )
+    }
+
+    @Test
+    fun `ranks fuzzy matches after every literal match`() {
+        val results = AppSearchEngine.search(
+            query = "mail",
+            apps = listOf(mountainTrail, gmail, mailbox, mail),
+        )
+
+        assertEquals(
+            listOf(
+                SearchResult(app = mail, match = Match.EXACT),
+                SearchResult(app = mailbox, match = Match.PREFIX),
+                SearchResult(app = gmail, match = Match.SUBSTRING),
+                SearchResult(app = mountainTrail, match = Match.FUZZY),
+            ),
+            results,
+        )
+    }
+
+    @Test
+    fun `ranks pinned applications first among equally strong matches`() {
+        val results = AppSearchEngine.search(
+            query = "mail",
+            apps = listOf(mailbox, mailer),
+            pinnedPackages = setOf(mailer.packageName),
+        )
+
+        assertEquals(listOf(mailer, mailbox), results.map(SearchResult::app))
+    }
+
+    @Test
+    fun `ranks the most launched application first among equally strong matches`() {
+        val results = AppSearchEngine.search(
+            query = "mail",
+            apps = listOf(mailbox, mailer),
+            usage = mapOf(mailer.packageName to AppUsage(launchCount = 3)),
+        )
+
+        assertEquals(listOf(mailer, mailbox), results.map(SearchResult::app))
+    }
+
+    @Test
+    fun `ranks the most recently launched application first when launch counts tie`() {
+        val results = AppSearchEngine.search(
+            query = "mail",
+            apps = listOf(mailbox, mailer),
+            usage = mapOf(
+                mailbox.packageName to AppUsage(launchCount = 2, lastLaunchedAt = 10L),
+                mailer.packageName to AppUsage(launchCount = 2, lastLaunchedAt = 20L),
+            ),
+        )
+
+        assertEquals(listOf(mailer, mailbox), results.map(SearchResult::app))
+    }
+
+    @Test
+    fun `stops rewarding launches once the usage score is capped`() {
+        val results = AppSearchEngine.search(
+            query = "mail",
+            apps = listOf(mailbox, mailer),
+            usage = mapOf(
+                mailbox.packageName to AppUsage(launchCount = 25),
+                mailer.packageName to AppUsage(launchCount = 100),
+            ),
+        )
+
+        assertEquals(listOf(mailbox, mailer), results.map(SearchResult::app))
+    }
+
+    @Test
+    fun `keeps a pinned application ahead of a far more launched one`() {
+        val results = AppSearchEngine.search(
+            query = "mail",
+            apps = listOf(mailbox, mailer),
+            usage = mapOf(mailbox.packageName to AppUsage(launchCount = 100)),
+            pinnedPackages = setOf(mailer.packageName),
+        )
+
+        assertEquals(listOf(mailer, mailbox), results.map(SearchResult::app))
+    }
+
     private val mail = InstalledApp(packageName = "com.example.mail", label = "Mail")
     private val mailbox = InstalledApp(packageName = "com.example.mailbox", label = "Mailbox")
     private val mailer = InstalledApp(packageName = "com.example.mailer", label = "Mailer")
     private val airMail = InstalledApp(packageName = "com.example.airmail", label = "AirMail")
     private val gmail = InstalledApp(packageName = "com.example.gmail", label = "Gmail")
+    private val mountainTrail =
+        InstalledApp(packageName = "com.example.trail", label = "Mountain Trail")
     private val apps = listOf(gmail, mailer, mail, airMail, mailbox)
 }

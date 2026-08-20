@@ -1,5 +1,6 @@
 package com.gybra.terminallauncher.preferences
 
+import com.gybra.terminallauncher.launcher.AppUsage
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
@@ -62,6 +63,16 @@ class RecordingPreferencesRepository(
     override suspend fun setAlias(name: String, packageName: String) {
         write("setAlias($name, $packageName)") { preferences ->
             preferences.copy(aliases = preferences.aliases + (name to packageName))
+        }
+    }
+
+    override suspend fun recordLaunch(packageName: String, launchedAt: Long) {
+        write("recordLaunch($packageName, $launchedAt)") { preferences ->
+            val launched = AppUsage(
+                launchCount = (preferences.usage[packageName]?.launchCount ?: 0) + 1,
+                lastLaunchedAt = launchedAt,
+            )
+            preferences.copy(usage = preferences.usage + (packageName to launched))
         }
     }
 

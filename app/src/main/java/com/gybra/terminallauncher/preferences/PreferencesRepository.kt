@@ -23,4 +23,7 @@ public interface PreferencesRepository {
 
     /** Names [packageName] so the prompt launches it when [name] is submitted. */
     public suspend fun setAlias(name: String, packageName: String)
+
+    /** Counts one launch of [packageName] at [launchedAt], so search can rank it higher. */
+    public suspend fun recordLaunch(packageName: String, launchedAt: Long)
 }
