@@ -24,14 +24,16 @@ The current implementation provides:
 - a focusable prompt with keyboard input, Enter submission, and a focus-aware blinking cursor;
 - live application search ranking exact, prefix, and substring label matches, limited to five results;
 - Enter launching only an unambiguous match, keeping every other match listed under the prompt;
+- an explicitly registered command engine that tokenizes prompt input and resolves DOS and Unix aliases to stable command identifiers;
+- unknown prompt input falling back to application search instead of reaching any unregistered code path;
 - command-line builds without Android Studio;
 - JVM tests and a mandatory 100% coverage gate for application logic.
 
-Command execution is tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and is intentionally deferred to its focused issues.
+No command is registered yet. The individual commands, help, application list, history, pinning, and settings, are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
 
 ## Safety model
 
-The project never executes real shell commands. `Runtime.exec`, `ProcessBuilder`, `/bin/sh`, `su`, shell passthrough, arbitrary Intent URIs, and unregistered commands are outside the architecture. Every future command must map to a controlled Android API or an explicit safe Intent.
+The project never executes real shell commands. `Runtime.exec`, `ProcessBuilder`, `/bin/sh`, `su`, shell passthrough, arbitrary Intent URIs, and unregistered commands are outside the architecture. Prompt input is tokenized and matched against explicitly registered commands only, and anything else falls back to application search. Every future command must map to a controlled Android API or an explicit safe Intent.
 
 ## Build without Android Studio
 
@@ -86,6 +88,7 @@ The v0.1 codebase is a single Gradle module with explicit boundaries:
 Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
                           \-> PreferencesRepository -> DataStore
                           \-> AppSearchEngine -------> ranked application matches
+                          \-> CommandExecutor -------> explicitly registered commands
                           \-> ShellProfiles ---------> DOS / Unix formatting
                           \-> TerminalTheme ---------> shell-independent colors
                           \-> LauncherClock ---------> local system time
@@ -94,6 +97,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
 
 - `launcher`: installed-application model, repository boundary, PackageManager adapter, and app launcher;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
+- `command`: stable command identifiers, prompt tokenizing, explicit registration, and execution;
 - `search`: Compose-independent label matching and deterministic result ranking;
 - `shell`: shell context, locations, profile selection, and all DOS/Unix presentation rules;
 - `theme`: shell-independent terminal theme and color definitions;

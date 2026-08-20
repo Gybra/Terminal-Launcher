@@ -17,6 +17,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.gybra.terminallauncher.command.CommandExecutor
+import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.launcher.AppLauncher
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
 import com.gybra.terminallauncher.launcher.SystemLauncherClock
@@ -42,12 +44,14 @@ public class MainActivity : ComponentActivity() {
         val preferencesRepository = DataStorePreferencesRepository(applicationContext.launcherDataStore)
         val appLauncher = AppLauncher(applicationContext)
         val launcherClock = SystemLauncherClock()
+        val commandExecutor = CommandExecutor(CommandRegistry(commands = emptyList()))
         val launcherViewModelFactory = viewModelFactory {
             initializer {
                 HomeViewModel(
                     appRepository = appRepository,
                     preferencesRepository = preferencesRepository,
                     launcherClock = launcherClock,
+                    commandExecutor = commandExecutor,
                 )
             }
             initializer { SettingsViewModel(preferencesRepository) }
