@@ -101,6 +101,19 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `clears an identity made only of unusable characters`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repository = FakePreferencesRepository()
+            val viewModel = SettingsViewModel(repository)
+
+            viewModel.setUsername("  \t ")
+            advanceUntilIdle()
+
+            assertEquals("", viewModel.uiState.value.username)
+            assertEquals("", repository.username)
+        }
+
+    @Test
     fun `keeps rapid controlled input updates in order`() = runTest(mainDispatcherRule.dispatcher) {
         val repository = FakePreferencesRepository()
         val viewModel = SettingsViewModel(repository)

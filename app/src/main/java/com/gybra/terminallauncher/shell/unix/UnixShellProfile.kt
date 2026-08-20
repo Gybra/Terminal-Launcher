@@ -11,9 +11,20 @@ import java.util.Locale
 public object UnixShellProfile : ShellProfile {
     override val type: ShellType = ShellType.UNIX
 
+    /**
+     * Writes `username@hostname:path` followed by the chosen symbol, leaving out every part that
+     * is empty or hidden, so an identity cleared in the settings never leaves a dangling
+     * separator behind.
+     */
     override fun prompt(context: ShellContext): String {
-        val path = if (context.showPath) ":${formatPath(context)}" else ""
-        return "${context.username}@${context.hostname}$path${context.promptSymbol.text}"
+        val identity = listOf(context.username, context.hostname)
+            .filter(String::isNotEmpty)
+            .joinToString(separator = IDENTITY_SEPARATOR)
+        val path = if (context.showPath) formatPath(context) else ""
+
+        return listOf(identity, path)
+            .filter(String::isNotEmpty)
+            .joinToString(separator = PATH_SEPARATOR) + context.promptSymbol.text
     }
 
     override fun formatAppName(app: InstalledApp): String = app.label.lowercase(Locale.ROOT)
@@ -40,4 +51,8 @@ public object UnixShellProfile : ShellProfile {
         Command.CLEAR -> setOf("clear", "cls")
         else -> setOf(aliasFor(command))
     }
+
+    private const val IDENTITY_SEPARATOR = "@"
+
+    private const val PATH_SEPARATOR = ":"
 }

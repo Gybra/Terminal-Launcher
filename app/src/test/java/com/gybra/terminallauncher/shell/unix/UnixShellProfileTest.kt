@@ -58,6 +58,19 @@ class UnixShellProfileTest {
     }
 
     @Test
+    fun `leaves out an identity the settings cleared`() {
+        val context = contextAt(LauncherLocation.HOME)
+
+        assertEquals("android:~$", profile.prompt(context.copy(username = "")))
+        assertEquals("oreste:~$", profile.prompt(context.copy(hostname = "")))
+        assertEquals("~$", profile.prompt(context.copy(username = "", hostname = "")))
+        assertEquals(
+            "$",
+            profile.prompt(context.copy(username = "", hostname = "", showPath = false)),
+        )
+    }
+
+    @Test
     fun `formats application labels as lowercase names`() {
         val app = InstalledApp(packageName = "org.example.telegram", label = "Telegram X")
 
