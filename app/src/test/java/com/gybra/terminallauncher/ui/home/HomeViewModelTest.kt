@@ -316,8 +316,6 @@ class HomeViewModelTest {
             return apps
         }
 
-        override suspend fun findApp(query: String): InstalledApp? = null
-
         override fun observeInstalledApps(): Flow<List<InstalledApp>> = flow {
             failure?.let { throw it }
             emit(apps)
