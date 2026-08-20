@@ -43,24 +43,7 @@ public fun HomeScreen(
         state.clockText?.let { clockText ->
             item(key = "clock") { TerminalLine(text = clockText) }
         }
-        items(
-            items = state.apps,
-            key = InstalledApp::packageName,
-        ) { app ->
-            AppRow(
-                displayName = state.shellProfile.formatAppName(app),
-                onClick = { onAppClick(app) },
-            )
-        }
-        items(
-            items = state.shortcuts,
-            key = { shortcut -> "shortcut-${shortcut.packageName}-${shortcut.id}" },
-        ) { shortcut ->
-            AppRow(
-                displayName = state.shellProfile.formatShortcutName(shortcut),
-                onClick = { onShortcutClick(shortcut) },
-            )
-        }
+        pinnedItems(state = state, onAppClick = onAppClick, onShortcutClick = onShortcutClick)
         item(key = "settings") {
             AppRow(
                 displayName = state.shellProfile.aliasFor(Command.SETTINGS),
@@ -87,6 +70,32 @@ public fun HomeScreen(
                 onClick = { onAppClick(result.app) },
             )
         }
+    }
+}
+
+/** Lists what Home keeps above the prompt: the pinned applications, then the pinned shortcuts. */
+private fun LazyListScope.pinnedItems(
+    state: HomeUiState,
+    onAppClick: (InstalledApp) -> Unit,
+    onShortcutClick: (PinnedShortcut) -> Unit,
+) {
+    items(
+        items = state.apps,
+        key = InstalledApp::packageName,
+    ) { app ->
+        AppRow(
+            displayName = state.shellProfile.formatAppName(app),
+            onClick = { onAppClick(app) },
+        )
+    }
+    items(
+        items = state.shortcuts,
+        key = { shortcut -> "shortcut-${shortcut.packageName}-${shortcut.id}" },
+    ) { shortcut ->
+        AppRow(
+            displayName = state.shellProfile.formatShortcutName(shortcut),
+            onClick = { onShortcutClick(shortcut) },
+        )
     }
 }
 
