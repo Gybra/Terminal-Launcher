@@ -2,6 +2,7 @@ package com.gybra.terminallauncher.shell
 
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.command.CommandSummary
+import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.PinnedShortcut
 
@@ -34,6 +35,17 @@ public interface ShellProfile {
     }
 
     public fun aliasesFor(command: Command): Set<String> = setOf(aliasFor(command))
+
+    /**
+     * Writes the single line Home keeps above everything else, from the parts that are shown.
+     * Either part may be missing, and an empty line means Home shows no status at all.
+     */
+    public fun formatStatus(clockText: String?, battery: BatteryStatus?): String = formatMessage(
+        listOfNotNull(clockText, battery?.toStatusText()).joinToString(separator = " "),
+    )
 }
+
+private fun BatteryStatus.toStatusText(): String =
+    "$percentage%" + if (charging) " charging" else ""
 
 private const val HELP_ALIAS_COLUMN_WIDTH = 10

@@ -37,6 +37,7 @@ class SettingsViewModelTest {
                 shellType = ShellType.DOS,
                 terminalTheme = TerminalTheme.GREEN,
                 showClock = false,
+                showBattery = false,
                 username = "oreste",
                 hostname = "phone",
                 promptSymbol = PromptSymbol.PERCENT,
@@ -51,6 +52,7 @@ class SettingsViewModelTest {
                 shellType = ShellType.DOS,
                 terminalTheme = TerminalTheme.GREEN,
                 showClock = false,
+                showBattery = false,
                 username = "oreste",
                 hostname = "phone",
                 promptSymbol = PromptSymbol.PERCENT,
@@ -69,6 +71,7 @@ class SettingsViewModelTest {
         viewModel.selectShell(ShellType.DOS)
         viewModel.selectTheme(TerminalTheme.AMBER)
         viewModel.setShowClock(false)
+        viewModel.setShowBattery(false)
         viewModel.setUsername("oreste")
         viewModel.setHostname("phone")
         viewModel.selectPromptSymbol(PromptSymbol.ARROW)
@@ -79,6 +82,7 @@ class SettingsViewModelTest {
         assertEquals(ShellType.DOS, repository.shellType)
         assertEquals(TerminalTheme.AMBER, repository.terminalTheme)
         assertEquals(false, repository.showClock)
+        assertEquals(false, repository.showBattery)
         assertEquals("oreste", repository.username)
         assertEquals("phone", repository.hostname)
         assertEquals(PromptSymbol.ARROW, repository.promptSymbol)
@@ -177,6 +181,7 @@ class SettingsViewModelTest {
         var shellType: ShellType? = null
         var terminalTheme: TerminalTheme? = null
         var showClock: Boolean? = null
+        var showBattery: Boolean? = null
         var username: String? = null
         var hostname: String? = null
         var promptSymbol: PromptSymbol? = null
@@ -204,6 +209,12 @@ class SettingsViewModelTest {
             writeFailure?.let { throw it }
             this.showClock = showClock
             emit(mutablePreferences.value.copy(showClock = showClock))
+        }
+
+        override suspend fun setShowBattery(showBattery: Boolean) {
+            writeFailure?.let { throw it }
+            this.showBattery = showBattery
+            emit(mutablePreferences.value.copy(showBattery = showBattery))
         }
 
         override suspend fun setUsername(username: String) {
@@ -278,6 +289,8 @@ class SettingsViewModelTest {
         override suspend fun setShowClock(showClock: Boolean) {
             throw IOException("disk full")
         }
+
+        override suspend fun setShowBattery(showBattery: Boolean) = unsupported()
 
         override suspend fun setUsername(username: String) {
             releaseUsernameWrite.await()

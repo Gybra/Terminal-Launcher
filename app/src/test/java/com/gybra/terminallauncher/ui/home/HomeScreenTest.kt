@@ -102,8 +102,8 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `removes the clock when reactive state hides it`() {
-        var state by mutableStateOf(homeState(clockText = "22:10"))
+    fun `removes the status line when reactive state hides it`() {
+        var state by mutableStateOf(homeState(statusText = "22:10"))
 
         composeRule.setContent {
             HomeScreen(
@@ -116,7 +116,7 @@ class HomeScreenTest {
         }
 
         composeRule.onNodeWithText("22:10").assertIsDisplayed()
-        state = state.copy(clockText = null)
+        state = state.copy(statusText = null)
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("22:10").assertDoesNotExist()
@@ -236,10 +236,10 @@ class HomeScreenTest {
         composeRule.onNodeWithText("telegram").assertIsDisplayed()
     }
 
-    private fun homeState(clockText: String? = null): HomeUiState = HomeUiState(
+    private fun homeState(statusText: String? = null): HomeUiState = HomeUiState(
         shellProfile = UnixShellProfile,
         shellContext = defaultShellContext(),
-        clockText = clockText,
+        statusText = statusText,
     )
 
     private fun defaultShellContext(): ShellContext = ShellContext(

@@ -43,6 +43,12 @@ class RecordingPreferencesRepository(
         write("setShowClock($showClock)") { preferences -> preferences.copy(showClock = showClock) }
     }
 
+    override suspend fun setShowBattery(showBattery: Boolean) {
+        write("setShowBattery($showBattery)") { preferences ->
+            preferences.copy(showBattery = showBattery)
+        }
+    }
+
     override suspend fun setUsername(username: String) {
         write("setUsername($username)") { preferences -> preferences.copy(username = username) }
     }

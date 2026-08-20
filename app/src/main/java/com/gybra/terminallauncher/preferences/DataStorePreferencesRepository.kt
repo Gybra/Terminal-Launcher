@@ -52,6 +52,12 @@ public class DataStorePreferencesRepository(
         }
     }
 
+    override suspend fun setShowBattery(showBattery: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[Keys.showBattery] = showBattery
+        }
+    }
+
     override suspend fun setUsername(username: String) {
         dataStore.edit { preferences ->
             preferences[Keys.username] = username
@@ -148,6 +154,7 @@ public class DataStorePreferencesRepository(
         terminalTheme = preferences[Keys.terminalTheme]
             .toEnum(TerminalTheme.entries, defaults.terminalTheme),
         showClock = preferences[Keys.showClock] ?: defaults.showClock,
+        showBattery = preferences[Keys.showBattery] ?: defaults.showBattery,
         username = preferences[Keys.username] ?: defaults.username,
         hostname = preferences[Keys.hostname] ?: defaults.hostname,
         promptSymbol = preferences[Keys.promptSymbol]
@@ -229,6 +236,7 @@ public class DataStorePreferencesRepository(
         val shellType: Preferences.Key<String> = stringPreferencesKey("shell_type")
         val terminalTheme: Preferences.Key<String> = stringPreferencesKey("terminal_theme")
         val showClock: Preferences.Key<Boolean> = booleanPreferencesKey("show_clock")
+        val showBattery: Preferences.Key<Boolean> = booleanPreferencesKey("show_battery")
         val username: Preferences.Key<String> = stringPreferencesKey("username")
         val hostname: Preferences.Key<String> = stringPreferencesKey("hostname")
         val promptSymbol: Preferences.Key<String> = stringPreferencesKey("prompt_symbol")

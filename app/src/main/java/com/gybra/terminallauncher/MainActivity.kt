@@ -54,11 +54,12 @@ public class MainActivity : ComponentActivity() {
         val launcherClock = SystemLauncherClock()
         val systemScreenLauncher = SystemScreenLauncher(applicationContext)
         val shortcutLauncher = ShortcutLauncher(applicationContext)
+        val batteryRepository = SystemBatteryRepository(applicationContext)
         val commandExecutor = CommandExecutor(
             CommandRegistry(
                 commands = launcherCommands(
                     preferencesRepository = preferencesRepository,
-                    batteryRepository = SystemBatteryRepository(applicationContext),
+                    batteryRepository = batteryRepository,
                     torch = SystemTorch(applicationContext),
                 ),
             ),
@@ -68,6 +69,7 @@ public class MainActivity : ComponentActivity() {
                 HomeViewModel(
                     appRepository = appRepository,
                     preferencesRepository = preferencesRepository,
+                    batteryRepository = batteryRepository,
                     launcherClock = launcherClock,
                     commandExecutor = commandExecutor,
                     packageMonitor = packageMonitor,
@@ -108,6 +110,7 @@ public class MainActivity : ComponentActivity() {
                     selectShell = settingsViewModel::selectShell,
                     selectTheme = settingsViewModel::selectTheme,
                     setShowClock = settingsViewModel::setShowClock,
+                    setShowBattery = settingsViewModel::setShowBattery,
                     setUsername = settingsViewModel::setUsername,
                     setHostname = settingsViewModel::setHostname,
                     selectPromptSymbol = settingsViewModel::selectPromptSymbol,

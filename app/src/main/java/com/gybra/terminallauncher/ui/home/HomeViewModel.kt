@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.gybra.terminallauncher.command.CommandExecutor
 import com.gybra.terminallauncher.command.CommandResult
 import com.gybra.terminallauncher.launcher.AppRepository
+import com.gybra.terminallauncher.launcher.BatteryRepository
+import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.LauncherClock
 import com.gybra.terminallauncher.launcher.PackageMonitor
@@ -34,6 +36,7 @@ import kotlinx.coroutines.launch
 public class HomeViewModel(
     private val appRepository: AppRepository,
     private val preferencesRepository: PreferencesRepository,
+    private val batteryRepository: BatteryRepository,
     private val launcherClock: LauncherClock,
     private val commandExecutor: CommandExecutor,
     private val packageMonitor: PackageMonitor,
@@ -66,10 +69,16 @@ public class HomeViewModel(
             initialValue = initialPreferences,
         )
 
+    private val deviceStatus: Flow<DeviceStatus> = combine(
+        launcherClock.observeTime(),
+        batteryRepository.observeStatus(),
+        ::DeviceStatus,
+    )
+
     public val uiState: StateFlow<HomeUiState> = combine(
         installedApps,
         preferences,
-        launcherClock.observeTime(),
+        deviceStatus,
         promptState,
         history,
         ::createUiState,
@@ -79,7 +88,7 @@ public class HomeViewModel(
         initialValue = createUiState(
             installedApps = emptyList(),
             preferences = initialPreferences,
-            clockText = "",
+            deviceStatus = DeviceStatus(clockText = "", battery = null),
             prompt = PromptState(),
             history = emptyList(),
         ),
@@ -210,24 +219,32 @@ public class HomeViewModel(
     private fun createUiState(
         installedApps: List<InstalledApp>,
         preferences: LauncherPreferences,
-        clockText: String,
+        deviceStatus: DeviceStatus,
         prompt: PromptState,
         history: List<TerminalEntry>,
-    ): HomeUiState = HomeUiState(
-        shellProfile = ShellProfiles.forType(preferences.shellType),
-        shellContext = preferences.toShellContext(),
-        apps = installedApps.filter { app -> app.packageName in preferences.pinnedPackages },
-        shortcuts = preferences.pinnedShortcuts,
-        searchResults = AppSearchEngine.search(
-            query = prompt.input,
-            apps = installedApps,
-            usage = preferences.usage,
-            pinnedPackages = preferences.pinnedPackages,
-        ),
-        history = history,
-        clockText = clockText.takeIf { preferences.showClock && it.isNotEmpty() },
-        prompt = prompt,
-    )
+    ): HomeUiState {
+        val shellProfile = ShellProfiles.forType(preferences.shellType)
+
+        return HomeUiState(
+            shellProfile = shellProfile,
+            shellContext = preferences.toShellContext(),
+            apps = installedApps.filter { app -> app.packageName in preferences.pinnedPackages },
+            shortcuts = preferences.pinnedShortcuts,
+            searchResults = AppSearchEngine.search(
+                query = prompt.input,
+                apps = installedApps,
+                usage = preferences.usage,
+                pinnedPackages = preferences.pinnedPackages,
+            ),
+            history = history,
+            statusText = shellProfile.formatStatus(
+                clockText = deviceStatus.clockText
+                    .takeIf { preferences.showClock && it.isNotEmpty() },
+                battery = deviceStatus.battery.takeIf { preferences.showBattery },
+            ).takeIf(String::isNotEmpty),
+            prompt = prompt,
+        )
+    }
 
     private fun LauncherPreferences.toShellContext(): ShellContext = ShellContext(
         username = username,
@@ -243,3 +260,9 @@ public class HomeViewModel(
         const val MAX_HISTORY_ENTRIES = 20
     }
 }
+
+/** What the device reports about itself, as one value, so Home writes it as a single line. */
+private data class DeviceStatus(
+    val clockText: String,
+    val battery: BatteryStatus?,
+)

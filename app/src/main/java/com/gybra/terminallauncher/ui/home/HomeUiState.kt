@@ -13,6 +13,6 @@ public data class HomeUiState(
     public val shortcuts: List<PinnedShortcut> = emptyList(),
     public val searchResults: List<SearchResult> = emptyList(),
     public val history: List<TerminalEntry> = emptyList(),
-    public val clockText: String? = null,
+    public val statusText: String? = null,
     public val prompt: PromptState = PromptState(),
 )

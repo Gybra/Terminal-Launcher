@@ -295,6 +295,7 @@ class LauncherIntegrationTest {
         val viewModel = HomeViewModel(
             appRepository = FakeAppRepository(apps = installedApps),
             preferencesRepository = preferencesRepository,
+            batteryRepository = FakeBatteryRepository(status = null),
             launcherClock = FakeLauncherClock(),
             commandExecutor = CommandExecutor(
                 CommandRegistry(
