@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.PinnedShortcut
@@ -274,6 +275,54 @@ class HomeScreenTest {
 
         assertEquals(1, locks)
         assertEquals(listOf(app), launched)
+    }
+
+    @Test
+    fun `leaves a double tap the rows already handle alone`() {
+        val app = InstalledApp(packageName = "com.example.camera", label = "Camera")
+        val launched = mutableListOf<InstalledApp>()
+        var locks = 0
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(apps = listOf(app)),
+                onAppClick = { launchedApp -> launched += launchedApp },
+                onShortcutClick = {},
+                onSettingsClick = {},
+                onLockScreen = { locks += 1 },
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("camera").performTouchInput { doubleClick() }
+        composeRule.waitForIdle()
+
+        assertEquals(0, locks)
+        assertEquals(listOf(app, app), launched)
+    }
+
+    @Test
+    fun `keeps scrolling instead of locking on a swipe`() {
+        var locks = 0
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(apps = manyApps()),
+                onAppClick = {},
+                onShortcutClick = {},
+                onSettingsClick = {},
+                onLockScreen = { locks += 1 },
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithTag("home-list").performTouchInput { swipeUp() }
+        composeRule.waitForIdle()
+
+        assertEquals(0, locks)
+        composeRule.onNodeWithText("app 0").assertDoesNotExist()
+    }
+
+    private fun manyApps(): List<InstalledApp> = List(30) { index ->
+        InstalledApp(packageName = "com.example.app$index", label = "App $index")
     }
 
     private fun homeState(statusText: String? = null): HomeUiState = HomeUiState(
