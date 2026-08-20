@@ -204,6 +204,28 @@ class HomeScreenTest {
         composeRule.onAllNodesWithText("mail").assertCountEquals(2)
     }
 
+    @Test
+    fun `renders the terminal history above the prompt`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    history = listOf(
+                        TerminalEntry(id = 0L, input = "ls", output = listOf("camera", "telegram")),
+                    ),
+                ),
+                onAppClick = {},
+                onSettingsClick = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("user@android:~$ ls").assertIsDisplayed()
+        composeRule.onNodeWithText("camera").assertIsDisplayed()
+        composeRule.onNodeWithText("telegram").assertIsDisplayed()
+    }
+
     private fun homeState(clockText: String? = null): HomeUiState = HomeUiState(
         shellProfile = UnixShellProfile,
         shellContext = defaultShellContext(),

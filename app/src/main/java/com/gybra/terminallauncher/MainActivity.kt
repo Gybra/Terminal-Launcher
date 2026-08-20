@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.gybra.terminallauncher.command.ClearCommand
 import com.gybra.terminallauncher.command.CommandExecutor
 import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.HelpCommand
@@ -47,7 +48,7 @@ public class MainActivity : ComponentActivity() {
         val appLauncher = AppLauncher(applicationContext)
         val launcherClock = SystemLauncherClock()
         val commandExecutor = CommandExecutor(
-            CommandRegistry(commands = listOf(ListAppsCommand, HelpCommand)),
+            CommandRegistry(commands = listOf(ListAppsCommand, ClearCommand, HelpCommand)),
         )
         val launcherViewModelFactory = viewModelFactory {
             initializer {
