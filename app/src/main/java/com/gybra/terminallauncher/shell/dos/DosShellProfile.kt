@@ -1,6 +1,7 @@
 package com.gybra.terminallauncher.shell.dos
 
 import com.gybra.terminallauncher.command.Command
+import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
@@ -32,4 +33,7 @@ public object DosShellProfile : ShellProfile {
 
     override fun formatAppList(apps: List<InstalledApp>): List<String> =
         apps.map(::formatAppName) + listOf("", "${apps.size} File(s)")
+
+    override fun formatHelp(commands: List<CommandSummary>): List<String> =
+        super.formatHelp(commands) + listOf("", "${commands.size} Command(s)")
 }
