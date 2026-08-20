@@ -10,6 +10,7 @@ public data class SettingsActions(
     public val selectTheme: (TerminalTheme) -> Unit,
     public val setShowClock: (Boolean) -> Unit,
     public val setShowBattery: (Boolean) -> Unit,
+    public val setDoubleTapToLock: (Boolean) -> Unit,
     public val setUsername: (String) -> Unit,
     public val setHostname: (String) -> Unit,
     public val selectPromptSymbol: (PromptSymbol) -> Unit,

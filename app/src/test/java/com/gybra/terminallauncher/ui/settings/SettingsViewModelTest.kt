@@ -2,6 +2,7 @@ package com.gybra.terminallauncher.ui.settings
 
 import com.gybra.terminallauncher.MainDispatcherRule
 import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.FakeDeviceLock
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.DosDrive
@@ -26,10 +27,12 @@ class SettingsViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private val deviceLock = FakeDeviceLock()
+
     @Test
     fun `exposes preferences and reacts to repository updates`() = runTest(mainDispatcherRule.dispatcher) {
         val repository = FakePreferencesRepository()
-        val viewModel = SettingsViewModel(repository)
+        val viewModel = SettingsViewModel(repository, deviceLock)
         advanceUntilIdle()
 
         repository.emit(
@@ -53,6 +56,7 @@ class SettingsViewModelTest {
                 terminalTheme = TerminalTheme.GREEN,
                 showClock = false,
                 showBattery = false,
+                doubleTapToLock = false,
                 username = "oreste",
                 hostname = "phone",
                 promptSymbol = PromptSymbol.PERCENT,
@@ -66,7 +70,7 @@ class SettingsViewModelTest {
     @Test
     fun `delegates every setting change to the repository`() = runTest(mainDispatcherRule.dispatcher) {
         val repository = FakePreferencesRepository()
-        val viewModel = SettingsViewModel(repository)
+        val viewModel = SettingsViewModel(repository, deviceLock)
 
         viewModel.selectShell(ShellType.DOS)
         viewModel.selectTheme(TerminalTheme.AMBER)
@@ -91,9 +95,52 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `asks Android for the device admin and gives it back`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = SettingsViewModel(FakePreferencesRepository(), deviceLock)
+            advanceUntilIdle()
+
+            assertEquals(false, viewModel.uiState.value.doubleTapToLock)
+
+            viewModel.setDoubleTapToLock(true)
+
+            assertEquals(listOf("requestEnable"), deviceLock.calls)
+            assertEquals(true, viewModel.uiState.value.doubleTapToLock)
+
+            viewModel.setDoubleTapToLock(false)
+
+            assertEquals(listOf("requestEnable", "disable"), deviceLock.calls)
+            assertEquals(false, viewModel.uiState.value.doubleTapToLock)
+        }
+
+    @Test
+    fun `leaves the lock off when the user declines the device admin`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val declined = FakeDeviceLock(requestGranted = false)
+            val viewModel = SettingsViewModel(FakePreferencesRepository(), declined)
+            advanceUntilIdle()
+
+            viewModel.setDoubleTapToLock(true)
+
+            assertEquals(false, viewModel.uiState.value.doubleTapToLock)
+        }
+
+    @Test
+    fun `reads the device admin again when asked to refresh`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = SettingsViewModel(FakePreferencesRepository(), deviceLock)
+            advanceUntilIdle()
+
+            deviceLock.enabled = true
+            viewModel.refreshDeviceLock()
+
+            assertEquals(true, viewModel.uiState.value.doubleTapToLock)
+        }
+
+    @Test
     fun `keeps an identity usable in a prompt`() = runTest(mainDispatcherRule.dispatcher) {
         val repository = FakePreferencesRepository()
-        val viewModel = SettingsViewModel(repository)
+        val viewModel = SettingsViewModel(repository, deviceLock)
 
         viewModel.setUsername(" or\teste\n")
         viewModel.setHostname("a very long hostname indeed")
@@ -109,7 +156,7 @@ class SettingsViewModelTest {
     fun `clears an identity made only of unusable characters`() =
         runTest(mainDispatcherRule.dispatcher) {
             val repository = FakePreferencesRepository()
-            val viewModel = SettingsViewModel(repository)
+            val viewModel = SettingsViewModel(repository, deviceLock)
 
             viewModel.setUsername("  \t ")
             advanceUntilIdle()
@@ -121,7 +168,7 @@ class SettingsViewModelTest {
     @Test
     fun `keeps rapid controlled input updates in order`() = runTest(mainDispatcherRule.dispatcher) {
         val repository = FakePreferencesRepository()
-        val viewModel = SettingsViewModel(repository)
+        val viewModel = SettingsViewModel(repository, deviceLock)
 
         viewModel.setUsername("o")
         viewModel.setUsername("or")
@@ -138,7 +185,7 @@ class SettingsViewModelTest {
     @Test
     fun `recovers from storage write failures without crashing`() = runTest(mainDispatcherRule.dispatcher) {
         val repository = FakePreferencesRepository(writeFailure = IOException("disk full"))
-        val viewModel = SettingsViewModel(repository)
+        val viewModel = SettingsViewModel(repository, deviceLock)
 
         viewModel.setShowClock(false)
         assertEquals(false, viewModel.uiState.value.showClock)
@@ -152,7 +199,7 @@ class SettingsViewModelTest {
     fun `does not replace a newer edit when failure recovery resumes`() =
         runTest(mainDispatcherRule.dispatcher) {
             val repository = RefreshRacePreferencesRepository()
-            val viewModel = SettingsViewModel(repository)
+            val viewModel = SettingsViewModel(repository, deviceLock)
             runCurrent()
 
             viewModel.setShowClock(false)

@@ -13,8 +13,9 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - registers as an Android Home application and renders full screen, edge to edge, in system monospace type;
 - persists every preference in DataStore: shell, terminal theme, clock, battery, username, hostname, prompt symbol, prompt path visibility, DOS drive letter, pinned applications, pinned shortcuts, and how often and how recently each application is launched;
 - offers independent System, Green, Amber, and Monochrome terminal themes, and a status line carrying an optional live clock and the battery level, which is shown by default;
-- offers a minimal settings screen for shell, theme, clock, battery, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter;
-- answers the requests applications make to pin one of their shortcuts to Home, such as a browser adding a website, and keeps nothing until the user accepts.
+- offers a minimal settings screen for shell, theme, clock, battery, double tap to lock, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter;
+- answers the requests applications make to pin one of their shortcuts to Home, such as a browser adding a website, and keeps nothing until the user accepts;
+- locks the screen on a double tap, once the user grants the device admin that Android requires for it.
 
 **Shell metaphor**
 
@@ -72,6 +73,8 @@ Anything that is not a registered command is treated as a search. Command names 
 
 An application can also ask the launcher to keep one of its own shortcuts, which is what a browser does when it adds a website to Home. The launcher answers with a confirmation naming the shortcut and the application that asked for it, and keeps nothing until it is accepted. An accepted shortcut is listed on Home under the pinned applications, written as `new tab` on Unix and `NEW TAB.LNK` on DOS, and tapping it asks Android to start it. A shortcut is started by the package and the identifier Android published for it, never by an Intent the launcher builds or the asking application supplies. Uninstalling an application removes the shortcuts it published, while updating it keeps them; removing a single shortcut without its application is not possible yet.
 
+A double tap on the empty area of Home locks the screen. It works only while the launcher is an active device admin, which Android grants nowhere but in its own confirmation: the `Double tap to lock` setting starts that request, and the setting reads whether the admin is active rather than a stored answer. Turning it off gives the admin back, so the privilege never outlives the feature, and revoking it in the Android settings stops the gesture too. The rows, the prompt, and scrolling keep working as they did, because a tap Home already handles never reaches the gesture.
+
 The prompt can be customized from the settings screen, and the customization is cosmetic only. The Unix prompt is written as `username@hostname:path$`, where the username and the hostname are kept usable as prompt tokens by dropping whitespace and control characters and keeping at most sixteen characters, and where the end symbol is `$`, `%`, or `>`. The DOS prompt is written as `C:\HOME>` on the chosen drive letter, `A`, `C`, or `D`. Hiding the path shortens the Unix prompt to `username@hostname$` and the DOS prompt to `C:\>`. A username or hostname cleared in the settings is left out of the prompt with its separator, so clearing both leaves `~$`.
 
 No drive, path, or symbol reaches a filesystem or grants a privilege: nothing exists behind them, and the launcher navigates no directories. The path shown is a fixed label for where the launcher is, not a working directory.
@@ -83,6 +86,8 @@ The terminal history lives in memory only and starts empty after every process r
 The Android utility commands map to controlled Android functionality and nothing else. `battery` reads `BatteryManager`, which needs no permission, and says so when the device publishes no level. The status line reads the same `BatteryManager`, on every battery broadcast the device sends, and listens only while Home is on screen. `torch` calls `CameraManager.setTorchMode`, which needs no camera permission and opens no camera, and says so on a device with no flash unit. `android`, `wifi`, `bluetooth`, and `info` start one documented `Settings` action each. `uninstall` starts `ACTION_DELETE`, so Android shows its own confirmation naming the application and the user answers it; the launcher removes nothing itself. `restart` recreates the launcher the way a configuration change does, killing no process and spawning none. A device without one of these destinations, or an Android that refuses one, leaves the prompt working instead of crashing.
 
 ## Safety model
+
+Locking the screen is the one privileged Android capability the launcher can hold. It is declared as a device admin whose policy is `force-lock` and nothing else, so no password rule, wipe, camera, or encryption policy is ever requested; the receiver carries no behavior beyond being the component Android names in that policy. The admin is granted only through the Android confirmation, is never requested at startup, and is given back the moment the setting is turned off. `lockNow()` is the only device-policy call the launcher makes.
 
 The project never executes real shell commands. `Runtime.exec`, `ProcessBuilder`, `/bin/sh`, `su`, shell passthrough, arbitrary Intent URIs, and unregistered commands are outside the architecture. Prompt input is tokenized and matched against explicitly registered commands only, and anything else falls back to application search. Every command maps to a controlled Android API or an explicit safe Intent: an Intent is never built from prompt input, and the only package name that ever reaches one is a package discovered through `PackageManager` and resolved to exactly one application. Every future command must meet the same rule.
 
@@ -152,9 +157,10 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
           tap or Enter -> AppLauncher ----------> explicit package launch Intent
              shortcut tap -> ShortcutLauncher --> LauncherApps shortcut start
      pin request -> ShortcutPinRequests -------> LauncherApps pin item request
+           double tap -> DeviceLock ------------> DevicePolicyManager lockNow
 ```
 
-- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery reading and observation, torch boundary, the named system destinations, and the pinned-shortcut model with its pin request and start boundaries;
+- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery reading and observation, torch boundary, the screen lock with its device admin receiver, the named system destinations, and the pinned-shortcut model with its pin request and start boundaries;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
 - `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the registered help, application-list, history-clearing, pinning, aliasing, settings, and Android utility commands;
 - `search`: Compose-independent label matching and deterministic result ranking;

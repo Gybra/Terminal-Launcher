@@ -97,6 +97,13 @@ private fun LazyListScope.appearanceSettings(
             onCheckedChange = actions.setShowBattery,
         )
     }
+    item(key = "double-tap-to-lock") {
+        ToggleOption(
+            label = "Double tap to lock",
+            checked = state.doubleTapToLock,
+            onCheckedChange = actions.setDoubleTapToLock,
+        )
+    }
     item(key = "prompt-path") {
         ToggleOption(
             label = "Show path in prompt",
