@@ -15,6 +15,9 @@ public interface ShellProfile {
 
     public fun aliasFor(command: Command): String
 
+    /** Writes a one-line command message, such as a confirmation or an error, in this shell style. */
+    public fun formatMessage(message: String): String
+
     public fun formatAppList(apps: List<InstalledApp>): List<String> = apps.map(::formatAppName)
 
     /**

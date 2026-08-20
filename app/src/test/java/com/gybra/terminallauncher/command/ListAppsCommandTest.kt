@@ -4,19 +4,20 @@ import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.shell.ShellProfile
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ListAppsCommandTest {
     @Test
-    fun `lists installed applications the Unix way`() {
+    fun `lists installed applications the Unix way`() = runTest {
         val result = ListAppsCommand.execute(contextFor(UnixShellProfile, apps))
 
         assertEquals(CommandResult.Output(listOf("camera", "telegram")), result)
     }
 
     @Test
-    fun `lists installed applications the DOS way`() {
+    fun `lists installed applications the DOS way`() = runTest {
         val result = ListAppsCommand.execute(contextFor(DosShellProfile, apps))
 
         assertEquals(
@@ -26,7 +27,7 @@ class ListAppsCommandTest {
     }
 
     @Test
-    fun `lists nothing when no application is installed`() {
+    fun `lists nothing when no application is installed`() = runTest {
         assertEquals(
             CommandResult.Output(emptyList()),
             ListAppsCommand.execute(contextFor(UnixShellProfile, emptyList())),
@@ -34,7 +35,7 @@ class ListAppsCommandTest {
     }
 
     @Test
-    fun `ignores arguments so listing stays predictable`() {
+    fun `ignores arguments so listing stays predictable`() = runTest {
         val context = contextFor(UnixShellProfile, apps).copy(arguments = listOf("-la"))
 
         assertEquals(CommandResult.Output(listOf("camera", "telegram")), ListAppsCommand.execute(context))

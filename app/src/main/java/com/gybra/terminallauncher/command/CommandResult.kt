@@ -8,6 +8,9 @@ public sealed interface CommandResult {
     /** A registered command asked the launcher to erase the terminal history. */
     public object ClearHistory : CommandResult
 
+    /** A registered command asked the launcher to open the settings destination. */
+    public object OpenSettings : CommandResult
+
     /** No registered command matched, so the input is searched among installed applications. */
     public object Search : CommandResult
 }

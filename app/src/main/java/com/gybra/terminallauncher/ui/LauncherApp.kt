@@ -2,18 +2,22 @@ package com.gybra.terminallauncher.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.ui.home.HomeScreen
 import com.gybra.terminallauncher.ui.home.HomeUiState
 import com.gybra.terminallauncher.ui.home.PromptActions
+import com.gybra.terminallauncher.ui.home.SubmittedAction
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsScreen
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
 import com.gybra.terminallauncher.ui.theme.TerminalThemeProvider
+import kotlinx.coroutines.flow.Flow
 
 @Composable
 public fun LauncherApp(
@@ -21,9 +25,20 @@ public fun LauncherApp(
     settingsState: SettingsUiState,
     settingsActions: SettingsActions,
     promptActions: PromptActions,
-    onAppClick: (InstalledApp) -> Unit,
+    submittedActions: Flow<SubmittedAction>,
+    onLaunchApp: (InstalledApp) -> Unit,
 ) {
     var destination by rememberSaveable { mutableStateOf(LauncherDestination.HOME) }
+    val launchApp by rememberUpdatedState(onLaunchApp)
+
+    LaunchedEffect(submittedActions) {
+        submittedActions.collect { action ->
+            when (action) {
+                is SubmittedAction.LaunchApp -> launchApp(action.app)
+                SubmittedAction.OpenSettings -> destination = LauncherDestination.SETTINGS
+            }
+        }
+    }
 
     TerminalThemeProvider(theme = settingsState.terminalTheme) {
         BackHandler(enabled = destination == LauncherDestination.SETTINGS) {
@@ -33,7 +48,7 @@ public fun LauncherApp(
         if (destination == LauncherDestination.HOME) {
             HomeScreen(
                 state = homeState,
-                onAppClick = onAppClick,
+                onAppClick = onLaunchApp,
                 onSettingsClick = { destination = LauncherDestination.SETTINGS },
                 promptActions = promptActions,
             )

@@ -15,13 +15,17 @@ import com.gybra.terminallauncher.search.SearchResult
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfiles
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 public class HomeViewModel(
     private val appRepository: AppRepository,
@@ -32,6 +36,10 @@ public class HomeViewModel(
     private val initialPreferences = LauncherPreferences()
     private val promptState = MutableStateFlow(PromptState())
     private val history = MutableStateFlow<List<TerminalEntry>>(emptyList())
+    private val submittedActionRequests = Channel<SubmittedAction>(capacity = Channel.BUFFERED)
+
+    /** Actions the composition root performs after a submitted line, each delivered once. */
+    public val submittedActions: Flow<SubmittedAction> = submittedActionRequests.receiveAsFlow()
     private val installedApps: StateFlow<List<InstalledApp>> = appRepository
         .observeInstalledApps()
         .catch { failure ->
@@ -77,38 +85,40 @@ public class HomeViewModel(
     }
 
     /**
-     * Runs the submitted input as a registered command, and otherwise returns the application to
-     * launch when the query resolves to a single match. Consumed input joins the terminal history
-     * and clears the prompt, so only ambiguous queries and their results stay on screen.
+     * Runs the submitted input as a registered command, and otherwise searches it among the
+     * installed applications. Consumed input joins the terminal history and clears the prompt, so
+     * only ambiguous queries and their results stay on screen.
      */
-    public fun submitPrompt(): InstalledApp? {
-        val state = uiState.value
-        val submittedInput = state.prompt.input
-        val result = commandExecutor.execute(
-            input = submittedInput,
-            shellProfile = state.shellProfile,
-            installedApps = installedApps.value,
-        )
-        return when (result) {
-            is CommandResult.Output -> {
-                recordEntry(input = submittedInput, output = result.lines)
-                null
+    public fun submitPrompt() {
+        viewModelScope.launch {
+            val state = uiState.value
+            val submittedInput = state.prompt.input
+            val result = commandExecutor.execute(
+                input = submittedInput,
+                shellProfile = state.shellProfile,
+                installedApps = installedApps.value,
+            )
+            when (result) {
+                is CommandResult.Output -> recordEntry(submittedInput, output = result.lines)
+                CommandResult.ClearHistory -> eraseHistory()
+                CommandResult.OpenSettings ->
+                    completeSubmission(submittedInput, SubmittedAction.OpenSettings)
+                CommandResult.Search -> launchSearchedApp(submittedInput, state.searchResults)
             }
-            CommandResult.ClearHistory -> {
-                eraseHistory()
-                null
-            }
-            CommandResult.Search -> resolveSearchedApp(submittedInput, state.searchResults)
         }
     }
 
-    private fun resolveSearchedApp(
+    private suspend fun launchSearchedApp(
         submittedInput: String,
         searchResults: List<SearchResult>,
-    ): InstalledApp? {
-        val resolvedApp = AppSearchEngine.unambiguousMatch(searchResults) ?: return null
-        recordEntry(input = submittedInput, output = emptyList())
-        return resolvedApp
+    ) {
+        val resolvedApp = AppSearchEngine.unambiguousMatch(searchResults) ?: return
+        completeSubmission(submittedInput, SubmittedAction.LaunchApp(resolvedApp))
+    }
+
+    private suspend fun completeSubmission(submittedInput: String, action: SubmittedAction) {
+        recordEntry(submittedInput, output = emptyList())
+        submittedActionRequests.send(action)
     }
 
     private fun recordEntry(input: String, output: List<String>) {
