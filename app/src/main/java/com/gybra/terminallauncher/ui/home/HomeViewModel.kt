@@ -31,7 +31,7 @@ public class HomeViewModel(
 ) : ViewModel() {
     private val initialPreferences = LauncherPreferences()
     private val promptState = MutableStateFlow(PromptState())
-    private val installedApps = appRepository
+    private val installedApps: StateFlow<List<InstalledApp>> = appRepository
         .observeInstalledApps()
         .catch { failure ->
             if (failure is SecurityException) {
@@ -40,6 +40,11 @@ public class HomeViewModel(
                 throw failure
             }
         }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_TIMEOUT_MILLIS),
+            initialValue = emptyList(),
+        )
 
     public val uiState: StateFlow<HomeUiState> = combine(
         installedApps,
@@ -49,7 +54,7 @@ public class HomeViewModel(
         ::createUiState,
     ).stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000L),
+        started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_TIMEOUT_MILLIS),
         initialValue = createUiState(
             installedApps = emptyList(),
             preferences = initialPreferences,
@@ -78,9 +83,10 @@ public class HomeViewModel(
         val result = commandExecutor.execute(
             input = state.prompt.input,
             shellProfile = state.shellProfile,
+            installedApps = installedApps.value,
         )
         return when (result) {
-            CommandResult.Handled -> {
+            is CommandResult.Output -> {
                 clearPrompt()
                 null
             }
@@ -119,4 +125,8 @@ public class HomeViewModel(
         hostname = hostname,
         location = LauncherLocation.HOME,
     )
+
+    private companion object {
+        const val STOP_TIMEOUT_MILLIS = 5_000L
+    }
 }

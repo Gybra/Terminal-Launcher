@@ -1,6 +1,7 @@
 package com.gybra.terminallauncher.shell.dos
 
 import com.gybra.terminallauncher.command.Command
+import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
@@ -42,6 +43,25 @@ class DosShellProfileTest {
             profile.formatAppList(apps),
         )
         assertEquals(listOf("", "0 File(s)"), profile.formatAppList(emptyList()))
+    }
+
+    @Test
+    fun `formats help from command metadata with a DOS command count`() {
+        val commands = listOf(
+            CommandSummary(id = Command.LIST_APPS, description = "List installed applications"),
+            CommandSummary(id = Command.HELP, description = "Show available commands"),
+        )
+
+        assertEquals(
+            listOf(
+                "DIR       List installed applications",
+                "HELP      Show available commands",
+                "",
+                "2 Command(s)",
+            ),
+            profile.formatHelp(commands),
+        )
+        assertEquals(listOf("", "0 Command(s)"), profile.formatHelp(emptyList()))
     }
 
     @Test

@@ -378,6 +378,32 @@ class HomeViewModelTest {
             assertEquals(0, listApps.executions)
         }
 
+    @Test
+    fun `gives commands every installed application, not only the pinned ones`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val listApps = RecordingCommand(id = Command.LIST_APPS)
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail, mailbox)),
+                preferencesRepository = FakePreferencesRepository(
+                    initialPreferences = LauncherPreferences(
+                        pinnedPackages = setOf(mail.packageName),
+                    ),
+                ),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(listApps),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "ls"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+
+            assertEquals(listOf(mail), viewModel.uiState.value.apps)
+            assertEquals(listOf(mail, mailbox), listApps.lastContext?.installedApps)
+            assertEquals(UnixShellProfile, listApps.lastContext?.shellProfile)
+        }
+
     private fun commandExecutor(vararg commands: LauncherCommand): CommandExecutor =
         CommandExecutor(CommandRegistry(commands = commands.toList()))
 

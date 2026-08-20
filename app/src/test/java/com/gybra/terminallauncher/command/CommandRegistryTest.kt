@@ -57,6 +57,29 @@ class CommandRegistryTest {
     }
 
     @Test
+    fun `summarizes registered commands in registration order`() {
+        val registry = CommandRegistry(
+            commands = listOf(
+                RecordingCommand(id = Command.LIST_APPS, description = "List installed applications"),
+                RecordingCommand(id = Command.HELP, description = "Show available commands"),
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                CommandSummary(id = Command.LIST_APPS, description = "List installed applications"),
+                CommandSummary(id = Command.HELP, description = "Show available commands"),
+            ),
+            registry.summaries,
+        )
+    }
+
+    @Test
+    fun `summarizes nothing when no command is registered`() {
+        assertEquals(emptyList<CommandSummary>(), CommandRegistry(commands = emptyList()).summaries)
+    }
+
+    @Test
     fun `rejects two commands sharing an identifier`() {
         val failure = assertThrows(IllegalArgumentException::class.java) {
             CommandRegistry(

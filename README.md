@@ -26,10 +26,12 @@ The current implementation provides:
 - Enter launching only an unambiguous match, keeping every other match listed under the prompt;
 - an explicitly registered command engine that tokenizes prompt input and resolves DOS and Unix aliases to stable command identifiers;
 - unknown prompt input falling back to application search instead of reaching any unregistered code path;
+- `ls`, `dir`, and `DIR` listing installed applications with shell-owned formatting, lowercase on Unix and decorative `.EXE` names plus a file count on DOS;
+- `help` written from command metadata, showing only the primary alias of the active shell;
 - command-line builds without Android Studio;
 - JVM tests and a mandatory 100% coverage gate for application logic.
 
-No command is registered yet. The individual commands, help, application list, history, pinning, and settings, are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
+Command output is written by the active shell profile. Displaying it as an in-memory terminal history, together with the history, pinning, and settings commands, is tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and is intentionally deferred to those focused issues.
 
 ## Safety model
 
@@ -97,7 +99,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
 
 - `launcher`: installed-application model, repository boundary, PackageManager adapter, and app launcher;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
-- `command`: stable command identifiers, prompt tokenizing, explicit registration, and execution;
+- `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the built-in help and application-list commands;
 - `search`: Compose-independent label matching and deterministic result ranking;
 - `shell`: shell context, locations, profile selection, and all DOS/Unix presentation rules;
 - `theme`: shell-independent terminal theme and color definitions;
