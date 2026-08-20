@@ -8,6 +8,7 @@ import com.gybra.terminallauncher.command.CommandResult
 import com.gybra.terminallauncher.launcher.AppRepository
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.LauncherClock
+import com.gybra.terminallauncher.launcher.PackageMonitor
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.search.AppSearchEngine
@@ -15,6 +16,7 @@ import com.gybra.terminallauncher.search.SearchResult
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfiles
+import java.io.IOException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -32,6 +35,7 @@ public class HomeViewModel(
     private val preferencesRepository: PreferencesRepository,
     private val launcherClock: LauncherClock,
     private val commandExecutor: CommandExecutor,
+    private val packageMonitor: PackageMonitor,
 ) : ViewModel() {
     private val initialPreferences = LauncherPreferences()
     private val promptState = MutableStateFlow(PromptState())
@@ -73,6 +77,10 @@ public class HomeViewModel(
             history = emptyList(),
         ),
     )
+
+    init {
+        unpinRemovedPackages()
+    }
 
     public fun updatePromptValue(value: PromptState) {
         promptState.update { state ->
@@ -119,6 +127,23 @@ public class HomeViewModel(
     private suspend fun completeSubmission(submittedInput: String, action: SubmittedAction) {
         recordEntry(submittedInput, output = emptyList())
         submittedActionRequests.send(action)
+    }
+
+    private fun unpinRemovedPackages() {
+        viewModelScope.launch {
+            packageMonitor.observeChanges()
+                .filter { change -> change.removed }
+                .collect { change -> unpinQuietly(change.packageName) }
+        }
+    }
+
+    private suspend fun unpinQuietly(packageName: String) {
+        try {
+            preferencesRepository.unpinPackage(packageName)
+        } catch (_: IOException) {
+            // Home already hides packages that are not installed, so a failed write only leaves a
+            // stale entry in storage.
+        }
     }
 
     private fun recordEntry(input: String, output: List<String>) {

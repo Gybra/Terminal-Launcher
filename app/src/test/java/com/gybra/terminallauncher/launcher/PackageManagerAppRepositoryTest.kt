@@ -7,6 +7,9 @@ import android.content.pm.ResolveInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -24,10 +27,21 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35])
 class PackageManagerAppRepositoryTest {
     private lateinit var packageManager: PackageManager
+    private var launchableApps: List<ResolveInfo> = emptyList()
 
     @Before
+    @Suppress("DEPRECATION")
     fun setUp() {
         packageManager = mock()
+        whenever(
+            packageManager.queryIntentActivities(
+                argThat<Intent> { intent ->
+                    intent.action == Intent.ACTION_MAIN &&
+                        intent.categories == setOf(Intent.CATEGORY_LAUNCHER)
+                },
+                eq(PackageManager.MATCH_ALL),
+            ),
+        ).thenAnswer { launchableApps }
     }
 
     @Test
@@ -62,23 +76,45 @@ class PackageManagerAppRepositoryTest {
         )
     }
 
-    private fun repository() = PackageManagerAppRepository(
-        packageManager = packageManager,
-        launcherPackageName = OWN_PACKAGE,
-        backgroundDispatcher = Dispatchers.Unconfined,
-    )
+    @Test
+    fun `observeInstalledApps queries again after every package change`() = runTest {
+        val browser = resolveInfo(packageName = "com.example.browser", label = "Browser")
+        val mail = resolveInfo(packageName = "com.example.mail", label = "Mail")
+        stubLaunchableApps(browser)
+        val packageMonitor = FakePackageMonitor()
+        val emissions = mutableListOf<List<InstalledApp>>()
+        val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            repository(packageMonitor).observeInstalledApps().collect { apps -> emissions += apps }
+        }
+        runCurrent()
 
-    @Suppress("DEPRECATION")
-    private fun stubLaunchableApps(vararg apps: ResolveInfo) {
-        whenever(
-            packageManager.queryIntentActivities(
-                argThat<Intent> { intent ->
-                    intent.action == Intent.ACTION_MAIN &&
-                        intent.categories == setOf(Intent.CATEGORY_LAUNCHER)
-                },
-                eq(PackageManager.MATCH_ALL),
+        stubLaunchableApps(browser, mail)
+        packageMonitor.report(PackageChange(packageName = "com.example.mail", removed = false))
+        runCurrent()
+
+        assertEquals(
+            listOf(
+                listOf(InstalledApp(packageName = "com.example.browser", label = "Browser")),
+                listOf(
+                    InstalledApp(packageName = "com.example.browser", label = "Browser"),
+                    InstalledApp(packageName = "com.example.mail", label = "Mail"),
+                ),
             ),
-        ).thenReturn(apps.toList())
+            emissions,
+        )
+        collection.cancel()
+    }
+
+    private fun repository(packageMonitor: PackageMonitor = FakePackageMonitor()) =
+        PackageManagerAppRepository(
+            packageManager = packageManager,
+            launcherPackageName = OWN_PACKAGE,
+            packageMonitor = packageMonitor,
+            backgroundDispatcher = Dispatchers.Unconfined,
+        )
+
+    private fun stubLaunchableApps(vararg apps: ResolveInfo) {
+        launchableApps = apps.toList()
     }
 
     private fun resolveInfo(packageName: String, label: String) = ResolveInfo().apply {
