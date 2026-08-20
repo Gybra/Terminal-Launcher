@@ -7,6 +7,8 @@ import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.LauncherClock
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
+import com.gybra.terminallauncher.search.SearchResult
+import com.gybra.terminallauncher.search.SearchResult.Match
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.shell.LauncherLocation
@@ -27,6 +29,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -211,7 +214,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `updates prompt input and focus then clears input on submit`() =
+    fun `updates prompt input and focus`() =
         runTest(mainDispatcherRule.dispatcher) {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(),
@@ -240,15 +243,69 @@ class HomeViewModelTest {
                 ),
                 viewModel.uiState.value.prompt,
             )
+        }
 
-            viewModel.submitPrompt()
+    @Test
+    fun `ranks every installed application while the user types`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = searchingViewModel()
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "mail"))
             advanceUntilIdle()
 
             assertEquals(
-                PromptState(input = "", focused = true),
-                viewModel.uiState.value.prompt,
+                listOf(
+                    SearchResult(app = mail, match = Match.EXACT),
+                    SearchResult(app = mailbox, match = Match.PREFIX),
+                    SearchResult(app = mailboxPro, match = Match.PREFIX),
+                ),
+                viewModel.uiState.value.searchResults,
             )
         }
+
+    @Test
+    fun `clears the prompt and resolves the application on unambiguous submit`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = searchingViewModel()
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "mailbox"))
+            viewModel.updatePromptFocus(focused = true)
+            advanceUntilIdle()
+
+            assertEquals(mailbox, viewModel.submitPrompt())
+            advanceUntilIdle()
+
+            assertEquals(PromptState(focused = true), viewModel.uiState.value.prompt)
+            assertEquals(emptyList<SearchResult>(), viewModel.uiState.value.searchResults)
+        }
+
+    @Test
+    fun `keeps ambiguous results visible on submit`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = searchingViewModel()
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "mailb"))
+            advanceUntilIdle()
+
+            assertNull(viewModel.submitPrompt())
+            advanceUntilIdle()
+
+            assertEquals(PromptState(input = "mailb"), viewModel.uiState.value.prompt)
+            assertEquals(
+                listOf(mailbox, mailboxPro),
+                viewModel.uiState.value.searchResults.map(SearchResult::app),
+            )
+        }
+
+    private val mail = InstalledApp(packageName = "com.example.mail", label = "Mail")
+    private val mailbox = InstalledApp(packageName = "com.example.mailbox", label = "Mailbox")
+    private val mailboxPro = InstalledApp(packageName = "com.example.pro", label = "Mailbox Pro")
 
     private class FakeAppRepository(
         private val apps: List<InstalledApp> = emptyList(),
@@ -259,13 +316,17 @@ class HomeViewModelTest {
             return apps
         }
 
-        override suspend fun findApp(query: String): InstalledApp? = null
-
         override fun observeInstalledApps(): Flow<List<InstalledApp>> = flow {
             failure?.let { throw it }
             emit(apps)
         }
     }
+
+    private fun searchingViewModel(): HomeViewModel = HomeViewModel(
+        appRepository = FakeAppRepository(apps = listOf(mailboxPro, mailbox, mail)),
+        preferencesRepository = FakePreferencesRepository(),
+        launcherClock = FakeLauncherClock(),
+    )
 
     private fun unixHomeState(apps: List<InstalledApp> = emptyList()): HomeUiState = HomeUiState(
         shellProfile = UnixShellProfile,

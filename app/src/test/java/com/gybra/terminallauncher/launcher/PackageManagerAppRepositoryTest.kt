@@ -9,7 +9,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,17 +50,6 @@ class PackageManagerAppRepositoryTest {
             ),
             repository.getInstalledApps(),
         )
-    }
-
-    @Test
-    fun `findApp matches a trimmed label or package name ignoring case`() = runTest {
-        stubLaunchableApps(resolveInfo(packageName = "com.example.mail", label = "Mail"))
-        val repository = repository()
-
-        assertEquals("com.example.mail", repository.findApp(" MAIL ")?.packageName)
-        assertEquals("Mail", repository.findApp("COM.EXAMPLE.MAIL")?.label)
-        assertNull(repository.findApp("calendar"))
-        assertNull(repository.findApp("   "))
     }
 
     @Test
