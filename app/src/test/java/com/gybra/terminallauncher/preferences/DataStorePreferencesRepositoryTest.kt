@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.gybra.terminallauncher.launcher.AppUsage
+import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
@@ -58,6 +59,7 @@ class DataStorePreferencesRepositoryTest {
         firstRepository.setShowPromptPath(false)
         firstRepository.setDosDrive(DosDrive.D)
         firstRepository.pinPackage("org.example.mail")
+        firstRepository.pinShortcut(NEW_TAB)
         firstRepository.setAlias(name = "browser", packageName = "org.example.firefox")
         firstRepository.recordLaunch(packageName = "org.example.mail", launchedAt = LAUNCHED_AT)
         firstJob.cancelAndJoin()
@@ -80,6 +82,7 @@ class DataStorePreferencesRepositoryTest {
                 showPromptPath = false,
                 dosDrive = DosDrive.D,
                 pinnedPackages = setOf("org.example.mail"),
+                pinnedShortcuts = listOf(NEW_TAB),
                 aliases = mapOf("browser" to "org.example.firefox"),
                 usage = mapOf(
                     "org.example.mail" to AppUsage(launchCount = 1, lastLaunchedAt = LAUNCHED_AT),
@@ -87,6 +90,103 @@ class DataStorePreferencesRepositoryTest {
             ),
             restoredPreferences,
         )
+    }
+
+    @Test
+    fun `keeps one entry per shortcut and orders pinned shortcuts by label`() = runTest {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+
+        repository.pinShortcut(NEW_TAB)
+        repository.pinShortcut(NEW_TAB.copy(label = "Renamed tab"))
+        repository.pinShortcut(NEW_TAB.copy(id = "https://example.com/?a=b", label = "Example"))
+
+        assertEquals(
+            listOf(
+                NEW_TAB.copy(id = "https://example.com/?a=b", label = "Example"),
+                NEW_TAB.copy(label = "Renamed tab"),
+            ),
+            repository.preferences.first().pinnedShortcuts,
+        )
+    }
+
+    @Test
+    fun `orders shortcuts sharing a label by package and identifier`() = runTest {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+
+        repository.pinShortcut(NEW_TAB.copy(packageName = "org.example.opera"))
+        repository.pinShortcut(NEW_TAB.copy(id = "new-tab-2"))
+        repository.pinShortcut(NEW_TAB)
+
+        assertEquals(
+            listOf(
+                NEW_TAB,
+                NEW_TAB.copy(id = "new-tab-2"),
+                NEW_TAB.copy(packageName = "org.example.opera"),
+            ),
+            repository.preferences.first().pinnedShortcuts,
+        )
+    }
+
+    @Test
+    fun `removes every pinned shortcut of a package`() = runTest {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+
+        repository.pinShortcut(NEW_TAB)
+        repository.pinShortcut(NEW_TAB.copy(id = "incognito", label = "Incognito tab"))
+        repository.pinShortcut(NEW_TAB.copy(packageName = "org.example.mail", label = "Inbox"))
+        repository.unpinShortcuts("org.example.browser")
+
+        assertEquals(
+            listOf(NEW_TAB.copy(packageName = "org.example.mail", label = "Inbox")),
+            repository.preferences.first().pinnedShortcuts,
+        )
+    }
+
+    @Test
+    fun `removing shortcuts of a package that pinned none changes nothing`() = runTest {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+
+        repository.unpinShortcuts("org.example.browser")
+
+        assertEquals(emptyList<PinnedShortcut>(), repository.preferences.first().pinnedShortcuts)
+    }
+
+    @Test
+    fun `ignores stored pinned shortcuts that are not readable`() = runTest {
+        val storedPreferences = mutablePreferencesOf(
+            stringSetPreferencesKey("pinned_shortcuts") to setOf(
+                "org.example.browser\nnew-tab\nNew tab",
+                "org.example.browser\nmissing-label",
+                "\nnew-tab\nOrphan",
+                "org.example.browser\n \nOrphan",
+                "org.example.browser\nnew-tab\n ",
+            ),
+        )
+
+        val shortcuts = DataStorePreferencesRepository(FakePreferencesDataStore(storedPreferences))
+            .preferences
+            .first()
+            .pinnedShortcuts
+
+        assertEquals(listOf(NEW_TAB), shortcuts)
+    }
+
+    @Test
+    fun `refuses to store a shortcut that could not be started again`() {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+
+        assertThrows(IllegalArgumentException::class.java) {
+            runTest { repository.pinShortcut(NEW_TAB.copy(packageName = " ")) }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            runTest { repository.pinShortcut(NEW_TAB.copy(id = " ")) }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            runTest { repository.pinShortcut(NEW_TAB.copy(label = " ")) }
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            runTest { repository.unpinShortcuts(" ") }
+        }
     }
 
     @Test
@@ -288,6 +388,12 @@ class DataStorePreferencesRepositoryTest {
     private companion object {
         const val LAUNCHED_AT = 1_700_000_000_000L
         const val RELAUNCHED_AT = LAUNCHED_AT + 60_000L
+
+        val NEW_TAB = PinnedShortcut(
+            packageName = "org.example.browser",
+            id = "new-tab",
+            label = "New tab",
+        )
     }
 
     private fun fileBackedRepository(

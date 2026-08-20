@@ -3,6 +3,7 @@ package com.gybra.terminallauncher.shell.dos
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfile
@@ -16,6 +17,10 @@ public object DosShellProfile : ShellProfile {
 
     override fun formatAppName(app: InstalledApp): String =
         "${app.label.uppercase(Locale.ROOT)}.EXE"
+
+    /** A shortcut is written as the link file DOS would have kept it in. */
+    override fun formatShortcutName(shortcut: PinnedShortcut): String =
+        "${shortcut.label.uppercase(Locale.ROOT)}.LNK"
 
     override fun formatMessage(message: String): String = message.uppercase(Locale.ROOT)
 

@@ -58,6 +58,7 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
+                onLaunchShortcut = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )
@@ -82,6 +83,7 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
+                onLaunchShortcut = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )
@@ -107,6 +109,7 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = submittedActions,
                 onLaunchApp = {},
+                onLaunchShortcut = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )
@@ -130,6 +133,7 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = submittedActions,
                 onLaunchApp = {},
+                onLaunchShortcut = {},
                 onOpenSystemScreen = { screen -> openedScreen = screen },
                 onRestartLauncher = {},
             )
@@ -155,6 +159,7 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = submittedActions,
                 onLaunchApp = {},
+                onLaunchShortcut = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = { restarts += 1 },
             )
@@ -179,6 +184,7 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = submittedActions,
                 onLaunchApp = { launched -> launchedApp = launched },
+                onLaunchShortcut = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )
@@ -201,6 +207,7 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
+                onLaunchShortcut = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )
@@ -232,6 +239,7 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
+                onLaunchShortcut = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
             )

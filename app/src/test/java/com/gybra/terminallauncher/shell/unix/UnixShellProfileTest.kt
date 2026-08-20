@@ -3,6 +3,7 @@ package com.gybra.terminallauncher.shell.unix
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.PromptSymbol
@@ -136,4 +137,15 @@ class UnixShellProfileTest {
         hostname = "android",
         location = location,
     )
+
+    @Test
+    fun `writes a pinned shortcut in lower case`() {
+        val shortcut = PinnedShortcut(
+            packageName = "org.example.browser",
+            id = "new-tab",
+            label = "New Tab",
+        )
+
+        assertEquals("new tab", profile.formatShortcutName(shortcut))
+    }
 }

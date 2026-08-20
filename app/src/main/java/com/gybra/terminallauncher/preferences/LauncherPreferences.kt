@@ -1,6 +1,7 @@
 package com.gybra.terminallauncher.preferences
 
 import com.gybra.terminallauncher.launcher.AppUsage
+import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
@@ -16,6 +17,7 @@ public data class LauncherPreferences(
     public val showPromptPath: Boolean = true,
     public val dosDrive: DosDrive = DosDrive.C,
     public val pinnedPackages: Set<String> = emptySet(),
+    public val pinnedShortcuts: List<PinnedShortcut> = emptyList(),
     public val aliases: Map<String, String> = emptyMap(),
     public val usage: Map<String, AppUsage> = emptyMap(),
 )

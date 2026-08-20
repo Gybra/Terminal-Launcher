@@ -24,6 +24,7 @@ import com.gybra.terminallauncher.launcher.AppLauncher
 import com.gybra.terminallauncher.launcher.BroadcastPackageMonitor
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
 import com.gybra.terminallauncher.launcher.SystemBatteryRepository
+import com.gybra.terminallauncher.launcher.ShortcutLauncher
 import com.gybra.terminallauncher.launcher.SystemScreenLauncher
 import com.gybra.terminallauncher.launcher.SystemTorch
 import com.gybra.terminallauncher.launcher.SystemLauncherClock
@@ -52,6 +53,7 @@ public class MainActivity : ComponentActivity() {
         val appLauncher = AppLauncher(applicationContext)
         val launcherClock = SystemLauncherClock()
         val systemScreenLauncher = SystemScreenLauncher(applicationContext)
+        val shortcutLauncher = ShortcutLauncher(applicationContext)
         val commandExecutor = CommandExecutor(
             CommandRegistry(
                 commands = launcherCommands(
@@ -77,6 +79,7 @@ public class MainActivity : ComponentActivity() {
         setLauncherContent(
             viewModelFactory = launcherViewModelFactory,
             appLauncher = appLauncher,
+            shortcutLauncher = shortcutLauncher,
             systemScreenLauncher = systemScreenLauncher,
         )
     }
@@ -84,6 +87,7 @@ public class MainActivity : ComponentActivity() {
     private fun setLauncherContent(
         viewModelFactory: ViewModelProvider.Factory,
         appLauncher: AppLauncher,
+        shortcutLauncher: ShortcutLauncher,
         systemScreenLauncher: SystemScreenLauncher,
     ) {
         setContent {
@@ -117,6 +121,7 @@ public class MainActivity : ComponentActivity() {
                 ),
                 submittedActions = homeViewModel.submittedActions,
                 onLaunchApp = appLauncher::launch,
+                onLaunchShortcut = shortcutLauncher::launch,
                 onOpenSystemScreen = systemScreenLauncher::open,
                 onRestartLauncher = ::recreate,
             )

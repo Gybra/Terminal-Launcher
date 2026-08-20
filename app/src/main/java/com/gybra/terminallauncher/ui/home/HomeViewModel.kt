@@ -177,6 +177,7 @@ public class HomeViewModel(
     private suspend fun unpinQuietly(packageName: String) {
         try {
             preferencesRepository.unpinPackage(packageName)
+            preferencesRepository.unpinShortcuts(packageName)
         } catch (_: IOException) {
             // Home already hides packages that are not installed, so a failed write only leaves a
             // stale entry in storage.
@@ -216,6 +217,7 @@ public class HomeViewModel(
         shellProfile = ShellProfiles.forType(preferences.shellType),
         shellContext = preferences.toShellContext(),
         apps = installedApps.filter { app -> app.packageName in preferences.pinnedPackages },
+        shortcuts = preferences.pinnedShortcuts,
         searchResults = AppSearchEngine.search(
             query = prompt.input,
             apps = installedApps,

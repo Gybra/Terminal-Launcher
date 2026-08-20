@@ -7,8 +7,10 @@ import com.gybra.terminallauncher.launcher.FakeAppRepository
 import com.gybra.terminallauncher.launcher.FakeBatteryRepository
 import com.gybra.terminallauncher.launcher.FakeTorch
 import com.gybra.terminallauncher.launcher.FakeLauncherClock
+import com.gybra.terminallauncher.launcher.FakeShortcutPinRequest
 import com.gybra.terminallauncher.launcher.FakePackageMonitor
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.launcher.SystemScreen
 import com.gybra.terminallauncher.launcher.TorchState
 import com.gybra.terminallauncher.preferences.LauncherPreferences
@@ -18,6 +20,7 @@ import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.ui.home.HomeViewModel
 import com.gybra.terminallauncher.ui.home.PromptState
 import com.gybra.terminallauncher.ui.home.SubmittedAction
+import com.gybra.terminallauncher.ui.pin.PinShortcutViewModel
 import com.gybra.terminallauncher.ui.home.TerminalEntry
 import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -267,6 +270,20 @@ class LauncherIntegrationTest {
             )
         }
 
+    @Test
+    fun `shows on Home the shortcut an application asked to pin`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val home = launcherHome()
+            val request = FakeShortcutPinRequest(shortcut = photo)
+            val confirmation = PinShortcutViewModel(request, home.preferences)
+
+            confirmation.accept()
+            advanceUntilIdle()
+
+            assertEquals(listOf(photo), home.viewModel.uiState.value.shortcuts)
+            assertEquals(listOf("pinShortcut(org.example.camera, photo)"), home.preferences.writes)
+        }
+
     private fun TestScope.launcherHome(
         preferences: LauncherPreferences = LauncherPreferences(),
         writeFailure: IOException? = null,
@@ -322,4 +339,9 @@ class LauncherIntegrationTest {
     private val camera = InstalledApp(packageName = "org.example.camera", label = "Camera")
     private val mail = InstalledApp(packageName = "org.example.mail", label = "Mail")
     private val installedApps = listOf(camera, mail)
+    private val photo = PinnedShortcut(
+        packageName = "org.example.camera",
+        id = "photo",
+        label = "Take a photo",
+    )
 }

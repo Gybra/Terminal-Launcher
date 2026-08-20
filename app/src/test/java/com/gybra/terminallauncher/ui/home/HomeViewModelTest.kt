@@ -11,6 +11,7 @@ import com.gybra.terminallauncher.command.RecordingCommand
 import com.gybra.terminallauncher.launcher.FakeAppRepository
 import com.gybra.terminallauncher.launcher.FakeLauncherClock
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.launcher.SystemScreen
 import com.gybra.terminallauncher.launcher.FakePackageMonitor
 import com.gybra.terminallauncher.launcher.LauncherClock
@@ -376,6 +377,11 @@ class HomeViewModelTest {
     private val mail = InstalledApp(packageName = "com.example.mail", label = "Mail")
     private val mailbox = InstalledApp(packageName = "com.example.mailbox", label = "Mailbox")
     private val mailboxPro = InstalledApp(packageName = "com.example.pro", label = "Mailbox Pro")
+    private val inbox = PinnedShortcut(
+        packageName = "com.example.mail",
+        id = "inbox",
+        label = "Inbox",
+    )
 
     @Test
     fun `runs a registered command instead of searching and clears the prompt`() =
@@ -760,7 +766,10 @@ class HomeViewModelTest {
         runTest(mainDispatcherRule.dispatcher) {
             val packageMonitor = FakePackageMonitor()
             val preferencesRepository = RecordingPreferencesRepository(
-                initialPreferences = LauncherPreferences(pinnedPackages = setOf(mail.packageName)),
+                initialPreferences = LauncherPreferences(
+                    pinnedPackages = setOf(mail.packageName),
+                    pinnedShortcuts = listOf(inbox),
+                ),
             )
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
@@ -776,10 +785,30 @@ class HomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                listOf("unpinPackage(${mail.packageName})"),
+                listOf("unpinPackage(${mail.packageName})", "unpinShortcuts(${mail.packageName})"),
                 preferencesRepository.writes,
             )
             assertEquals(emptyList<InstalledApp>(), viewModel.uiState.value.apps)
+            assertEquals(emptyList<PinnedShortcut>(), viewModel.uiState.value.shortcuts)
+        }
+
+    @Test
+    fun `lists the shortcuts pinned to Home`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val preferencesRepository = RecordingPreferencesRepository(
+                initialPreferences = LauncherPreferences(pinnedShortcuts = listOf(inbox)),
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = preferencesRepository,
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            assertEquals(listOf(inbox), viewModel.uiState.value.shortcuts)
         }
 
     @Test

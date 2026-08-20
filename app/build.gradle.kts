@@ -69,6 +69,8 @@ kover {
                 classes(
                     "*.MainActivity",
                     "*.MainActivity$*",
+                    "*.PinShortcutActivity",
+                    "*.PinShortcutActivity$*",
                     "*.ui.home.HomeScreenKt$*",
                 )
             }

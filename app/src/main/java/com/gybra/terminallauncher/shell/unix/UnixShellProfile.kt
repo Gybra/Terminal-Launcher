@@ -2,6 +2,7 @@ package com.gybra.terminallauncher.shell.unix
 
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfile
@@ -28,6 +29,9 @@ public object UnixShellProfile : ShellProfile {
     }
 
     override fun formatAppName(app: InstalledApp): String = app.label.lowercase(Locale.ROOT)
+
+    override fun formatShortcutName(shortcut: PinnedShortcut): String =
+        shortcut.label.lowercase(Locale.ROOT)
 
     override fun formatMessage(message: String): String = message.lowercase(Locale.ROOT)
 
