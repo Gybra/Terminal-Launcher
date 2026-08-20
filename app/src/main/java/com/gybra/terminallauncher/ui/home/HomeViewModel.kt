@@ -118,6 +118,13 @@ public class HomeViewModel(
                 CommandResult.ClearHistory -> eraseHistory()
                 CommandResult.OpenSettings ->
                     completeSubmission(submittedInput, SubmittedAction.OpenSettings)
+                is CommandResult.OpenSystemScreen ->
+                    completeSubmission(
+                        submittedInput,
+                        SubmittedAction.OpenSystemScreen(result.screen),
+                    )
+                CommandResult.RestartLauncher ->
+                    completeSubmission(submittedInput, SubmittedAction.RestartLauncher)
                 CommandResult.Search -> launchSubmittedApp(submittedInput, state.searchResults)
             }
         }

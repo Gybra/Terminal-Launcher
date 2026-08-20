@@ -23,6 +23,9 @@ import com.gybra.terminallauncher.command.launcherCommands
 import com.gybra.terminallauncher.launcher.AppLauncher
 import com.gybra.terminallauncher.launcher.BroadcastPackageMonitor
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
+import com.gybra.terminallauncher.launcher.SystemBatteryRepository
+import com.gybra.terminallauncher.launcher.SystemScreenLauncher
+import com.gybra.terminallauncher.launcher.SystemTorch
 import com.gybra.terminallauncher.launcher.SystemLauncherClock
 import com.gybra.terminallauncher.preferences.DataStorePreferencesRepository
 import com.gybra.terminallauncher.preferences.launcherDataStore
@@ -48,8 +51,15 @@ public class MainActivity : ComponentActivity() {
         val preferencesRepository = DataStorePreferencesRepository(applicationContext.launcherDataStore)
         val appLauncher = AppLauncher(applicationContext)
         val launcherClock = SystemLauncherClock()
+        val systemScreenLauncher = SystemScreenLauncher(applicationContext)
         val commandExecutor = CommandExecutor(
-            CommandRegistry(commands = launcherCommands(preferencesRepository)),
+            CommandRegistry(
+                commands = launcherCommands(
+                    preferencesRepository = preferencesRepository,
+                    batteryRepository = SystemBatteryRepository(applicationContext),
+                    torch = SystemTorch(applicationContext),
+                ),
+            ),
         )
         val launcherViewModelFactory = viewModelFactory {
             initializer {
@@ -67,12 +77,14 @@ public class MainActivity : ComponentActivity() {
         setLauncherContent(
             viewModelFactory = launcherViewModelFactory,
             appLauncher = appLauncher,
+            systemScreenLauncher = systemScreenLauncher,
         )
     }
 
     private fun setLauncherContent(
         viewModelFactory: ViewModelProvider.Factory,
         appLauncher: AppLauncher,
+        systemScreenLauncher: SystemScreenLauncher,
     ) {
         setContent {
             val homeViewModel: HomeViewModel = viewModel(factory = viewModelFactory)
@@ -105,6 +117,8 @@ public class MainActivity : ComponentActivity() {
                 ),
                 submittedActions = homeViewModel.submittedActions,
                 onLaunchApp = appLauncher::launch,
+                onOpenSystemScreen = systemScreenLauncher::open,
+                onRestartLauncher = ::recreate,
             )
         }
     }

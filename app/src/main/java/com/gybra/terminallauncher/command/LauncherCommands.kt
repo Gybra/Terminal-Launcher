@@ -1,5 +1,8 @@
 package com.gybra.terminallauncher.command
 
+import com.gybra.terminallauncher.launcher.BatteryRepository
+import com.gybra.terminallauncher.launcher.SystemScreen
+import com.gybra.terminallauncher.launcher.Torch
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 
 /**
@@ -8,12 +11,34 @@ import com.gybra.terminallauncher.preferences.PreferencesRepository
  */
 public fun launcherCommands(
     preferencesRepository: PreferencesRepository,
+    batteryRepository: BatteryRepository,
+    torch: Torch,
 ): List<LauncherCommand> = listOf(
     ListAppsCommand,
     HelpCommand,
     PinCommand(preferencesRepository),
     UnpinCommand(preferencesRepository),
     AliasCommand(preferencesRepository),
+    AppInfoCommand,
+    UninstallCommand,
+    BatteryCommand(batteryRepository),
+    TorchCommand(torch),
+    SystemScreenCommand(
+        id = Command.ANDROID_SETTINGS,
+        description = "Open the Android settings",
+        screen = SystemScreen.AndroidSettings,
+    ),
+    SystemScreenCommand(
+        id = Command.WIFI_SETTINGS,
+        description = "Open the Wi-Fi settings",
+        screen = SystemScreen.WifiSettings,
+    ),
+    SystemScreenCommand(
+        id = Command.BLUETOOTH_SETTINGS,
+        description = "Open the Bluetooth settings",
+        screen = SystemScreen.BluetoothSettings,
+    ),
     ClearCommand,
+    RestartCommand,
     SettingsCommand,
 )

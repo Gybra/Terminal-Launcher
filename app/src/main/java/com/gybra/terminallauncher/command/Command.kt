@@ -8,4 +8,12 @@ public enum class Command {
     UNPIN,
     SETTINGS,
     ALIAS,
+    BATTERY,
+    TORCH,
+    APP_INFO,
+    UNINSTALL,
+    ANDROID_SETTINGS,
+    WIFI_SETTINGS,
+    BLUETOOTH_SETTINGS,
+    RESTART,
 }

@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.SystemScreen
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfile
@@ -57,6 +58,8 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
             )
         }
 
@@ -79,6 +82,8 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
             )
         }
         composeRule.onNodeWithText("settings").performClick()
@@ -102,6 +107,8 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = submittedActions,
                 onLaunchApp = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
             )
         }
 
@@ -109,6 +116,54 @@ class LauncherAppTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Appearance").assertIsDisplayed()
+    }
+
+    @Test
+    fun `opens the system screen a submitted line asked for`() {
+        val submittedActions = MutableSharedFlow<SubmittedAction>(extraBufferCapacity = 1)
+        var openedScreen: SystemScreen? = null
+        composeRule.setContent {
+            LauncherApp(
+                homeState = homeState(),
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
+                submittedActions = submittedActions,
+                onLaunchApp = {},
+                onOpenSystemScreen = { screen -> openedScreen = screen },
+                onRestartLauncher = {},
+            )
+        }
+
+        composeRule.runOnIdle {
+            submittedActions.tryEmit(SubmittedAction.OpenSystemScreen(SystemScreen.WifiSettings))
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(SystemScreen.WifiSettings, openedScreen)
+    }
+
+    @Test
+    fun `restarts the launcher when a submitted line asks for it`() {
+        val submittedActions = MutableSharedFlow<SubmittedAction>(extraBufferCapacity = 1)
+        var restarts = 0
+        composeRule.setContent {
+            LauncherApp(
+                homeState = homeState(),
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
+                submittedActions = submittedActions,
+                onLaunchApp = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = { restarts += 1 },
+            )
+        }
+
+        composeRule.runOnIdle { submittedActions.tryEmit(SubmittedAction.RestartLauncher) }
+        composeRule.waitForIdle()
+
+        assertEquals(1, restarts)
     }
 
     @Test
@@ -124,6 +179,8 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = submittedActions,
                 onLaunchApp = { launched -> launchedApp = launched },
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
             )
         }
 
@@ -144,6 +201,8 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
             )
         }
 
@@ -173,6 +232,8 @@ class LauncherAppTest {
                 promptActions = emptyPromptActions(),
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
             )
         }
 

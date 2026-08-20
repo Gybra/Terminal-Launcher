@@ -44,6 +44,14 @@ public object UnixShellProfile : ShellProfile {
         Command.UNPIN -> "unpin"
         Command.SETTINGS -> "settings"
         Command.ALIAS -> "alias"
+        Command.BATTERY -> "battery"
+        Command.TORCH -> "torch"
+        Command.APP_INFO -> "info"
+        Command.UNINSTALL -> "uninstall"
+        Command.ANDROID_SETTINGS -> "android"
+        Command.WIFI_SETTINGS -> "wifi"
+        Command.BLUETOOTH_SETTINGS -> "bluetooth"
+        Command.RESTART -> "restart"
     }
 
     override fun aliasesFor(command: Command): Set<String> = when (command) {

@@ -11,6 +11,7 @@ import com.gybra.terminallauncher.command.RecordingCommand
 import com.gybra.terminallauncher.launcher.FakeAppRepository
 import com.gybra.terminallauncher.launcher.FakeLauncherClock
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.launcher.SystemScreen
 import com.gybra.terminallauncher.launcher.FakePackageMonitor
 import com.gybra.terminallauncher.launcher.LauncherClock
 import com.gybra.terminallauncher.launcher.PackageChange
@@ -708,6 +709,50 @@ class HomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(listOf(SubmittedAction.LaunchApp(mailbox)), actions)
+        }
+
+    @Test
+    fun `hands a system destination and a restart to the composition root`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val wifi = RecordingCommand(
+                id = Command.WIFI_SETTINGS,
+                result = CommandResult.OpenSystemScreen(SystemScreen.WifiSettings),
+            )
+            val restart = RecordingCommand(
+                id = Command.RESTART,
+                result = CommandResult.RestartLauncher,
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = RecordingPreferencesRepository(),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(wifi, restart),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+            val actions = collectSubmittedActions(viewModel)
+
+            viewModel.updatePromptValue(PromptState(input = "wifi"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+            viewModel.updatePromptValue(PromptState(input = "restart"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(
+                    SubmittedAction.OpenSystemScreen(SystemScreen.WifiSettings),
+                    SubmittedAction.RestartLauncher,
+                ),
+                actions,
+            )
+            assertEquals(
+                listOf("wifi", "restart"),
+                viewModel.uiState.value.history.map(TerminalEntry::input),
+            )
         }
 
     @Test

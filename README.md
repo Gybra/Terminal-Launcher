@@ -28,6 +28,7 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - orders equally strong matches by a documented score: pinned applications first, then the most launched, then the most recently launched;
 - launches on Enter only when the query is unambiguous, and keeps every other match listed;
 - runs explicitly registered commands only, resolving each shell alias to a stable command identifier;
+- reports the battery, switches the torch, opens the Android, Wi-Fi, Bluetooth, and application details screens, asks Android to uninstall an application, and restarts itself, each through one documented Android API or explicit Intent;
 - launches persisted application aliases, which never shadow a registered command;
 - refreshes the application list when packages are added, changed, or removed, and drops an uninstalled package from the pinned ones while a package being updated keeps its pin.
 
@@ -36,7 +37,7 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - builds, tests, lints, and packages from the command line without Android Studio;
 - enforces 100% line coverage for testable application logic on every pull request.
 
-Controlled Android utility commands are v0.3, tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues).
+Further work is tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues).
 
 ## Using the launcher
 
@@ -54,6 +55,14 @@ Anything that is not a registered command is treated as a search. Command names 
 | Remove an application from Home | `unpin <application>` | `UNPIN <APPLICATION>` |
 | Clear the terminal history | `clear`, `cls` | `CLS` |
 | Name an application | `alias <name> <application>` | `ALIAS <NAME> <APPLICATION>` |
+| Open the Android details of an application | `info <application>` | `INFO <APPLICATION>` |
+| Ask Android to uninstall an application | `uninstall <application>` | `UNINSTALL <APPLICATION>` |
+| Report the battery level | `battery` | `BATTERY` |
+| Turn the torch on or off | `torch` | `TORCH` |
+| Open the Android settings | `android` | `ANDROID` |
+| Open the Wi-Fi settings | `wifi` | `WIFI` |
+| Open the Bluetooth settings | `bluetooth` | `BLUETOOTH` |
+| Restart the launcher | `restart` | `RESTART` |
 | Open the settings screen | `settings` | `SETTINGS` |
 
 `alias` names an application so submitting that name launches it, for example `alias browser firefox`. Aliases persist across restarts, are matched without case, and are replaced by defining the same name again. A registered command is always resolved before an alias, and a name any shell already uses for a command is refused rather than allowed to shadow it, so no alias can ever take over `ls`, `clear`, or any other command.
@@ -66,9 +75,11 @@ No drive, path, or symbol reaches a filesystem or grants a privilege: nothing ex
 
 The terminal history lives in memory only and starts empty after every process restart, by design.
 
+The Android utility commands map to controlled Android functionality and nothing else. `battery` reads `BatteryManager`, which needs no permission, and says so when the device publishes no level. `torch` calls `CameraManager.setTorchMode`, which needs no camera permission and opens no camera, and says so on a device with no flash unit. `android`, `wifi`, `bluetooth`, and `info` start one documented `Settings` action each. `uninstall` starts `ACTION_DELETE`, so Android shows its own confirmation naming the application and the user answers it; the launcher removes nothing itself. `restart` recreates the launcher the way a configuration change does, killing no process and spawning none. A device without one of these destinations, or an Android that refuses one, leaves the prompt working instead of crashing.
+
 ## Safety model
 
-The project never executes real shell commands. `Runtime.exec`, `ProcessBuilder`, `/bin/sh`, `su`, shell passthrough, arbitrary Intent URIs, and unregistered commands are outside the architecture. Prompt input is tokenized and matched against explicitly registered commands only, and anything else falls back to application search. Every future command must map to a controlled Android API or an explicit safe Intent.
+The project never executes real shell commands. `Runtime.exec`, `ProcessBuilder`, `/bin/sh`, `su`, shell passthrough, arbitrary Intent URIs, and unregistered commands are outside the architecture. Prompt input is tokenized and matched against explicitly registered commands only, and anything else falls back to application search. Every command maps to a controlled Android API or an explicit safe Intent: an Intent is never built from prompt input, and the only package name that ever reaches one is a package discovered through `PackageManager` and resolved to exactly one application. Every future command must meet the same rule.
 
 ## Build without Android Studio
 
@@ -130,12 +141,15 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
                           \-> ShellProfiles ---------> DOS / Unix formatting
                           \-> TerminalTheme ---------> shell-independent colors
                           \-> LauncherClock ---------> local system time
+                          \-> BatteryRepository -----> BatteryManager
+                          \-> Torch -----------------> CameraManager torch mode
+  submitted line -> SystemScreenLauncher ----> documented Settings and package Intents
           tap or Enter -> AppLauncher ----------> explicit package launch Intent
 ```
 
-- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, and app launcher;
+- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery and torch boundaries, and the named system destinations;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
-- `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the registered help, application-list, history-clearing, pinning, and settings commands;
+- `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the registered help, application-list, history-clearing, pinning, aliasing, settings, and Android utility commands;
 - `search`: Compose-independent label matching and deterministic result ranking;
 - `shell`: shell context, locations, profile selection, and all DOS/Unix presentation rules;
 - `theme`: shell-independent terminal theme and color definitions;
