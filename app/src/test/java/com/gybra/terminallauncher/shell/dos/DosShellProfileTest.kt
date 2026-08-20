@@ -3,7 +3,9 @@ package com.gybra.terminallauncher.shell.dos
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.LauncherLocation
+import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellType
 import org.junit.Assert.assertEquals
@@ -20,8 +22,31 @@ class DosShellProfileTest {
 
     @Test
     fun `formats DOS paths independently from prompts`() {
-        assertEquals("C:\\HOME", profile.formatPath(LauncherLocation.HOME))
-        assertEquals("C:\\APPS", profile.formatPath(LauncherLocation.APPS))
+        assertEquals("C:\\HOME", profile.formatPath(contextAt(LauncherLocation.HOME)))
+        assertEquals("C:\\APPS", profile.formatPath(contextAt(LauncherLocation.APPS)))
+    }
+
+    @Test
+    fun `formats DOS paths on the chosen drive`() {
+        val context = contextAt(LauncherLocation.HOME).copy(dosDrive = DosDrive.D)
+
+        assertEquals("D:\\HOME>", profile.prompt(context))
+        assertEquals("D:\\HOME", profile.formatPath(context))
+    }
+
+    @Test
+    fun `shortens the DOS path to the drive root when the path is hidden`() {
+        val context = contextAt(LauncherLocation.APPS).copy(showPath = false)
+
+        assertEquals("C:\\>", profile.prompt(context))
+        assertEquals("C:\\", profile.formatPath(context))
+    }
+
+    @Test
+    fun `ignores the Unix prompt symbol`() {
+        val context = contextAt(LauncherLocation.HOME).copy(promptSymbol = PromptSymbol.PERCENT)
+
+        assertEquals("C:\\HOME>", profile.prompt(context))
     }
 
     @Test

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
+import com.gybra.terminallauncher.shell.DosDrive
+import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
@@ -49,19 +51,52 @@ public class SettingsViewModel(
         )
     }
 
+    /** Stores [username] as a prompt token, so what is typed can always be written in a prompt. */
     public fun setUsername(username: String) {
+        val token = username.asPromptToken()
         updateSetting(
-            update = { state -> state.copy(username = username) },
-            persist = { preferencesRepository.setUsername(username) },
+            update = { state -> state.copy(username = token) },
+            persist = { preferencesRepository.setUsername(token) },
         )
     }
 
+    /** Stores [hostname] as a prompt token, under the same rule as the username. */
     public fun setHostname(hostname: String) {
+        val token = hostname.asPromptToken()
         updateSetting(
-            update = { state -> state.copy(hostname = hostname) },
-            persist = { preferencesRepository.setHostname(hostname) },
+            update = { state -> state.copy(hostname = token) },
+            persist = { preferencesRepository.setHostname(token) },
         )
     }
+
+    public fun selectPromptSymbol(promptSymbol: PromptSymbol) {
+        updateSetting(
+            update = { state -> state.copy(promptSymbol = promptSymbol) },
+            persist = { preferencesRepository.setPromptSymbol(promptSymbol) },
+        )
+    }
+
+    public fun setShowPromptPath(showPromptPath: Boolean) {
+        updateSetting(
+            update = { state -> state.copy(showPromptPath = showPromptPath) },
+            persist = { preferencesRepository.setShowPromptPath(showPromptPath) },
+        )
+    }
+
+    public fun selectDosDrive(dosDrive: DosDrive) {
+        updateSetting(
+            update = { state -> state.copy(dosDrive = dosDrive) },
+            persist = { preferencesRepository.setDosDrive(dosDrive) },
+        )
+    }
+
+    /**
+     * Keeps an identity usable in a prompt: whitespace and control characters never reach it, and
+     * it stays short enough to leave the rest of the line readable.
+     */
+    private fun String.asPromptToken(): String =
+        filterNot { character -> character.isWhitespace() || character.isISOControl() }
+            .take(MAX_PROMPT_TOKEN_LENGTH)
 
     private fun observePreferences() {
         viewModelScope.launch {
@@ -108,9 +143,13 @@ public class SettingsViewModel(
         showClock = showClock,
         username = username,
         hostname = hostname,
+        promptSymbol = promptSymbol,
+        showPromptPath = showPromptPath,
+        dosDrive = dosDrive,
     )
 
     private companion object {
         const val STORAGE_ERROR = "Unable to save preferences"
+        const val MAX_PROMPT_TOKEN_LENGTH = 16
     }
 }

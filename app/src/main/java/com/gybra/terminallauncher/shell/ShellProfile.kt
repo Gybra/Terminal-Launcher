@@ -11,7 +11,8 @@ public interface ShellProfile {
 
     public fun formatAppName(app: InstalledApp): String
 
-    public fun formatPath(location: LauncherLocation): String
+    /** Writes the location [context] points at, whether or not the prompt shows it. */
+    public fun formatPath(context: ShellContext): String
 
     public fun aliasFor(command: Command): String
 

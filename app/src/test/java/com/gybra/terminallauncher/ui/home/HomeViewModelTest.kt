@@ -21,7 +21,9 @@ import com.gybra.terminallauncher.search.SearchResult.Match
 import com.gybra.terminallauncher.shell.ShellType
 import java.io.IOException
 import com.gybra.terminallauncher.theme.TerminalTheme
+import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.LauncherLocation
+import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
@@ -169,6 +171,44 @@ class HomeViewModelTest {
             viewModel.uiState.value,
         )
     }
+
+    @Test
+    fun `carries the cosmetic prompt preferences into the shell context`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val preferencesRepository = RecordingPreferencesRepository()
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(),
+                preferencesRepository = preferencesRepository,
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            preferencesRepository.emit(
+                LauncherPreferences(
+                    promptSymbol = PromptSymbol.PERCENT,
+                    showPromptPath = false,
+                    dosDrive = DosDrive.D,
+                ),
+            )
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(
+                ShellContext(
+                    username = "user",
+                    hostname = "android",
+                    location = LauncherLocation.HOME,
+                    promptSymbol = PromptSymbol.PERCENT,
+                    showPath = false,
+                    dosDrive = DosDrive.D,
+                ),
+                state.shellContext,
+            )
+            assertEquals("user@android%", state.shellProfile.prompt(state.shellContext))
+        }
 
     @Test
     fun `keeps an empty state when package access is denied`() = runTest(mainDispatcherRule.dispatcher) {

@@ -11,14 +11,16 @@ import java.util.Locale
 public object UnixShellProfile : ShellProfile {
     override val type: ShellType = ShellType.UNIX
 
-    override fun prompt(context: ShellContext): String =
-        "${context.username}@${context.hostname}:${formatPath(context.location)}$"
+    override fun prompt(context: ShellContext): String {
+        val path = if (context.showPath) ":${formatPath(context)}" else ""
+        return "${context.username}@${context.hostname}$path${context.promptSymbol.text}"
+    }
 
     override fun formatAppName(app: InstalledApp): String = app.label.lowercase(Locale.ROOT)
 
     override fun formatMessage(message: String): String = message.lowercase(Locale.ROOT)
 
-    override fun formatPath(location: LauncherLocation): String = when (location) {
+    override fun formatPath(context: ShellContext): String = when (context.location) {
         LauncherLocation.HOME -> "~"
         LauncherLocation.APPS -> "~/apps"
     }

@@ -94,6 +94,9 @@ public class MainActivity : ComponentActivity() {
                     setShowClock = settingsViewModel::setShowClock,
                     setUsername = settingsViewModel::setUsername,
                     setHostname = settingsViewModel::setHostname,
+                    selectPromptSymbol = settingsViewModel::selectPromptSymbol,
+                    setShowPromptPath = settingsViewModel::setShowPromptPath,
+                    selectDosDrive = settingsViewModel::selectDosDrive,
                 ),
                 promptActions = PromptActions(
                     updateValue = homeViewModel::updatePromptValue,

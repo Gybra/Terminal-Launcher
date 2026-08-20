@@ -12,16 +12,23 @@ import java.util.Locale
 public object DosShellProfile : ShellProfile {
     override val type: ShellType = ShellType.DOS
 
-    override fun prompt(context: ShellContext): String = "${formatPath(context.location)}>"
+    override fun prompt(context: ShellContext): String = "${formatPath(context)}>"
 
     override fun formatAppName(app: InstalledApp): String =
         "${app.label.uppercase(Locale.ROOT)}.EXE"
 
     override fun formatMessage(message: String): String = message.uppercase(Locale.ROOT)
 
-    override fun formatPath(location: LauncherLocation): String = when (location) {
-        LauncherLocation.HOME -> "C:\\HOME"
-        LauncherLocation.APPS -> "C:\\APPS"
+    override fun formatPath(context: ShellContext): String {
+        val root = "${context.dosDrive}:\\"
+        if (!context.showPath) {
+            return root
+        }
+
+        return root + when (context.location) {
+            LauncherLocation.HOME -> "HOME"
+            LauncherLocation.APPS -> "APPS"
+        }
     }
 
     override fun aliasFor(command: Command): String = when (command) {

@@ -3,7 +3,9 @@ package com.gybra.terminallauncher.shell.unix
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.InstalledApp
+import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.LauncherLocation
+import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellType
 import org.junit.Assert.assertEquals
@@ -20,8 +22,39 @@ class UnixShellProfileTest {
 
     @Test
     fun `formats Unix paths independently from prompts`() {
-        assertEquals("~", profile.formatPath(LauncherLocation.HOME))
-        assertEquals("~/apps", profile.formatPath(LauncherLocation.APPS))
+        assertEquals("~", profile.formatPath(contextAt(LauncherLocation.HOME)))
+        assertEquals("~/apps", profile.formatPath(contextAt(LauncherLocation.APPS)))
+    }
+
+    @Test
+    fun `ends the Unix prompt with the chosen symbol`() {
+        PromptSymbol.entries.forEach { symbol ->
+            assertEquals(
+                "oreste@android:~${symbol.text}",
+                profile.prompt(contextAt(LauncherLocation.HOME).copy(promptSymbol = symbol)),
+            )
+        }
+    }
+
+    @Test
+    fun `drops the path from the Unix prompt when it is hidden`() {
+        val context = contextAt(LauncherLocation.APPS).copy(showPath = false)
+
+        assertEquals("oreste@android$", profile.prompt(context))
+    }
+
+    @Test
+    fun `keeps the Unix path readable while the prompt hides it`() {
+        val context = contextAt(LauncherLocation.APPS).copy(showPath = false)
+
+        assertEquals("~/apps", profile.formatPath(context))
+    }
+
+    @Test
+    fun `ignores the DOS drive`() {
+        val context = contextAt(LauncherLocation.HOME).copy(dosDrive = DosDrive.D)
+
+        assertEquals("oreste@android:~$", profile.prompt(context))
     }
 
     @Test

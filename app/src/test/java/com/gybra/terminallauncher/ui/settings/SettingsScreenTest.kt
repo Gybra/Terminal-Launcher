@@ -14,6 +14,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
+import com.gybra.terminallauncher.shell.DosDrive
+import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import org.junit.Assert.assertEquals
@@ -86,6 +88,47 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `forwards every prompt symbol selection`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+
+        listOf(PromptSymbol.PERCENT, PromptSymbol.ARROW, PromptSymbol.DOLLAR).forEach { symbol ->
+            val optionText = "( ) ${symbol.text}"
+            composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(optionText))
+            composeRule.onNodeWithText(optionText).performClick()
+
+            assertEquals(symbol, harness.state.promptSymbol)
+        }
+    }
+
+    @Test
+    fun `forwards every DOS drive selection`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+
+        listOf(DosDrive.A, DosDrive.D, DosDrive.C).forEach { drive ->
+            val optionText = "( ) ${drive.name}:"
+            composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(optionText))
+            composeRule.onNodeWithText(optionText).performClick()
+
+            assertEquals(drive, harness.state.dosDrive)
+        }
+    }
+
+    @Test
+    fun `forwards the prompt path toggle`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+
+        composeRule
+            .onNodeWithTag("settings-list")
+            .performScrollToNode(hasText("[*] Show path in prompt"))
+        composeRule.onNodeWithText("[*] Show path in prompt").performClick()
+
+        assertFalse(harness.state.showPromptPath)
+    }
+
+    @Test
     fun `renders unchecked clock and selected DOS state`() {
         val harness = SettingsHarness(
             initialState = defaultState().copy(
@@ -118,6 +161,9 @@ class SettingsScreenTest {
         showClock = true,
         username = "user",
         hostname = "android",
+        promptSymbol = PromptSymbol.DOLLAR,
+        showPromptPath = true,
+        dosDrive = DosDrive.C,
     )
 
     private inner class SettingsHarness(
@@ -136,6 +182,9 @@ class SettingsScreenTest {
                     setShowClock = { state = state.copy(showClock = it) },
                     setUsername = { state = state.copy(username = it) },
                     setHostname = { state = state.copy(hostname = it) },
+                    selectPromptSymbol = { state = state.copy(promptSymbol = it) },
+                    setShowPromptPath = { state = state.copy(showPromptPath = it) },
+                    selectDosDrive = { state = state.copy(dosDrive = it) },
                 ),
                 onBack = { wentBack = true },
             )
