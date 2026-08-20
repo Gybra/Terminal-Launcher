@@ -22,10 +22,12 @@ The current implementation provides:
 - independent System, Green, Amber, and Monochrome terminal color themes;
 - a minimal settings screen for shell, theme, clock, username, and hostname preferences;
 - a focusable prompt with keyboard input, Enter submission, and a focus-aware blinking cursor;
+- live application search ranking exact, prefix, and substring label matches, limited to five results;
+- Enter launching only an unambiguous match, keeping every other match listed under the prompt;
 - command-line builds without Android Studio;
 - JVM tests and a mandatory 100% coverage gate for application logic.
 
-Live application search and command execution are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
+Command execution is tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and is intentionally deferred to its focused issues.
 
 ## Safety model
 
@@ -83,6 +85,7 @@ The v0.1 codebase is a single Gradle module with explicit boundaries:
 ```text
 Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
                           \-> PreferencesRepository -> DataStore
+                          \-> AppSearchEngine -------> ranked application matches
                           \-> ShellProfiles ---------> DOS / Unix formatting
                           \-> TerminalTheme ---------> shell-independent colors
                           \-> LauncherClock ---------> local system time
@@ -91,6 +94,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
 
 - `launcher`: installed-application model, repository boundary, PackageManager adapter, and app launcher;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
+- `search`: Compose-independent label matching and deterministic result ranking;
 - `shell`: shell context, locations, profile selection, and all DOS/Unix presentation rules;
 - `theme`: shell-independent terminal theme and color definitions;
 - `ui/home`: immutable UI state, screen-level ViewModel, and stateless Compose rendering;

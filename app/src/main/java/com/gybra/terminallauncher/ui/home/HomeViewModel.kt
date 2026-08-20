@@ -8,6 +8,7 @@ import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.LauncherClock
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
+import com.gybra.terminallauncher.search.AppSearchEngine
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfiles
@@ -63,10 +64,17 @@ public class HomeViewModel(
         promptState.update { state -> state.copy(focused = focused) }
     }
 
-    public fun submitPrompt() {
+    /**
+     * Resolves the current query and returns the application to launch, clearing the prompt once
+     * it does. Ambiguous or unmatched input keeps the query and its results on screen.
+     */
+    public fun submitPrompt(): InstalledApp? {
+        val resolvedApp = AppSearchEngine.unambiguousMatch(uiState.value.searchResults)
+            ?: return null
         promptState.update { state ->
             state.copy(input = "", selection = TextRange.Zero, composition = null)
         }
+        return resolvedApp
     }
 
     private fun createUiState(
@@ -78,6 +86,7 @@ public class HomeViewModel(
         shellProfile = ShellProfiles.forType(preferences.shellType),
         shellContext = preferences.toShellContext(),
         apps = installedApps.filter { app -> app.packageName in preferences.pinnedPackages },
+        searchResults = AppSearchEngine.search(query = prompt.input, apps = installedApps),
         clockText = clockText.takeIf { preferences.showClock && it.isNotEmpty() },
         prompt = prompt,
     )

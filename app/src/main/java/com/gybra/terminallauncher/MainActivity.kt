@@ -87,7 +87,7 @@ public class MainActivity : ComponentActivity() {
                 promptActions = PromptActions(
                     updateValue = homeViewModel::updatePromptValue,
                     updateFocus = homeViewModel::updatePromptFocus,
-                    submit = homeViewModel::submitPrompt,
+                    submit = { homeViewModel.submitPrompt()?.let(appLauncher::launch) },
                 ),
                 onAppClick = appLauncher::launch,
             )
