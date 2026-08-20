@@ -6,7 +6,9 @@ import com.gybra.terminallauncher.search.SearchResult
 
 /**
  * Shared behavior of the commands that change the pinned applications. The argument must resolve
- * to exactly one installed application; anything else is reported instead of guessed.
+ * to exactly one installed application; anything else is reported instead of guessed. Ambiguous
+ * candidates are listed as [AppSearchEngine] ranks them, so a query matching more applications
+ * than the engine returns shows the best ones and asks for a longer argument.
  */
 public abstract class PinningCommand : LauncherCommand {
     /** Word the success message is written with, such as `pinned`. */

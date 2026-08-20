@@ -61,6 +61,39 @@ class PinCommandTest {
     }
 
     @Test
+    fun `lists the best candidates when more applications match than the engine returns`() = runTest {
+        val preferencesRepository = RecordingPreferencesRepository()
+        val command = PinCommand(preferencesRepository)
+        val manyApps = (1..6).map { index ->
+            InstalledApp(packageName = "org.example.mail$index", label = "Mail $index")
+        }
+
+        val result = command.execute(
+            CommandContext(
+                arguments = listOf("mail"),
+                shellProfile = UnixShellProfile,
+                installedApps = manyApps,
+                registeredCommands = emptyList(),
+            ),
+        )
+
+        assertEquals(
+            CommandResult.Output(
+                listOf(
+                    "mail matches more than one application",
+                    "mail 1",
+                    "mail 2",
+                    "mail 3",
+                    "mail 4",
+                    "mail 5",
+                ),
+            ),
+            result,
+        )
+        assertEquals(emptyList<String>(), preferencesRepository.writes)
+    }
+
+    @Test
     fun `reports an argument matching no application`() = runTest {
         val preferencesRepository = RecordingPreferencesRepository()
         val command = PinCommand(preferencesRepository)

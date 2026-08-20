@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.gybra.terminallauncher.launcher.InstalledApp
@@ -28,11 +29,12 @@ public fun LauncherApp(
     onLaunchApp: (InstalledApp) -> Unit,
 ) {
     var destination by rememberSaveable { mutableStateOf(LauncherDestination.HOME) }
+    val launchApp by rememberUpdatedState(onLaunchApp)
 
     LaunchedEffect(submittedActions) {
         submittedActions.collect { action ->
             when (action) {
-                is SubmittedAction.LaunchApp -> onLaunchApp(action.app)
+                is SubmittedAction.LaunchApp -> launchApp(action.app)
                 SubmittedAction.OpenSettings -> destination = LauncherDestination.SETTINGS
             }
         }
