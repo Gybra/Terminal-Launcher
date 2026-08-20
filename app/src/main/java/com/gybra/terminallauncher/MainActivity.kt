@@ -22,6 +22,9 @@ import com.gybra.terminallauncher.command.CommandExecutor
 import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.HelpCommand
 import com.gybra.terminallauncher.command.ListAppsCommand
+import com.gybra.terminallauncher.command.PinCommand
+import com.gybra.terminallauncher.command.SettingsCommand
+import com.gybra.terminallauncher.command.UnpinCommand
 import com.gybra.terminallauncher.launcher.AppLauncher
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
 import com.gybra.terminallauncher.launcher.SystemLauncherClock
@@ -48,7 +51,16 @@ public class MainActivity : ComponentActivity() {
         val appLauncher = AppLauncher(applicationContext)
         val launcherClock = SystemLauncherClock()
         val commandExecutor = CommandExecutor(
-            CommandRegistry(commands = listOf(ListAppsCommand, ClearCommand, HelpCommand)),
+            CommandRegistry(
+                commands = listOf(
+                    ListAppsCommand,
+                    ClearCommand,
+                    HelpCommand,
+                    PinCommand(preferencesRepository),
+                    UnpinCommand(preferencesRepository),
+                    SettingsCommand,
+                ),
+            ),
         )
         val launcherViewModelFactory = viewModelFactory {
             initializer {
@@ -96,9 +108,10 @@ public class MainActivity : ComponentActivity() {
                 promptActions = PromptActions(
                     updateValue = homeViewModel::updatePromptValue,
                     updateFocus = homeViewModel::updatePromptFocus,
-                    submit = { homeViewModel.submitPrompt()?.let(appLauncher::launch) },
+                    submit = homeViewModel::submitPrompt,
                 ),
-                onAppClick = appLauncher::launch,
+                submittedActions = homeViewModel.submittedActions,
+                onLaunchApp = appLauncher::launch,
             )
         }
     }

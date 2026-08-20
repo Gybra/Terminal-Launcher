@@ -30,10 +30,13 @@ The current implementation provides:
 - `help` written from command metadata, showing only the primary alias of the active shell;
 - an in-memory terminal history that echoes each submitted line with its output and keeps the twenty most recent entries;
 - `clear` and `cls` erasing that history only, leaving preferences and pinned applications untouched;
+- `pin` and `unpin` changing the pinned applications from the prompt, accepting only an exact or unique match and listing ambiguous ones instead of guessing;
+- `settings` opening the settings destination the Home list already links to;
+- command confirmations and errors written in the style of the active shell, lowercase on Unix and uppercase on DOS;
 - command-line builds without Android Studio;
 - JVM tests and a mandatory 100% coverage gate for application logic.
 
-The terminal history lives in memory only and is gone after a process restart, by design. The pinning and settings commands are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
+The terminal history lives in memory only and is gone after a process restart, by design. Package-change monitoring, persistent aliases, fuzzy search, prompt customization, and the controlled Android utility commands are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
 
 ## Safety model
 
@@ -101,7 +104,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
 
 - `launcher`: installed-application model, repository boundary, PackageManager adapter, and app launcher;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
-- `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the built-in help and application-list commands;
+- `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the registered help, application-list, history-clearing, pinning, and settings commands;
 - `search`: Compose-independent label matching and deterministic result ranking;
 - `shell`: shell context, locations, profile selection, and all DOS/Unix presentation rules;
 - `theme`: shell-independent terminal theme and color definitions;

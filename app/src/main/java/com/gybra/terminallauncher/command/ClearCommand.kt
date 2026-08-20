@@ -6,5 +6,5 @@ public object ClearCommand : LauncherCommand {
 
     override val description: String = "Clear the terminal history"
 
-    override fun execute(context: CommandContext): CommandResult = CommandResult.ClearHistory
+    override suspend fun execute(context: CommandContext): CommandResult = CommandResult.ClearHistory
 }

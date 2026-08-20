@@ -16,6 +16,8 @@ public object UnixShellProfile : ShellProfile {
 
     override fun formatAppName(app: InstalledApp): String = app.label.lowercase(Locale.ROOT)
 
+    override fun formatMessage(message: String): String = message.lowercase(Locale.ROOT)
+
     override fun formatPath(location: LauncherLocation): String = when (location) {
         LauncherLocation.HOME -> "~"
         LauncherLocation.APPS -> "~/apps"

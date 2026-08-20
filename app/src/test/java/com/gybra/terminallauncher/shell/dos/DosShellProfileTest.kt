@@ -46,6 +46,12 @@ class DosShellProfileTest {
     }
 
     @Test
+    fun `writes command messages in uppercase`() {
+        assertEquals("PINNED MAIL.EXE", profile.formatMessage("pinned mail.exe"))
+        assertEquals("", profile.formatMessage(""))
+    }
+
+    @Test
     fun `formats help from command metadata with a DOS command count`() {
         val commands = listOf(
             CommandSummary(id = Command.LIST_APPS, description = "List installed applications"),

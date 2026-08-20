@@ -3,13 +3,14 @@ package com.gybra.terminallauncher.command
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Test
 
 class CommandExecutorTest {
     @Test
-    fun `runs the command registered for the typed alias`() {
+    fun `runs the command registered for the typed alias`() = runTest {
         val listApps = RecordingCommand(id = Command.LIST_APPS)
         val executor = CommandExecutor(CommandRegistry(commands = listOf(listApps)))
 
@@ -24,7 +25,7 @@ class CommandExecutorTest {
     }
 
     @Test
-    fun `gives the running command its arguments, shell, applications, and command set`() {
+    fun `gives the running command its arguments, shell, applications, and command set`() = runTest {
         val pin = RecordingCommand(id = Command.PIN)
         val executor = CommandExecutor(CommandRegistry(commands = listOf(pin)))
 
@@ -48,7 +49,7 @@ class CommandExecutorTest {
     }
 
     @Test
-    fun `falls back to search for an unregistered command`() {
+    fun `falls back to search for an unregistered command`() = runTest {
         val listApps = RecordingCommand(id = Command.LIST_APPS)
         val executor = CommandExecutor(CommandRegistry(commands = listOf(listApps)))
 
@@ -63,7 +64,7 @@ class CommandExecutorTest {
     }
 
     @Test
-    fun `falls back to search for blank input`() {
+    fun `falls back to search for blank input`() = runTest {
         val executor = CommandExecutor(CommandRegistry(commands = emptyList()))
 
         assertSame(
@@ -73,7 +74,7 @@ class CommandExecutorTest {
     }
 
     @Test
-    fun `returns the result the command produced`() {
+    fun `returns the result the command produced`() = runTest {
         val help = RecordingCommand(
             id = Command.HELP,
             result = CommandResult.Output(listOf("help")),

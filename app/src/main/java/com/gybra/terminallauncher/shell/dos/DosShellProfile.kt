@@ -17,6 +17,8 @@ public object DosShellProfile : ShellProfile {
     override fun formatAppName(app: InstalledApp): String =
         "${app.label.uppercase(Locale.ROOT)}.EXE"
 
+    override fun formatMessage(message: String): String = message.uppercase(Locale.ROOT)
+
     override fun formatPath(location: LauncherLocation): String = when (location) {
         LauncherLocation.HOME -> "C:\\HOME"
         LauncherLocation.APPS -> "C:\\APPS"

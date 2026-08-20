@@ -6,6 +6,6 @@ public object ListAppsCommand : LauncherCommand {
 
     override val description: String = "List installed applications"
 
-    override fun execute(context: CommandContext): CommandResult =
+    override suspend fun execute(context: CommandContext): CommandResult =
         CommandResult.Output(context.shellProfile.formatAppList(context.installedApps))
 }
