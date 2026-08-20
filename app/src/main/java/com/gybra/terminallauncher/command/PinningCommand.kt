@@ -1,14 +1,10 @@
 package com.gybra.terminallauncher.command
 
 import com.gybra.terminallauncher.launcher.InstalledApp
-import com.gybra.terminallauncher.search.AppSearchEngine
-import com.gybra.terminallauncher.search.SearchResult
 
 /**
  * Shared behavior of the commands that change the pinned applications. The argument must resolve
- * to exactly one installed application; anything else is reported instead of guessed. Ambiguous
- * candidates are listed as [AppSearchEngine] ranks them, so a query matching more applications
- * than the engine returns shows the best ones and asks for a longer argument.
+ * to exactly one installed application; anything else is reported instead of guessed.
  */
 public abstract class PinningCommand : LauncherCommand {
     /** Word the success message is written with, such as `pinned`. */
@@ -23,25 +19,9 @@ public abstract class PinningCommand : LauncherCommand {
             return context.message("usage: ${context.shellProfile.aliasFor(id)} <application>")
         }
 
-        val results = AppSearchEngine.search(query = query, apps = context.installedApps)
-        val app = AppSearchEngine.unambiguousMatch(results)
-            ?: return context.reject(query = query, results = results)
-
-        apply(app)
-        return context.message("$outcome ${context.shellProfile.formatAppName(app)}")
-    }
-
-    private fun CommandContext.reject(query: String, results: List<SearchResult>): CommandResult {
-        if (results.isEmpty()) {
-            return message("no application matches $query")
+        return context.withResolvedApp(query) { app ->
+            apply(app)
+            context.message("$outcome ${context.shellProfile.formatAppName(app)}")
         }
-
-        return CommandResult.Output(
-            listOf(shellProfile.formatMessage("$query matches more than one application")) +
-                shellProfile.formatAppList(results.map(SearchResult::app)),
-        )
     }
-
-    private fun CommandContext.message(text: String): CommandResult =
-        CommandResult.Output(listOf(shellProfile.formatMessage(text)))
 }
