@@ -2,6 +2,11 @@ package com.gybra.terminallauncher.ui.home
 
 import androidx.compose.ui.text.TextRange
 import com.gybra.terminallauncher.MainDispatcherRule
+import com.gybra.terminallauncher.command.Command
+import com.gybra.terminallauncher.command.CommandExecutor
+import com.gybra.terminallauncher.command.CommandRegistry
+import com.gybra.terminallauncher.command.LauncherCommand
+import com.gybra.terminallauncher.command.RecordingCommand
 import com.gybra.terminallauncher.launcher.AppRepository
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.LauncherClock
@@ -54,6 +59,7 @@ class HomeViewModelTest {
             appRepository = FakeAppRepository(apps = apps),
             preferencesRepository = preferencesRepository,
             launcherClock = FakeLauncherClock(),
+            commandExecutor = commandExecutor(),
         )
         startCollecting(viewModel)
 
@@ -70,6 +76,7 @@ class HomeViewModelTest {
             appRepository = FakeAppRepository(apps = listOf(app)),
             preferencesRepository = preferencesRepository,
             launcherClock = FakeLauncherClock(),
+            commandExecutor = commandExecutor(),
         )
         startCollecting(viewModel)
         advanceUntilIdle()
@@ -96,6 +103,7 @@ class HomeViewModelTest {
             appRepository = FakeAppRepository(apps = listOf(app)),
             preferencesRepository = preferencesRepository,
             launcherClock = FakeLauncherClock(),
+            commandExecutor = commandExecutor(),
         )
         startCollecting(viewModel)
         advanceUntilIdle()
@@ -126,6 +134,7 @@ class HomeViewModelTest {
             appRepository = FakeAppRepository(),
             preferencesRepository = preferencesRepository,
             launcherClock = FakeLauncherClock(),
+            commandExecutor = commandExecutor(),
         )
         startCollecting(viewModel)
         advanceUntilIdle()
@@ -163,6 +172,7 @@ class HomeViewModelTest {
                 ),
             ),
             launcherClock = FakeLauncherClock(),
+            commandExecutor = commandExecutor(),
         )
         startCollecting(viewModel)
 
@@ -181,6 +191,7 @@ class HomeViewModelTest {
                     ),
                     preferencesRepository = FakePreferencesRepository(),
                     launcherClock = FakeLauncherClock(),
+                    commandExecutor = commandExecutor(),
                 )
                 startCollecting(viewModel)
 
@@ -196,6 +207,7 @@ class HomeViewModelTest {
             appRepository = FakeAppRepository(),
             preferencesRepository = FakePreferencesRepository(),
             launcherClock = clock,
+            commandExecutor = commandExecutor(),
         )
 
         runCurrent()
@@ -220,6 +232,7 @@ class HomeViewModelTest {
                 appRepository = FakeAppRepository(),
                 preferencesRepository = FakePreferencesRepository(),
                 launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
             )
             startCollecting(viewModel)
             advanceUntilIdle()
@@ -322,10 +335,57 @@ class HomeViewModelTest {
         }
     }
 
+    @Test
+    fun `runs a registered command instead of searching and clears the prompt`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val listApps = RecordingCommand(id = Command.LIST_APPS)
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = FakePreferencesRepository(),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(listApps),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "ls"))
+            advanceUntilIdle()
+
+            assertNull(viewModel.submitPrompt())
+            advanceUntilIdle()
+
+            assertEquals(1, listApps.executions)
+            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+        }
+
+    @Test
+    fun `searches instead of running a command the active shell does not know`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val listApps = RecordingCommand(id = Command.LIST_APPS)
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = FakePreferencesRepository(),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(listApps),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "mail"))
+            advanceUntilIdle()
+
+            assertEquals(mail, viewModel.submitPrompt())
+            assertEquals(0, listApps.executions)
+        }
+
+    private fun commandExecutor(vararg commands: LauncherCommand): CommandExecutor =
+        CommandExecutor(CommandRegistry(commands = commands.toList()))
+
     private fun searchingViewModel(): HomeViewModel = HomeViewModel(
         appRepository = FakeAppRepository(apps = listOf(mailboxPro, mailbox, mail)),
         preferencesRepository = FakePreferencesRepository(),
         launcherClock = FakeLauncherClock(),
+        commandExecutor = commandExecutor(),
     )
 
     private fun unixHomeState(apps: List<InstalledApp> = emptyList()): HomeUiState = HomeUiState(
