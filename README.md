@@ -33,10 +33,12 @@ The current implementation provides:
 - `pin` and `unpin` changing the pinned applications from the prompt, accepting only an exact or unique match and listing ambiguous ones instead of guessing;
 - `settings` opening the settings destination the Home list already links to;
 - command confirmations and errors written in the style of the active shell, lowercase on Unix and uppercase on DOS;
+- installed applications refreshed whenever a package is added, changed, or removed;
+- a removed package dropped from the pinned applications, while a package replaced by an update keeps its pin;
 - command-line builds without Android Studio;
 - JVM tests and a mandatory 100% coverage gate for application logic.
 
-The terminal history lives in memory only and is gone after a process restart, by design. Package-change monitoring, persistent aliases, fuzzy search, prompt customization, and the controlled Android utility commands are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
+The terminal history lives in memory only and is gone after a process restart, by design. Persistent aliases, fuzzy search, prompt customization, and the controlled Android utility commands are tracked in the [public roadmap](https://github.com/Gybra/Terminal-Launcher/issues) and are intentionally deferred to their focused issues.
 
 ## Safety model
 
@@ -94,6 +96,7 @@ The v0.1 codebase is a single Gradle module with explicit boundaries:
 ```text
 Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
                           \-> PreferencesRepository -> DataStore
+                          \-> PackageMonitor --------> package broadcasts
                           \-> AppSearchEngine -------> ranked application matches
                           \-> CommandExecutor -------> explicitly registered commands
                           \-> ShellProfiles ---------> DOS / Unix formatting
@@ -102,7 +105,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
                          tap -> AppLauncher ----------> explicit package launch Intent
 ```
 
-- `launcher`: installed-application model, repository boundary, PackageManager adapter, and app launcher;
+- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, and app launcher;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
 - `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the registered help, application-list, history-clearing, pinning, and settings commands;
 - `search`: Compose-independent label matching and deterministic result ranking;

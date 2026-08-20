@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 public class PackageManagerAppRepository(
     private val packageManager: PackageManager,
     private val launcherPackageName: String,
+    private val packageMonitor: PackageMonitor,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : AppRepository {
     override suspend fun getInstalledApps(): List<InstalledApp> =
@@ -21,6 +22,7 @@ public class PackageManagerAppRepository(
 
     override fun observeInstalledApps(): Flow<List<InstalledApp>> = flow {
         emit(getInstalledApps())
+        packageMonitor.observeChanges().collect { emit(getInstalledApps()) }
     }
 
     @Suppress("DEPRECATION")

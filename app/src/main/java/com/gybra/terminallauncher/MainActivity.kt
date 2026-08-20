@@ -26,6 +26,7 @@ import com.gybra.terminallauncher.command.PinCommand
 import com.gybra.terminallauncher.command.SettingsCommand
 import com.gybra.terminallauncher.command.UnpinCommand
 import com.gybra.terminallauncher.launcher.AppLauncher
+import com.gybra.terminallauncher.launcher.BroadcastPackageMonitor
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
 import com.gybra.terminallauncher.launcher.SystemLauncherClock
 import com.gybra.terminallauncher.preferences.DataStorePreferencesRepository
@@ -43,9 +44,11 @@ public class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         configureFullScreenWindow()
 
+        val packageMonitor = BroadcastPackageMonitor(applicationContext)
         val appRepository = PackageManagerAppRepository(
             packageManager = packageManager,
             launcherPackageName = packageName,
+            packageMonitor = packageMonitor,
         )
         val preferencesRepository = DataStorePreferencesRepository(applicationContext.launcherDataStore)
         val appLauncher = AppLauncher(applicationContext)
@@ -69,6 +72,7 @@ public class MainActivity : ComponentActivity() {
                     preferencesRepository = preferencesRepository,
                     launcherClock = launcherClock,
                     commandExecutor = commandExecutor,
+                    packageMonitor = packageMonitor,
                 )
             }
             initializer { SettingsViewModel(preferencesRepository) }
