@@ -5,12 +5,13 @@ import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.launcherCommands
 import com.gybra.terminallauncher.launcher.FakeAppRepository
 import com.gybra.terminallauncher.launcher.FakeBatteryRepository
+import com.gybra.terminallauncher.launcher.FakeShortcutRepository
 import com.gybra.terminallauncher.launcher.FakeTorch
 import com.gybra.terminallauncher.launcher.FakeLauncherClock
 import com.gybra.terminallauncher.launcher.FakeShortcutPinRequest
 import com.gybra.terminallauncher.launcher.FakePackageMonitor
 import com.gybra.terminallauncher.launcher.InstalledApp
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.launcher.SystemScreen
 import com.gybra.terminallauncher.launcher.TorchState
 import com.gybra.terminallauncher.preferences.LauncherPreferences
@@ -102,6 +103,7 @@ class LauncherIntegrationTest {
                     "help      Show available commands",
                     "pin       Pin an application to Home",
                     "unpin     Remove an application from Home",
+                "shortcuts List, pin, and remove application shortcuts",
                     "alias     Name an application",
                     "info      Open the Android details of an application",
                     "uninstall Ask Android to uninstall an application",
@@ -302,6 +304,7 @@ class LauncherIntegrationTest {
                     commands = launcherCommands(
                         preferencesRepository = preferencesRepository,
                         batteryRepository = FakeBatteryRepository(),
+                        shortcutRepository = FakeShortcutRepository(),
                         torch = FakeTorch(TorchState.ON, TorchState.OFF),
                     ),
                 ),
@@ -340,7 +343,7 @@ class LauncherIntegrationTest {
     private val camera = InstalledApp(packageName = "org.example.camera", label = "Camera")
     private val mail = InstalledApp(packageName = "org.example.mail", label = "Mail")
     private val installedApps = listOf(camera, mail)
-    private val photo = PinnedShortcut(
+    private val photo = AppShortcut(
         packageName = "org.example.camera",
         id = "photo",
         label = "Take a photo",

@@ -55,6 +55,7 @@ Anything that is not a registered command is treated as a search. Command names 
 | Describe the available commands | `help` | `HELP` |
 | Pin an application to Home | `pin <application>` | `PIN <APPLICATION>` |
 | Remove an application from Home | `unpin <application>` | `UNPIN <APPLICATION>` |
+| List, pin, and remove application shortcuts | `shortcuts <application>` | `SHORTCUTS <APPLICATION>` |
 | Clear the terminal history | `clear`, `cls` | `CLS` |
 | Name an application | `alias <name> <application>` | `ALIAS <NAME> <APPLICATION>` |
 | Open the Android details of an application | `info <application>` | `INFO <APPLICATION>` |
@@ -71,7 +72,9 @@ Anything that is not a registered command is treated as a search. Command names 
 
 `pin`, `unpin`, and `alias` accept an exact or unique application name; an ambiguous name is answered with the matching applications so a longer name can be given. Output, confirmations, and errors are written in the style of the selected shell: lowercase names on Unix, decorative `.EXE` names and uppercase messages on DOS.
 
-An application can also ask the launcher to keep one of its own shortcuts, which is what a browser does when it adds a website to Home. The launcher answers with a confirmation naming the shortcut and the application that asked for it, and keeps nothing until it is accepted. An accepted shortcut is listed on Home under the pinned applications, written as `new tab` on Unix and `NEW TAB.LNK` on DOS, and tapping it asks Android to start it. A shortcut is started by the package and the identifier Android published for it, never by an Intent the launcher builds or the asking application supplies. Uninstalling an application removes the shortcuts it published, while updating it keeps them; removing a single shortcut without its application is not possible yet.
+An application can also ask the launcher to keep one of its own shortcuts, which is what a browser does when it adds a website to Home. The launcher answers with a confirmation naming the shortcut and the application that asked for it, and keeps nothing until it is accepted. An accepted shortcut is listed on Home under the pinned applications, written as `new tab` on Unix and `NEW TAB.LNK` on DOS, and tapping it asks Android to start it. A shortcut is started by the package and the identifier Android published for it, never by an Intent the launcher builds or the asking application supplies. Uninstalling an application removes the shortcuts it published, while updating it keeps them.
+
+The same shortcuts are reachable from the prompt, without waiting for the application to offer them. `shortcuts <application>` lists what the application publishes, `shortcuts pin <application> <shortcut>` keeps one on Home, and `shortcuts unpin <application> <shortcut>` removes a pinned one, whichever way it was pinned. The application is named by the first word and the shortcut by the rest of the line, a shortcut name matching more than one is answered with the candidates, and Android answers the question only while Terminal Launcher is the Home application, which is reported as a message rather than a crash.
 
 A double tap on the empty area of Home locks the screen, the way the power button does, so fingerprint and face unlock keep working afterwards. It works only while the launcher accessibility service is on, which Android grants nowhere but in its own settings: the `Double tap to lock` setting sends the user there, and the setting reads whether the service is connected rather than a stored answer. Turning it off turns the service off, so the privilege never outlives the feature, and turning the service off in the Android settings stops the gesture too. The rows, the prompt, and scrolling keep working as they did, because a tap Home already handles never reaches the gesture.
 
@@ -158,11 +161,12 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
   submitted line -> SystemScreenLauncher ----> documented Settings and package Intents
           tap or Enter -> AppLauncher ----------> explicit package launch Intent
              shortcut tap -> ShortcutLauncher --> LauncherApps shortcut start
+       shortcuts command -> ShortcutRepository -> LauncherApps published shortcuts
      pin request -> ShortcutPinRequests -------> LauncherApps pin item request
            double tap -> DeviceLock ------------> accessibility lock screen action
 ```
 
-- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery reading and observation, torch boundary, the screen lock with its accessibility service, the named system destinations, and the pinned-shortcut model with its pin request and start boundaries;
+- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery reading and observation, torch boundary, the screen lock with its accessibility service, the named system destinations, and the shortcut model with its reading, pin request, and start boundaries;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
 - `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the registered help, application-list, history-clearing, pinning, aliasing, settings, and Android utility commands;
 - `search`: Compose-independent label matching and deterministic result ranking;

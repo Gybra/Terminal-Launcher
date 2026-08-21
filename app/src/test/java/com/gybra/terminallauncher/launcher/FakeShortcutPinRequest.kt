@@ -2,7 +2,7 @@ package com.gybra.terminallauncher.launcher
 
 /** A [ShortcutPinRequest] that answers what a test asks for and counts the answers it gave. */
 class FakeShortcutPinRequest(
-    override val shortcut: PinnedShortcut = PinnedShortcut(
+    override val shortcut: AppShortcut = AppShortcut(
         packageName = "org.example.browser",
         id = "new-tab",
         label = "New tab",

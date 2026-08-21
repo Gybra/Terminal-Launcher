@@ -27,6 +27,7 @@ import com.gybra.terminallauncher.launcher.BroadcastPackageMonitor
 import com.gybra.terminallauncher.launcher.SystemDeviceLock
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
 import com.gybra.terminallauncher.launcher.SystemBatteryRepository
+import com.gybra.terminallauncher.launcher.LauncherAppsShortcutRepository
 import com.gybra.terminallauncher.launcher.ShortcutLauncher
 import com.gybra.terminallauncher.launcher.SystemScreenLauncher
 import com.gybra.terminallauncher.launcher.SystemTorch
@@ -60,12 +61,14 @@ public class MainActivity : ComponentActivity() {
         val systemScreenLauncher = SystemScreenLauncher(applicationContext)
         val shortcutLauncher = ShortcutLauncher(applicationContext)
         val batteryRepository = SystemBatteryRepository(applicationContext)
+        val shortcutRepository = LauncherAppsShortcutRepository(applicationContext)
         val deviceLock = SystemDeviceLock(applicationContext)
         val commandExecutor = CommandExecutor(
             CommandRegistry(
                 commands = launcherCommands(
                     preferencesRepository = preferencesRepository,
                     batteryRepository = batteryRepository,
+                    shortcutRepository = shortcutRepository,
                     torch = SystemTorch(applicationContext),
                 ),
             ),

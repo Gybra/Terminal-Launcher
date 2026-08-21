@@ -1,6 +1,7 @@
 package com.gybra.terminallauncher.command
 
 import com.gybra.terminallauncher.launcher.BatteryRepository
+import com.gybra.terminallauncher.launcher.ShortcutRepository
 import com.gybra.terminallauncher.launcher.SystemScreen
 import com.gybra.terminallauncher.launcher.Torch
 import com.gybra.terminallauncher.preferences.PreferencesRepository
@@ -12,12 +13,17 @@ import com.gybra.terminallauncher.preferences.PreferencesRepository
 public fun launcherCommands(
     preferencesRepository: PreferencesRepository,
     batteryRepository: BatteryRepository,
+    shortcutRepository: ShortcutRepository,
     torch: Torch,
 ): List<LauncherCommand> = listOf(
     ListAppsCommand,
     HelpCommand,
     PinCommand(preferencesRepository),
     UnpinCommand(preferencesRepository),
+    ShortcutsCommand(
+        shortcutRepository = shortcutRepository,
+        preferencesRepository = preferencesRepository,
+    ),
     AliasCommand(preferencesRepository),
     AppInfoCommand,
     UninstallCommand,

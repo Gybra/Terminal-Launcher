@@ -8,7 +8,7 @@ import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.gybra.terminallauncher.launcher.AppUsage
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
@@ -132,6 +132,27 @@ class DataStorePreferencesRepositoryTest {
     }
 
     @Test
+    fun `removes one pinned shortcut and keeps the others`() = runTest {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+        val incognito = NEW_TAB.copy(id = "incognito", label = "Incognito tab")
+
+        repository.pinShortcut(NEW_TAB)
+        repository.pinShortcut(incognito)
+        repository.unpinShortcut(incognito)
+
+        assertEquals(listOf(NEW_TAB), repository.preferences.first().pinnedShortcuts)
+    }
+
+    @Test
+    fun `removing a shortcut nothing pinned changes nothing`() = runTest {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+
+        repository.unpinShortcut(NEW_TAB)
+
+        assertEquals(emptyList<AppShortcut>(), repository.preferences.first().pinnedShortcuts)
+    }
+
+    @Test
     fun `removes every pinned shortcut of a package`() = runTest {
         val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
 
@@ -152,7 +173,7 @@ class DataStorePreferencesRepositoryTest {
 
         repository.unpinShortcuts("org.example.browser")
 
-        assertEquals(emptyList<PinnedShortcut>(), repository.preferences.first().pinnedShortcuts)
+        assertEquals(emptyList<AppShortcut>(), repository.preferences.first().pinnedShortcuts)
     }
 
     @Test
@@ -393,7 +414,7 @@ class DataStorePreferencesRepositoryTest {
         const val LAUNCHED_AT = 1_700_000_000_000L
         const val RELAUNCHED_AT = LAUNCHED_AT + 60_000L
 
-        val NEW_TAB = PinnedShortcut(
+        val NEW_TAB = AppShortcut(
             packageName = "org.example.browser",
             id = "new-tab",
             label = "New tab",

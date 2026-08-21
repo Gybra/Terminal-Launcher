@@ -26,7 +26,7 @@ class ShortcutLauncherTest {
     private lateinit var context: Context
     private lateinit var launcherApps: LauncherApps
 
-    private val shortcut = PinnedShortcut(
+    private val shortcut = AppShortcut(
         packageName = "org.example.browser",
         id = "new-tab",
         label = "New tab",

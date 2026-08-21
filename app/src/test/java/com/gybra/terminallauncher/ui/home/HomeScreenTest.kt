@@ -19,7 +19,7 @@ import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import com.gybra.terminallauncher.launcher.InstalledApp
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.search.SearchResult
 import com.gybra.terminallauncher.search.SearchResult.Match
 import com.gybra.terminallauncher.shell.LauncherLocation
@@ -394,12 +394,12 @@ class HomeScreenTest {
 
     @Test
     fun `lists the shortcuts pinned to Home and starts the one that is tapped`() {
-        val shortcut = PinnedShortcut(
+        val shortcut = AppShortcut(
             packageName = "org.example.browser",
             id = "new-tab",
             label = "New Tab",
         )
-        var startedShortcut: PinnedShortcut? = null
+        var startedShortcut: AppShortcut? = null
         composeRule.setContent {
             HomeScreen(
                 state = HomeUiState(

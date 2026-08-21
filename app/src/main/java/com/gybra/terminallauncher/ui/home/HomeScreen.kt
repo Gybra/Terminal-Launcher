@@ -24,7 +24,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.launcher.InstalledApp
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
@@ -33,7 +33,7 @@ import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 public fun HomeScreen(
     state: HomeUiState,
     onAppClick: (InstalledApp) -> Unit,
-    onShortcutClick: (PinnedShortcut) -> Unit,
+    onShortcutClick: (AppShortcut) -> Unit,
     onSettingsClick: () -> Unit,
     onLockScreen: () -> Unit,
     promptActions: PromptActions,
@@ -91,7 +91,7 @@ public fun HomeScreen(
 private fun LazyListScope.pinnedItems(
     state: HomeUiState,
     onAppClick: (InstalledApp) -> Unit,
-    onShortcutClick: (PinnedShortcut) -> Unit,
+    onShortcutClick: (AppShortcut) -> Unit,
 ) {
     items(
         items = state.apps,

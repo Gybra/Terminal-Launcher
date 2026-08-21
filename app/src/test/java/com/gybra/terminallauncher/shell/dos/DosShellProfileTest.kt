@@ -4,7 +4,7 @@ import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.InstalledApp
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.PromptSymbol
@@ -123,7 +123,7 @@ class DosShellProfileTest {
 
     @Test
     fun `writes a pinned shortcut as a DOS link file`() {
-        val shortcut = PinnedShortcut(
+        val shortcut = AppShortcut(
             packageName = "org.example.browser",
             id = "new-tab",
             label = "New Tab",

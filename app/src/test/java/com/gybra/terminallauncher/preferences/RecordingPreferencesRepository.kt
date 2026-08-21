@@ -1,7 +1,7 @@
 package com.gybra.terminallauncher.preferences
 
 import com.gybra.terminallauncher.launcher.AppUsage
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
@@ -93,9 +93,15 @@ class RecordingPreferencesRepository(
         }
     }
 
-    override suspend fun pinShortcut(shortcut: PinnedShortcut) {
+    override suspend fun pinShortcut(shortcut: AppShortcut) {
         write("pinShortcut(${shortcut.packageName}, ${shortcut.id})") { preferences ->
             preferences.copy(pinnedShortcuts = preferences.pinnedShortcuts + shortcut)
+        }
+    }
+
+    override suspend fun unpinShortcut(shortcut: AppShortcut) {
+        write("unpinShortcut(${shortcut.packageName}, ${shortcut.id})") { preferences ->
+            preferences.copy(pinnedShortcuts = preferences.pinnedShortcuts - shortcut)
         }
     }
 

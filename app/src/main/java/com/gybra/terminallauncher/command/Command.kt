@@ -6,6 +6,7 @@ public enum class Command {
     HELP,
     PIN,
     UNPIN,
+    SHORTCUTS,
     SETTINGS,
     ALIAS,
     BATTERY,

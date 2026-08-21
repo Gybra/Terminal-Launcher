@@ -1,7 +1,7 @@
 package com.gybra.terminallauncher.ui.settings
 
 import com.gybra.terminallauncher.MainDispatcherRule
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.launcher.FakeDeviceLock
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
@@ -310,7 +310,9 @@ class SettingsViewModelTest {
 
         override suspend fun unpinPackage(packageName: String) = unsupported()
 
-        override suspend fun pinShortcut(shortcut: PinnedShortcut) = unsupported()
+        override suspend fun pinShortcut(shortcut: AppShortcut) = unsupported()
+
+        override suspend fun unpinShortcut(shortcut: AppShortcut) = unsupported()
 
         override suspend fun unpinShortcuts(packageName: String) = unsupported()
 
@@ -369,7 +371,9 @@ class SettingsViewModelTest {
 
         override suspend fun unpinPackage(packageName: String) = unsupported()
 
-        override suspend fun pinShortcut(shortcut: PinnedShortcut) = unsupported()
+        override suspend fun pinShortcut(shortcut: AppShortcut) = unsupported()
+
+        override suspend fun unpinShortcut(shortcut: AppShortcut) = unsupported()
 
         override suspend fun unpinShortcuts(packageName: String) = unsupported()
 

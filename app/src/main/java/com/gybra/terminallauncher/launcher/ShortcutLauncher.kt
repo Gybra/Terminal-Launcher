@@ -12,7 +12,7 @@ import android.os.Process
 public class ShortcutLauncher(
     private val context: Context,
 ) {
-    public fun launch(shortcut: PinnedShortcut): Boolean {
+    public fun launch(shortcut: AppShortcut): Boolean {
         val launcherApps = context.getSystemService(LauncherApps::class.java) ?: return false
 
         return try {
