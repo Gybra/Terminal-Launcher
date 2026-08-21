@@ -10,7 +10,8 @@ import kotlinx.coroutines.flow.first
 
 /**
  * Lists the shortcuts an application publishes, pins one of them to Home, and removes a pinned
- * one. The application is named by its first argument and the shortcut by the rest of the line.
+ * one. The application is named by its first argument and the shortcut by the rest of the line,
+ * so a first argument reading `pin` or `unpin` asks for those instead of naming an application.
  */
 public class ShortcutsCommand(
     private val shortcutRepository: ShortcutRepository,
