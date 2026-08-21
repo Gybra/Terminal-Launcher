@@ -152,4 +152,9 @@ class DosShellProfileTest {
         assertEquals("42% CHARGING", profile.formatBattery(battery))
         assertEquals("42%", profile.formatBattery(battery.copy(charging = false)))
     }
+
+    @Test
+    fun `invites the help command on an empty Home in upper case`() {
+        assertEquals("TYPE HELP TO LIST THE COMMANDS", profile.formatHelpInvitation())
+    }
 }

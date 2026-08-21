@@ -21,6 +21,11 @@ import com.gybra.terminallauncher.ui.settings.SettingsUiState
 import com.gybra.terminallauncher.ui.theme.TerminalThemeProvider
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Shows Home or the settings, and turns what a row or a submitted line asks into the launcher
+ * work the composition root wired. Starting anything from a row calls [onRowStart] first, since
+ * the tap answers what was typed the way a submitted line does.
+ */
 @Composable
 public fun LauncherApp(
     homeState: HomeUiState,
@@ -30,6 +35,7 @@ public fun LauncherApp(
     submittedActions: Flow<SubmittedAction>,
     onLaunchApp: (InstalledApp) -> Unit,
     onLaunchShortcut: (AppShortcut) -> Unit,
+    onRowStart: () -> Unit,
     onLockScreen: () -> Unit,
     onOpenSystemScreen: (SystemScreen) -> Unit,
     onRestartLauncher: () -> Unit,
@@ -58,8 +64,14 @@ public fun LauncherApp(
         if (destination == LauncherDestination.HOME) {
             HomeScreen(
                 state = homeState,
-                onAppClick = onLaunchApp,
-                onShortcutClick = onLaunchShortcut,
+                onAppClick = { app ->
+                    onRowStart()
+                    onLaunchApp(app)
+                },
+                onShortcutClick = { shortcut ->
+                    onRowStart()
+                    onLaunchShortcut(shortcut)
+                },
                 onLockScreen = onLockScreen,
                 promptActions = promptActions,
             )

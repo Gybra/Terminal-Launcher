@@ -77,6 +77,7 @@ public fun HomeScreen(
                 .testTag(TestTag.HOME_LIST.tag),
             verticalArrangement = Arrangement.Bottom,
         ) {
+            helpInvitation(line = state.helpInvitation)
             pinnedItems(state = state, onAppClick = onAppClick, onShortcutClick = onShortcutClick)
             terminalHistory(
                 entries = state.history,
@@ -101,7 +102,17 @@ public fun HomeScreen(
  * happened next to the prompt.
  */
 private val HomeUiState.rowCount: Int
-    get() = apps.size + shortcuts.size + history.size + searchResults.size
+    get() = apps.size + shortcuts.size + history.size + searchResults.size +
+        (if (helpInvitation == null) 0 else 1)
+
+/** Writes the line an empty Home reads, which the shell wrote and nothing here can start. */
+private fun LazyListScope.helpInvitation(line: String?) {
+    if (line != null) {
+        item(key = HomeItem.HELP_INVITATION.key) {
+            TerminalLine(text = line)
+        }
+    }
+}
 
 /** Lists what the typed line matches, right above the prompt that is matching it. */
 private fun LazyListScope.searchResults(

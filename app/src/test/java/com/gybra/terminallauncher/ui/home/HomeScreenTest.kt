@@ -402,6 +402,25 @@ class HomeScreenTest {
     }
 
     @Test
+    fun `writes the empty Home line the shell wrote, above the prompt`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = DosShellProfile,
+                    shellContext = defaultShellContext(),
+                    helpInvitation = "TYPE HELP TO LIST THE COMMANDS",
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("TYPE HELP TO LIST THE COMMANDS").assertIsDisplayed()
+    }
+
+    @Test
     fun `starts an application listed in the terminal history when it is tapped`() {
         val app = InstalledApp(packageName = "com.example.mailbox", label = "Mailbox")
         var launched: InstalledApp? = null
