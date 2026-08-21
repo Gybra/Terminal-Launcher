@@ -61,7 +61,7 @@ public object UnixShellProfile : ShellProfile {
 
     override fun aliasesFor(command: Command): Set<String> = when (command) {
         Command.LIST_APPS -> setOf("ls", "dir")
-        Command.CLEAR -> setOf("clear", "cls")
+        Command.CLEAR -> setOf("clear", "cls", "clr")
         else -> setOf(aliasFor(command))
     }
 

@@ -129,7 +129,7 @@ class UnixShellProfileTest {
             assertEquals(alias, profile.aliasFor(command))
         }
         assertEquals(setOf("ls", "dir"), profile.aliasesFor(Command.LIST_APPS))
-        assertEquals(setOf("clear", "cls"), profile.aliasesFor(Command.CLEAR))
+        assertEquals(setOf("clear", "cls", "clr"), profile.aliasesFor(Command.CLEAR))
         assertEquals(setOf("help"), profile.aliasesFor(Command.HELP))
     }
 
