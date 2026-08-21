@@ -2,6 +2,8 @@ package com.gybra.terminallauncher.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,8 +23,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -70,7 +75,7 @@ public fun HomeScreen(
             modifier = Modifier
                 .weight(1f)
                 .testTag(TestTag.HOME_LIST.tag),
-            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Bottom),
+            verticalArrangement = Arrangement.Bottom,
         ) {
             pinnedItems(state = state, onAppClick = onAppClick, onShortcutClick = onShortcutClick)
             terminalHistory(
@@ -174,27 +179,40 @@ private fun StatusLine(clock: String?, battery: String?) {
     }
 }
 
+/**
+ * One startable line, written in full colour and tall enough to be operated reliably. Pressing it
+ * swaps the two terminal colours, the way a TTY marks a selection, so the answer to a touch needs
+ * no colour of its own.
+ */
 @Composable
 private fun AppRow(
     displayName: String,
     onClick: () -> Unit,
 ) {
     val colors = LocalTerminalColors.current
-    BasicText(
-        text = displayName,
-        style = terminalTextStyle(colors.foreground),
+    val presses = remember { MutableInteractionSource() }
+    val pressed by presses.collectIsPressedAsState()
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
-            .clickable(onClick = onClick),
-    )
+            .background(if (pressed) colors.foreground else Color.Transparent)
+            .clickable(interactionSource = presses, indication = null, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BasicText(
+            text = displayName,
+            style = terminalTextStyle(if (pressed) colors.background else colors.foreground),
+        )
+    }
 }
 
+/** One line Home only writes: the status, what a command printed, and the lines already submitted. */
 @Composable
 private fun TerminalLine(text: String) {
     val colors = LocalTerminalColors.current
     BasicText(
         text = text,
-        style = terminalTextStyle(colors.foreground),
+        style = terminalTextStyle(colors.secondary),
     )
 }

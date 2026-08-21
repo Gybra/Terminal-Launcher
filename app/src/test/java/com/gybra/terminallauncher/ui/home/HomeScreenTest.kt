@@ -3,9 +3,12 @@ package com.gybra.terminallauncher.ui.home
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -14,9 +17,12 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.down
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.test.up
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
@@ -26,6 +32,8 @@ import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
+import com.gybra.terminallauncher.theme.TerminalTheme
+import com.gybra.terminallauncher.theme.colors
 import com.gybra.terminallauncher.ui.TestTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -34,9 +42,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], qualifiers = "notnight")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class HomeScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
@@ -505,4 +515,132 @@ class HomeScreenTest {
 
         composeRule.onNodeWithText("settings").assertDoesNotExist()
     }
+
+    @Test
+    fun `centres the text of a startable row in its tappable height`() {
+        val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(apps = listOf(app)),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        val row = composeRule.onNodeWithText("mail").getUnclippedBoundsInRoot()
+        val text = composeRule
+            .onNodeWithText("mail", useUnmergedTree = true)
+            .getUnclippedBoundsInRoot()
+
+        assertTrue("Expected the text inside the row, got $text in $row", text.height < row.height)
+        assertEquals((text.top - row.top).value, (row.bottom - text.bottom).value, 1f)
+    }
+
+    @Test
+    fun `leaves no gap between startable rows`() {
+        val apps = listOf(
+            InstalledApp(packageName = "com.example.mail", label = "Mail"),
+            InstalledApp(packageName = "com.example.camera", label = "Camera"),
+        )
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(apps = apps),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        val mail = composeRule.onNodeWithText("mail").getUnclippedBoundsInRoot()
+        val camera = composeRule.onNodeWithText("camera").getUnclippedBoundsInRoot()
+
+        assertEquals(mail.bottom.value, camera.top.value, 0.5f)
+    }
+
+    @Test
+    fun `writes command output in the arrested colour`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(
+                    history = listOf(TerminalEntry(id = 0L, input = "ls", output = listOf("camera"))),
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        val output = pixelsOf("camera")
+
+        assertTrue("Expected the arrested colour", output.contains(terminalColors().secondary))
+        assertTrue("Expected no full colour", !output.contains(terminalColors().foreground))
+    }
+
+    @Test
+    fun `writes a startable row in the full colour`() {
+        val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(apps = listOf(app)),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        val row = pixelsOf("mail")
+
+        assertTrue("Expected the full colour", row.contains(terminalColors().foreground))
+        assertTrue("Expected no arrested colour", !row.contains(terminalColors().secondary))
+    }
+
+    @Test
+    fun `inverts a startable row while it is pressed`() {
+        val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(apps = listOf(app)),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("mail").performTouchInput { down(center) }
+        composeRule.mainClock.advanceTimeBy(PRESS_DELAY_MILLIS)
+        composeRule.waitForIdle()
+
+        val pressed = pixelsOf("mail")
+
+        assertEquals(terminalColors().foreground, pressed.mostPainted())
+        assertTrue("Expected the text cut out", pressed.contains(terminalColors().background))
+
+        composeRule.onNodeWithText("mail").performTouchInput { up() }
+        composeRule.waitForIdle()
+
+        val released = pixelsOf("mail")
+
+        assertEquals(terminalColors().background, released.mostPainted())
+        assertTrue("Expected the text back", released.contains(terminalColors().foreground))
+    }
+
+    private fun pixelsOf(text: String): List<Color> {
+        val pixels = composeRule.onNodeWithText(text).captureToImage().toPixelMap()
+        return (0 until pixels.width)
+            .flatMap { x -> (0 until pixels.height).map { y -> pixels[x, y] } }
+    }
+
+    /** The colour a row is mostly painted in, which is what an inversion swaps. */
+    private fun List<Color>.mostPainted(): Color =
+        groupingBy { colour -> colour }.eachCount().maxBy { painted -> painted.value }.key
+
+    private fun terminalColors() = TerminalTheme.MONOCHROME.colors(systemDarkTheme = true)
 }
+
+private const val PRESS_DELAY_MILLIS = 300L
