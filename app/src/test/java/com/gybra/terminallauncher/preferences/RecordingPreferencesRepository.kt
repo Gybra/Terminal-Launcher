@@ -49,6 +49,12 @@ class RecordingPreferencesRepository(
         }
     }
 
+    override suspend fun setImmersiveMode(immersiveMode: Boolean) {
+        write("setImmersiveMode($immersiveMode)") { preferences ->
+            preferences.copy(immersiveMode = immersiveMode)
+        }
+    }
+
     override suspend fun setUsername(username: String) {
         write("setUsername($username)") { preferences -> preferences.copy(username = username) }
     }

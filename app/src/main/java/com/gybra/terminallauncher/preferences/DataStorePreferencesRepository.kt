@@ -58,6 +58,12 @@ public class DataStorePreferencesRepository(
         }
     }
 
+    override suspend fun setImmersiveMode(immersiveMode: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[Keys.immersiveMode] = immersiveMode
+        }
+    }
+
     override suspend fun setUsername(username: String) {
         dataStore.edit { preferences ->
             preferences[Keys.username] = username
@@ -155,6 +161,7 @@ public class DataStorePreferencesRepository(
             .toEnum(TerminalTheme.entries, defaults.terminalTheme),
         showClock = preferences[Keys.showClock] ?: defaults.showClock,
         showBattery = preferences[Keys.showBattery] ?: defaults.showBattery,
+        immersiveMode = preferences[Keys.immersiveMode] ?: defaults.immersiveMode,
         username = preferences[Keys.username] ?: defaults.username,
         hostname = preferences[Keys.hostname] ?: defaults.hostname,
         promptSymbol = preferences[Keys.promptSymbol]
@@ -237,6 +244,7 @@ public class DataStorePreferencesRepository(
         val terminalTheme: Preferences.Key<String> = stringPreferencesKey("terminal_theme")
         val showClock: Preferences.Key<Boolean> = booleanPreferencesKey("show_clock")
         val showBattery: Preferences.Key<Boolean> = booleanPreferencesKey("show_battery")
+        val immersiveMode: Preferences.Key<Boolean> = booleanPreferencesKey("immersive_mode")
         val username: Preferences.Key<String> = stringPreferencesKey("username")
         val hostname: Preferences.Key<String> = stringPreferencesKey("hostname")
         val promptSymbol: Preferences.Key<String> = stringPreferencesKey("prompt_symbol")

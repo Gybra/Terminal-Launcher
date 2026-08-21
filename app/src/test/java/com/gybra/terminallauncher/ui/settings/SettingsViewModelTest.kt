@@ -41,6 +41,7 @@ class SettingsViewModelTest {
                 terminalTheme = TerminalTheme.GREEN,
                 showClock = false,
                 showBattery = false,
+                immersiveMode = false,
                 username = "oreste",
                 hostname = "phone",
                 promptSymbol = PromptSymbol.PERCENT,
@@ -56,6 +57,7 @@ class SettingsViewModelTest {
                 terminalTheme = TerminalTheme.GREEN,
                 showClock = false,
                 showBattery = false,
+                immersiveMode = false,
                 doubleTapToLock = false,
                 username = "oreste",
                 hostname = "phone",
@@ -76,6 +78,7 @@ class SettingsViewModelTest {
         viewModel.selectTheme(TerminalTheme.AMBER)
         viewModel.setShowClock(false)
         viewModel.setShowBattery(false)
+        viewModel.setImmersiveMode(false)
         viewModel.setUsername("oreste")
         viewModel.setHostname("phone")
         viewModel.selectPromptSymbol(PromptSymbol.ARROW)
@@ -87,6 +90,7 @@ class SettingsViewModelTest {
         assertEquals(TerminalTheme.AMBER, repository.terminalTheme)
         assertEquals(false, repository.showClock)
         assertEquals(false, repository.showBattery)
+        assertEquals(false, repository.immersiveMode)
         assertEquals("oreste", repository.username)
         assertEquals("phone", repository.hostname)
         assertEquals(PromptSymbol.ARROW, repository.promptSymbol)
@@ -229,6 +233,7 @@ class SettingsViewModelTest {
         var terminalTheme: TerminalTheme? = null
         var showClock: Boolean? = null
         var showBattery: Boolean? = null
+        var immersiveMode: Boolean? = null
         var username: String? = null
         var hostname: String? = null
         var promptSymbol: PromptSymbol? = null
@@ -262,6 +267,12 @@ class SettingsViewModelTest {
             writeFailure?.let { throw it }
             this.showBattery = showBattery
             emit(mutablePreferences.value.copy(showBattery = showBattery))
+        }
+
+        override suspend fun setImmersiveMode(immersiveMode: Boolean) {
+            writeFailure?.let { throw it }
+            this.immersiveMode = immersiveMode
+            emit(mutablePreferences.value.copy(immersiveMode = immersiveMode))
         }
 
         override suspend fun setUsername(username: String) {
@@ -338,6 +349,8 @@ class SettingsViewModelTest {
         }
 
         override suspend fun setShowBattery(showBattery: Boolean) = unsupported()
+
+        override suspend fun setImmersiveMode(immersiveMode: Boolean) = unsupported()
 
         override suspend fun setUsername(username: String) {
             releaseUsernameWrite.await()

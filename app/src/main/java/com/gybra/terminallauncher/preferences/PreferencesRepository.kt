@@ -18,6 +18,9 @@ public interface PreferencesRepository {
 
     public suspend fun setShowBattery(showBattery: Boolean)
 
+    /** Keeps the system bars hidden, or lets Android show them, as [immersiveMode] asks. */
+    public suspend fun setImmersiveMode(immersiveMode: Boolean)
+
     public suspend fun setUsername(username: String)
 
     public suspend fun setHostname(hostname: String)

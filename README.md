@@ -10,10 +10,10 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 
 **Home and appearance**
 
-- registers as an Android Home application and renders full screen, edge to edge, in system monospace type;
-- persists every preference in DataStore: shell, terminal theme, clock, battery, username, hostname, prompt symbol, prompt path visibility, DOS drive letter, pinned applications, pinned shortcuts, and how often and how recently each application is launched;
+- registers as an Android Home application and renders edge to edge, in system monospace type, hiding the system bars until the user asks to keep them;
+- persists every preference in DataStore: shell, terminal theme, clock, battery, immersive mode, username, hostname, prompt symbol, prompt path visibility, DOS drive letter, pinned applications, pinned shortcuts, and how often and how recently each application is launched;
 - offers independent System, Green, Amber, and Monochrome terminal themes, and a status line carrying an optional live clock and the battery level, which is shown by default;
-- offers a minimal settings screen for shell, theme, clock, battery, double tap to lock, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter;
+- offers a minimal settings screen for shell, theme, clock, battery, immersive mode, double tap to lock, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter;
 - answers the requests applications make to pin one of their shortcuts to Home, such as a browser adding a website, and keeps nothing until the user accepts;
 - locks the screen on a double tap, once the user grants the device admin that Android requires for it.
 
@@ -80,6 +80,8 @@ The prompt can be customized from the settings screen, and the customization is 
 No drive, path, or symbol reaches a filesystem or grants a privilege: nothing exists behind them, and the launcher navigates no directories. The path shown is a fixed label for where the launcher is, not a working directory.
 
 Home keeps one status line above everything else, with the clock on the left and the battery on the right, each written in the style of the selected shell: `42% charging` on Unix and `42% CHARGING` on DOS. The clock and the battery are each turned off in the settings screen, both are shown by default, hiding one leaves the other on its own side, and hiding both leaves no line at all. The battery follows the device instead of being read once, and a device reporting no level shows none rather than a number the launcher made up.
+
+`Immersive mode`, on by default, keeps the status and navigation bars hidden and brings them back only as transient bars on a swipe. Turning it off leaves the system bars on screen, and Home keeps its content clear of them.
 
 The terminal history lives in memory only and starts empty after every process restart, by design.
 

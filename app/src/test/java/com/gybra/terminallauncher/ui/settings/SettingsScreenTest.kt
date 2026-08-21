@@ -127,6 +127,17 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `forwards the immersive mode toggle`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+
+        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("[*] Immersive mode"))
+        composeRule.onNodeWithText("[*] Immersive mode").performClick()
+
+        assertFalse(harness.state.immersiveMode)
+    }
+
+    @Test
     fun `forwards the prompt path toggle`() {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
@@ -171,6 +182,7 @@ class SettingsScreenTest {
         terminalTheme = TerminalTheme.SYSTEM,
         showClock = true,
         showBattery = true,
+        immersiveMode = true,
         doubleTapToLock = false,
         username = "user",
         hostname = "android",
@@ -194,6 +206,7 @@ class SettingsScreenTest {
                     selectTheme = { state = state.copy(terminalTheme = it) },
                     setShowClock = { state = state.copy(showClock = it) },
                     setShowBattery = { state = state.copy(showBattery = it) },
+                    setImmersiveMode = { state = state.copy(immersiveMode = it) },
                     setDoubleTapToLock = { state = state.copy(doubleTapToLock = it) },
                     setUsername = { state = state.copy(username = it) },
                     setHostname = { state = state.copy(hostname = it) },

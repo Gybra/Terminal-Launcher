@@ -42,6 +42,8 @@ import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsViewModel
 
 public class MainActivity : ComponentActivity() {
+    private var immersiveMode = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         configureFullScreenWindow()
@@ -111,6 +113,7 @@ public class MainActivity : ComponentActivity() {
                 updateSystemBarIconAppearance(
                     useDarkIcons = terminalColors.useDarkSystemBarIcons(),
                 )
+                applySystemBars(immersive = settingsState.immersiveMode)
             }
             LauncherApp(
                 homeState = homeState,
@@ -120,6 +123,7 @@ public class MainActivity : ComponentActivity() {
                     selectTheme = settingsViewModel::selectTheme,
                     setShowClock = settingsViewModel::setShowClock,
                     setShowBattery = settingsViewModel::setShowBattery,
+                    setImmersiveMode = settingsViewModel::setImmersiveMode,
                     setDoubleTapToLock = settingsViewModel::setDoubleTapToLock,
                     setUsername = settingsViewModel::setUsername,
                     setHostname = settingsViewModel::setHostname,
@@ -145,7 +149,7 @@ public class MainActivity : ComponentActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
-            hideSystemBars()
+            applySystemBars(immersive = immersiveMode)
         }
     }
 
@@ -156,13 +160,20 @@ public class MainActivity : ComponentActivity() {
         )
         WindowCompat.getInsetsController(window, window.decorView).systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        hideSystemBars()
     }
 
-    private fun hideSystemBars() {
-        WindowCompat
-            .getInsetsController(window, window.decorView)
-            .hide(WindowInsetsCompat.Type.systemBars())
+    /**
+     * Hides the system bars, or gives them back, as the setting asks. The window answers focus
+     * changes outside the composition, so the last applied value is kept here.
+     */
+    private fun applySystemBars(immersive: Boolean) {
+        immersiveMode = immersive
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        if (immersive) {
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+        }
     }
 
     private fun updateSystemBarIconAppearance(useDarkIcons: Boolean) {
