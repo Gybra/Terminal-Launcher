@@ -6,10 +6,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.selection.selectable
@@ -44,6 +47,7 @@ public fun SettingsScreen(
         modifier = modifier
             .fillMaxSize()
             .background(colors.background)
+            .windowInsetsPadding(WindowInsets.systemBars)
             .testTag("settings-list"),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -53,6 +57,7 @@ public fun SettingsScreen(
             item(key = "storage-error") { TerminalText(error) }
         }
         appearanceSettings(state = state, actions = actions)
+        homeSettings(state = state, actions = actions)
         unixSettings(state = state, actions = actions)
         dosSettings(state = state, actions = actions)
     }
@@ -83,6 +88,13 @@ private fun LazyListScope.appearanceSettings(
             )
         }
     }
+}
+
+/** Lists what Home shows and how it behaves, under the same section as the appearance. */
+private fun LazyListScope.homeSettings(
+    state: SettingsUiState,
+    actions: SettingsActions,
+) {
     item(key = "clock") {
         ToggleOption(
             label = "Show clock",
@@ -95,6 +107,13 @@ private fun LazyListScope.appearanceSettings(
             label = "Show battery",
             checked = state.showBattery,
             onCheckedChange = actions.setShowBattery,
+        )
+    }
+    item(key = "immersive-mode") {
+        ToggleOption(
+            label = "Immersive mode",
+            checked = state.immersiveMode,
+            onCheckedChange = actions.setImmersiveMode,
         )
     }
     item(key = "double-tap-to-lock") {

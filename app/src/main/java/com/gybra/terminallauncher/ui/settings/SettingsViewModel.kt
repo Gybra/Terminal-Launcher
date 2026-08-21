@@ -60,6 +60,13 @@ public class SettingsViewModel(
         )
     }
 
+    public fun setImmersiveMode(immersiveMode: Boolean) {
+        updateSetting(
+            update = { state -> state.copy(immersiveMode = immersiveMode) },
+            persist = { preferencesRepository.setImmersiveMode(immersiveMode) },
+        )
+    }
+
     /**
      * Asks the user for the device admin that locking the screen needs, or gives it back. The
      * toggle follows what Android answers, so a request the user declines leaves it off.
@@ -169,6 +176,7 @@ public class SettingsViewModel(
         terminalTheme = terminalTheme,
         showClock = showClock,
         showBattery = showBattery,
+        immersiveMode = immersiveMode,
         doubleTapToLock = deviceLock.enabled,
         username = username,
         hostname = hostname,

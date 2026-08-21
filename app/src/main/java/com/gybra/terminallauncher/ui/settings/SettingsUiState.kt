@@ -10,6 +10,7 @@ public data class SettingsUiState(
     public val terminalTheme: TerminalTheme,
     public val showClock: Boolean,
     public val showBattery: Boolean,
+    public val immersiveMode: Boolean,
     public val doubleTapToLock: Boolean,
     public val username: String,
     public val hostname: String,

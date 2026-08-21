@@ -54,6 +54,7 @@ class DataStorePreferencesRepositoryTest {
         firstRepository.setTerminalTheme(TerminalTheme.AMBER)
         firstRepository.setShowClock(false)
         firstRepository.setShowBattery(false)
+        firstRepository.setImmersiveMode(false)
         firstRepository.setUsername("oreste")
         firstRepository.setHostname("phone")
         firstRepository.setPromptSymbol(PromptSymbol.PERCENT)
@@ -78,6 +79,7 @@ class DataStorePreferencesRepositoryTest {
                 terminalTheme = TerminalTheme.AMBER,
                 showClock = false,
                 showBattery = false,
+                immersiveMode = false,
                 username = "oreste",
                 hostname = "phone",
                 promptSymbol = PromptSymbol.PERCENT,
