@@ -9,6 +9,11 @@ public data class TerminalColors(
     public val secondary: Color,
 )
 
+/**
+ * The secondary color always sits between the background and the foreground, so what a command
+ * printed reads as inert under every theme. `C64` reproduces the light blue on blue of the machine
+ * it is named after, which is dimmer than the rest on purpose.
+ */
 public fun TerminalTheme.colors(systemDarkTheme: Boolean): TerminalColors = when (this) {
     TerminalTheme.SYSTEM -> systemColors(systemDarkTheme)
     TerminalTheme.GREEN -> TerminalColors(
@@ -22,6 +27,16 @@ public fun TerminalTheme.colors(systemDarkTheme: Boolean): TerminalColors = when
         secondary = Color(0xFFB87900),
     )
     TerminalTheme.MONOCHROME -> darkMonochromeColors()
+    TerminalTheme.C64 -> TerminalColors(
+        background = Color(0xFF40318D),
+        foreground = Color(0xFF7869C4),
+        secondary = Color(0xFF5A4BA8),
+    )
+    TerminalTheme.SOLARIZED -> TerminalColors(
+        background = Color(0xFF002B36),
+        foreground = Color(0xFF93A1A1),
+        secondary = Color(0xFF586E75),
+    )
 }
 
 public fun TerminalColors.useDarkSystemBarIcons(): Boolean =
