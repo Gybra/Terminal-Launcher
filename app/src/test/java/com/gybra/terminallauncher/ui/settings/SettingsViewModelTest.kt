@@ -8,6 +8,7 @@ import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
@@ -53,7 +54,7 @@ class SettingsViewModelTest {
 
         assertEquals(
             SettingsUiState(
-                shellType = ShellType.DOS,
+                shellProfile = DosShellProfile,
                 terminalTheme = TerminalTheme.GREEN,
                 showClock = false,
                 showBattery = false,

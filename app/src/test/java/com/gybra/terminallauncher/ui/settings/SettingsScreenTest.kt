@@ -16,7 +16,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
+import com.gybra.terminallauncher.shell.ShellProfile
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.shell.ShellProfiles
+import com.gybra.terminallauncher.shell.dos.DosShellProfile
+import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.ui.TestTag
 import org.junit.Assert.assertEquals
@@ -39,13 +43,35 @@ class SettingsScreenTest {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
 
-        composeRule.onNodeWithText("(*) UNIX").assertIsDisplayed()
-        composeRule.onNodeWithText("( ) DOS").performClick()
-        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(toggleText(SettingsEntry.SHOW_CLOCK, checked = true)))
-        composeRule.onNodeWithText(toggleText(SettingsEntry.SHOW_CLOCK, checked = true)).performClick()
+        composeRule
+            .onNodeWithText(optionText(ShellType.UNIX.name, selected = true))
+            .assertIsDisplayed()
+        composeRule.onNodeWithText(optionText(ShellType.DOS.name)).performClick()
 
-        assertEquals(ShellType.DOS, harness.state.shellType)
+        val clock = toggleText(SettingsEntry.SHOW_CLOCK, checked = true, profile = DosShellProfile)
+        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(clock))
+        composeRule.onNodeWithText(clock).performClick()
+
+        assertEquals(DosShellProfile, harness.state.shellProfile)
         assertFalse(harness.state.showClock)
+    }
+
+    @Test
+    fun `reads every label in the shell that was chosen`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+
+        composeRule.onNodeWithText(label(SettingsEntry.BACK)).assertIsDisplayed()
+        composeRule.onNodeWithText(label(SettingsEntry.APPEARANCE)).assertIsDisplayed()
+
+        composeRule.onNodeWithText(optionText(ShellType.DOS.name)).performClick()
+
+        composeRule
+            .onNodeWithText(label(SettingsEntry.BACK, profile = DosShellProfile))
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithText(label(SettingsEntry.APPEARANCE, profile = DosShellProfile))
+            .assertIsDisplayed()
     }
 
     @Test
@@ -60,9 +86,9 @@ class SettingsScreenTest {
             TerminalTheme.SYSTEM,
         )
         selectionOrder.forEach { theme ->
-            val optionText = "( ) ${theme.name}"
-            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(optionText))
-            composeRule.onNodeWithText(optionText).performClick()
+            val option = optionText(theme.name)
+            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(option))
+            composeRule.onNodeWithText(option).performClick()
 
             assertEquals(theme, harness.state.terminalTheme)
         }
@@ -75,13 +101,13 @@ class SettingsScreenTest {
 
         composeRule
             .onNodeWithTag(TestTag.SETTINGS_LIST.tag)
-            .performScrollToNode(hasContentDescription(SettingsEntry.USERNAME.label))
-        composeRule.onNodeWithContentDescription(SettingsEntry.USERNAME.label).performTextReplacement("oreste")
+            .performScrollToNode(hasContentDescription(label(SettingsEntry.USERNAME)))
+        composeRule.onNodeWithContentDescription(label(SettingsEntry.USERNAME)).performTextReplacement("oreste")
         composeRule
             .onNodeWithTag(TestTag.SETTINGS_LIST.tag)
-            .performScrollToNode(hasContentDescription(SettingsEntry.HOSTNAME.label))
+            .performScrollToNode(hasContentDescription(label(SettingsEntry.HOSTNAME)))
         composeRule
-            .onNodeWithContentDescription(SettingsEntry.HOSTNAME.label)
+            .onNodeWithContentDescription(label(SettingsEntry.HOSTNAME))
             .performTextReplacement("phone")
 
         assertEquals("oreste", harness.state.username)
@@ -94,9 +120,9 @@ class SettingsScreenTest {
         composeRule.setContent { harness.Content() }
 
         listOf(PromptSymbol.PERCENT, PromptSymbol.ARROW, PromptSymbol.DOLLAR).forEach { symbol ->
-            val optionText = "( ) ${symbol.text}"
-            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(optionText))
-            composeRule.onNodeWithText(optionText).performClick()
+            val option = optionText(symbol.text)
+            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(option))
+            composeRule.onNodeWithText(option).performClick()
 
             assertEquals(symbol, harness.state.promptSymbol)
         }
@@ -108,9 +134,9 @@ class SettingsScreenTest {
         composeRule.setContent { harness.Content() }
 
         listOf(DosDrive.A, DosDrive.D, DosDrive.C).forEach { drive ->
-            val optionText = "( ) ${drive.name}:"
-            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(optionText))
-            composeRule.onNodeWithText(optionText).performClick()
+            val option = optionText("${drive.name}:")
+            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(option))
+            composeRule.onNodeWithText(option).performClick()
 
             assertEquals(drive, harness.state.dosDrive)
         }
@@ -155,17 +181,20 @@ class SettingsScreenTest {
     fun `renders unchecked clock and selected DOS state`() {
         val harness = SettingsHarness(
             initialState = defaultState().copy(
-                shellType = ShellType.DOS,
+                shellProfile = DosShellProfile,
                 showClock = false,
                 storageError = "Unable to save preferences",
             ),
         )
         composeRule.setContent { harness.Content() }
 
-        composeRule.onNodeWithText("(*) DOS").assertIsDisplayed()
-        composeRule.onNodeWithText("Unable to save preferences").assertIsDisplayed()
-        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(toggleText(SettingsEntry.SHOW_CLOCK, checked = false)))
-        composeRule.onNodeWithText(toggleText(SettingsEntry.SHOW_CLOCK, checked = false)).assertIsDisplayed()
+        val dosClock = toggleText(SettingsEntry.SHOW_CLOCK, checked = false, profile = DosShellProfile)
+        composeRule
+            .onNodeWithText(optionText(ShellType.DOS.name, selected = true, profile = DosShellProfile))
+            .assertIsDisplayed()
+        composeRule.onNodeWithText("UNABLE TO SAVE PREFERENCES").assertIsDisplayed()
+        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(dosClock))
+        composeRule.onNodeWithText(dosClock).assertIsDisplayed()
     }
 
     @Test
@@ -173,16 +202,31 @@ class SettingsScreenTest {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
 
-        composeRule.onNodeWithText(SettingsEntry.BACK.label).performClick()
+        composeRule.onNodeWithText(label(SettingsEntry.BACK)).performClick()
 
         assertTrue(harness.wentBack)
     }
 
-    private fun toggleText(entry: SettingsEntry, checked: Boolean): String =
-        "[${if (checked) "*" else " "}] ${entry.label}"
+    private fun toggleText(
+        entry: SettingsEntry,
+        checked: Boolean,
+        profile: ShellProfile = UnixShellProfile,
+    ): String = "[${if (checked) "*" else " "}] ${profile.formatMessage(entry.label)}"
+
+    private fun optionText(
+        label: String,
+        selected: Boolean = false,
+        profile: ShellProfile = UnixShellProfile,
+    ): String = "${if (selected) "(*)" else "( )"} ${profile.formatMessage(label)}"
+
+    /** The label the screen writes for [entry], which the selected shell decides. */
+    private fun label(
+        entry: SettingsEntry,
+        profile: ShellProfile = UnixShellProfile,
+    ): String = profile.formatMessage(entry.label)
 
     private fun defaultState(): SettingsUiState = SettingsUiState(
-        shellType = ShellType.UNIX,
+        shellProfile = UnixShellProfile,
         terminalTheme = TerminalTheme.SYSTEM,
         showClock = true,
         showBattery = true,
@@ -206,7 +250,7 @@ class SettingsScreenTest {
             SettingsScreen(
                 state = state,
                 actions = SettingsActions(
-                    selectShell = { state = state.copy(shellType = it) },
+                    selectShell = { state = state.copy(shellProfile = ShellProfiles.forType(it)) },
                     selectTheme = { state = state.copy(terminalTheme = it) },
                     setShowClock = { state = state.copy(showClock = it) },
                     setShowBattery = { state = state.copy(showBattery = it) },

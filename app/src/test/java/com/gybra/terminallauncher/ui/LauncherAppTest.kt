@@ -72,9 +72,9 @@ class LauncherAppTest {
             )
         }
 
-        composeRule.onNodeWithText(SettingsEntry.APPEARANCE.label).assertIsDisplayed()
+        composeRule.onNodeWithText(UnixShellProfile.formatMessage(SettingsEntry.APPEARANCE.label)).assertIsDisplayed()
 
-        composeRule.onNodeWithText(SettingsEntry.BACK.label).performClick()
+        composeRule.onNodeWithText(UnixShellProfile.formatMessage(SettingsEntry.BACK.label)).performClick()
         composeRule.onNodeWithText("user@android:~$", substring = true).assertIsDisplayed()
     }
 
@@ -124,7 +124,7 @@ class LauncherAppTest {
                 onRestartLauncher = {},
             )
         }
-        composeRule.onNodeWithText(SettingsEntry.APPEARANCE.label).assertIsDisplayed()
+        composeRule.onNodeWithText(UnixShellProfile.formatMessage(SettingsEntry.APPEARANCE.label)).assertIsDisplayed()
 
         composeRule.runOnIdle {
             checkNotNull(backDispatcher).onBackPressed()
@@ -156,7 +156,7 @@ class LauncherAppTest {
         composeRule.runOnIdle { submittedActions.tryEmit(SubmittedAction.OpenSettings) }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText(SettingsEntry.APPEARANCE.label).assertIsDisplayed()
+        composeRule.onNodeWithText(UnixShellProfile.formatMessage(SettingsEntry.APPEARANCE.label)).assertIsDisplayed()
     }
 
     @Test
@@ -370,7 +370,7 @@ class LauncherAppTest {
                     )
                     settingsState = settingsState(
                         terminalTheme = theme,
-                        shellType = shell.type,
+                        shellProfile = shell.profile,
                     )
                 }
 
@@ -414,9 +414,9 @@ class LauncherAppTest {
 
     private fun settingsState(
         terminalTheme: TerminalTheme = TerminalTheme.SYSTEM,
-        shellType: ShellType = ShellType.UNIX,
+        shellProfile: ShellProfile = UnixShellProfile,
     ): SettingsUiState = SettingsUiState(
-        shellType = shellType,
+        shellProfile = shellProfile,
         terminalTheme = terminalTheme,
         showClock = true,
         showBattery = true,

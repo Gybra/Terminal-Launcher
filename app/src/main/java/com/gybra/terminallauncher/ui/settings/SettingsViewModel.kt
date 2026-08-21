@@ -7,6 +7,7 @@ import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
+import com.gybra.terminallauncher.shell.ShellProfiles
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
@@ -34,7 +35,7 @@ public class SettingsViewModel(
 
     public fun selectShell(shellType: ShellType) {
         updateSetting(
-            update = { state -> state.copy(shellType = shellType) },
+            update = { state -> state.copy(shellProfile = ShellProfiles.forType(shellType)) },
             persist = { preferencesRepository.setShellType(shellType) },
         )
     }
@@ -172,7 +173,7 @@ public class SettingsViewModel(
     }
 
     private fun LauncherPreferences.toUiState(): SettingsUiState = SettingsUiState(
-        shellType = shellType,
+        shellProfile = ShellProfiles.forType(shellType),
         terminalTheme = terminalTheme,
         showClock = showClock,
         showBattery = showBattery,
