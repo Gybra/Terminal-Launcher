@@ -8,7 +8,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.gybra.terminallauncher.launcher.AppUsage
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
@@ -110,7 +110,7 @@ public class DataStorePreferencesRepository(
         }
     }
 
-    override suspend fun pinShortcut(shortcut: PinnedShortcut) {
+    override suspend fun pinShortcut(shortcut: AppShortcut) {
         require(shortcut.packageName.isNotBlank()) { "Package name must not be blank" }
         require(shortcut.id.isNotBlank()) { "Shortcut id must not be blank" }
         require(shortcut.label.isNotBlank()) { "Shortcut label must not be blank" }
@@ -207,12 +207,12 @@ public class DataStorePreferencesRepository(
      * follows the second separator, so only a package name or an identifier containing one is
      * unreadable. Shortcuts are ordered the way Home lists them, and never by storage order.
      */
-    private fun Set<String>.toShortcuts(): List<PinnedShortcut> = mapNotNull { entry ->
+    private fun Set<String>.toShortcuts(): List<AppShortcut> = mapNotNull { entry ->
         val fields = entry.split(SHORTCUT_SEPARATOR, limit = SHORTCUT_FIELD_COUNT)
         if (fields.size != SHORTCUT_FIELD_COUNT) return@mapNotNull null
         val (packageName, id, label) = fields
         if (packageName.isBlank() || id.isBlank() || label.isBlank()) return@mapNotNull null
-        PinnedShortcut(packageName = packageName, id = id, label = label)
+        AppShortcut(packageName = packageName, id = id, label = label)
     }.sortedWith(
         compareBy(
             { shortcut -> shortcut.label.lowercase(Locale.ROOT) },
@@ -221,9 +221,9 @@ public class DataStorePreferencesRepository(
         ),
     )
 
-    private fun PinnedShortcut.toStoredEntry(): String = storedPrefix() + label
+    private fun AppShortcut.toStoredEntry(): String = storedPrefix() + label
 
-    private fun PinnedShortcut.storedPrefix(): String =
+    private fun AppShortcut.storedPrefix(): String =
         "$packageName$SHORTCUT_SEPARATOR$id$SHORTCUT_SEPARATOR"
 
     private fun Map<String, AppUsage>.toStoredEntries(): Set<String> =

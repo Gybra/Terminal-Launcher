@@ -9,7 +9,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.gybra.terminallauncher.launcher.InstalledApp
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.launcher.SystemScreen
 import com.gybra.terminallauncher.ui.home.HomeScreen
 import com.gybra.terminallauncher.ui.home.HomeUiState
@@ -29,7 +29,7 @@ public fun LauncherApp(
     promptActions: PromptActions,
     submittedActions: Flow<SubmittedAction>,
     onLaunchApp: (InstalledApp) -> Unit,
-    onLaunchShortcut: (PinnedShortcut) -> Unit,
+    onLaunchShortcut: (AppShortcut) -> Unit,
     onLockScreen: () -> Unit,
     onOpenSystemScreen: (SystemScreen) -> Unit,
     onRestartLauncher: () -> Unit,

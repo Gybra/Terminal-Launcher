@@ -28,7 +28,7 @@ class ShortcutPinRequestsTest {
         val read = ShortcutPinRequests(context).read(intentCarrying(request))
 
         assertEquals(
-            PinnedShortcut(packageName = context.packageName, id = "new-tab", label = "New tab"),
+            AppShortcut(packageName = context.packageName, id = "new-tab", label = "New tab"),
             read?.shortcut,
         )
     }

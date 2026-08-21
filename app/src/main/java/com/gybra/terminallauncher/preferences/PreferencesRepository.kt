@@ -1,6 +1,6 @@
 package com.gybra.terminallauncher.preferences
 
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
@@ -36,7 +36,7 @@ public interface PreferencesRepository {
     public suspend fun unpinPackage(packageName: String)
 
     /** Keeps [shortcut] on Home, replacing what was stored for the same shortcut. */
-    public suspend fun pinShortcut(shortcut: PinnedShortcut)
+    public suspend fun pinShortcut(shortcut: AppShortcut)
 
     /** Removes every shortcut of [packageName] from Home, such as after an uninstall. */
     public suspend fun unpinShortcuts(packageName: String)

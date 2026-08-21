@@ -10,7 +10,7 @@ import com.gybra.terminallauncher.launcher.FakeLauncherClock
 import com.gybra.terminallauncher.launcher.FakeShortcutPinRequest
 import com.gybra.terminallauncher.launcher.FakePackageMonitor
 import com.gybra.terminallauncher.launcher.InstalledApp
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.launcher.SystemScreen
 import com.gybra.terminallauncher.launcher.TorchState
 import com.gybra.terminallauncher.preferences.LauncherPreferences
@@ -340,7 +340,7 @@ class LauncherIntegrationTest {
     private val camera = InstalledApp(packageName = "org.example.camera", label = "Camera")
     private val mail = InstalledApp(packageName = "org.example.mail", label = "Mail")
     private val installedApps = listOf(camera, mail)
-    private val photo = PinnedShortcut(
+    private val photo = AppShortcut(
         packageName = "org.example.camera",
         id = "photo",
         label = "Take a photo",

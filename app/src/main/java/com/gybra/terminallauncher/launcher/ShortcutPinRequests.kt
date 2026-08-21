@@ -19,21 +19,21 @@ public class ShortcutPinRequests(
         if (request.requestType != LauncherApps.PinItemRequest.REQUEST_TYPE_SHORTCUT) {
             return null
         }
-        val shortcut = request.shortcutInfo?.toPinnedShortcut() ?: return null
+        val shortcut = request.shortcutInfo?.toAppShortcut() ?: return null
 
         return AndroidShortcutPinRequest(request = request, shortcut = shortcut)
     }
 
-    private fun ShortcutInfo.toPinnedShortcut(): PinnedShortcut? {
+    private fun ShortcutInfo.toAppShortcut(): AppShortcut? {
         val label = shortLabel?.toString()?.takeIf(String::isNotBlank) ?: return null
 
-        return PinnedShortcut(packageName = `package`, id = id, label = label)
+        return AppShortcut(packageName = `package`, id = id, label = label)
     }
 }
 
 private class AndroidShortcutPinRequest(
     private val request: LauncherApps.PinItemRequest,
-    override val shortcut: PinnedShortcut,
+    override val shortcut: AppShortcut,
 ) : ShortcutPinRequest {
     override fun accept(): Boolean = request.accept()
 }

@@ -4,7 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import com.gybra.terminallauncher.theme.TerminalTheme
@@ -21,7 +21,7 @@ class PinShortcutScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val shortcut = PinnedShortcut(
+    private val shortcut = AppShortcut(
         packageName = "org.example.browser",
         id = "new-tab",
         label = "New Tab",
