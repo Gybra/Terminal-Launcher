@@ -39,6 +39,7 @@ The required `build-and-test` GitHub check must be green. Only the repository ow
 - Do not add dependencies, abstractions, or modules without demonstrated need.
 - Do not add real shell execution, unsafe arbitrary intents, networking, analytics, accounts, or other out-of-scope features.
 - Update user and contributor documentation when behavior or workflows change.
+- Regenerate the README pictures when the interface changes. `ReadmeScreenshots` renders Home and the settings through Robolectric and writes `docs/screenshots/`, so running the test suite updates them and `git status` reports what moved.
 
 ## Review
 
