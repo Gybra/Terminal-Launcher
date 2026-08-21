@@ -138,6 +138,8 @@ public class MainActivity : ComponentActivity() {
                     updateValue = homeViewModel::updatePromptValue,
                     updateFocus = homeViewModel::updatePromptFocus,
                     submit = homeViewModel::submitPrompt,
+                    writeAppCommand = homeViewModel::writeAppCommand,
+                    writeShortcutCommand = homeViewModel::writeShortcutCommand,
                 ),
                 submittedActions = homeViewModel.submittedActions,
                 onLaunchApp = appLauncher::launch,

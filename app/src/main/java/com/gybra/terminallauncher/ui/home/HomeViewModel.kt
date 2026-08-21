@@ -4,7 +4,9 @@ import androidx.compose.ui.text.TextRange
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gybra.terminallauncher.command.CommandExecutor
+import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.command.CommandResult
+import com.gybra.terminallauncher.command.ShortcutsCommand
 import com.gybra.terminallauncher.command.rejectAppQuery
 import com.gybra.terminallauncher.launcher.AppRepository
 import com.gybra.terminallauncher.launcher.AppShortcut
@@ -118,6 +120,40 @@ public class HomeViewModel(
         promptState.update { state ->
             state.copy(input = "", selection = TextRange.Zero, composition = null)
         }
+    }
+
+    /**
+     * Writes at the prompt the command a long press on [app] offers, which is the opposite of what
+     * Home has already done with it: an application Home keeps is unpinned, and one it only found
+     * is pinned. Nothing runs until the line is submitted.
+     */
+    public fun writeAppCommand(app: InstalledApp) {
+        val pinned = app.packageName in preferences.value.pinnedPackages
+        writeAtPrompt(
+            uiState.value.shellProfile.formatCommandLine(
+                command = if (pinned) Command.UNPIN else Command.PIN,
+                name = app.label,
+            ),
+        )
+    }
+
+    /**
+     * Writes at the prompt the shortcuts command a long press on [shortcut] offers, naming the
+     * application it belongs to and the shortcut itself. A shortcut whose application is gone
+     * leaves the prompt alone, since the command has nothing to name it with.
+     */
+    public fun writeShortcutCommand(shortcut: AppShortcut) {
+        val app = installedApps.value
+            .firstOrNull { installed -> installed.packageName == shortcut.packageName }
+            ?: return
+        val pinned = shortcut in preferences.value.pinnedShortcuts
+        writeAtPrompt(
+            uiState.value.shellProfile.formatCommandLine(
+                command = Command.SHORTCUTS,
+                keyword = if (pinned) ShortcutsCommand.UNPIN else ShortcutsCommand.PIN,
+                name = "${app.label} ${shortcut.label}",
+            ),
+        )
     }
 
     /**
@@ -239,6 +275,12 @@ public class HomeViewModel(
             (entries + entry).takeLast(MAX_HISTORY_ENTRIES)
         }
         clearPrompt()
+    }
+
+    private fun writeAtPrompt(line: String) {
+        promptState.update { state ->
+            state.copy(input = line, selection = TextRange(line.length), composition = null)
+        }
     }
 
     private fun eraseHistory() {

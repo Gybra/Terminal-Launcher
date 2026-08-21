@@ -58,6 +58,16 @@ public interface ShellProfile {
     public fun aliasesFor(command: Command): Set<String> = setOf(aliasFor(command))
 
     /**
+     * Writes how [command] is invoked on [name], with [keyword] between them when the command
+     * takes one, ready to be read and edited at the prompt. The alias and the keyword are written
+     * in the case of this shell, while [name] is left as it is, since the parser resolves the name
+     * an application carries rather than the decorated one a list writes.
+     */
+    public fun formatCommandLine(command: Command, keyword: String? = null, name: String): String =
+        listOfNotNull(aliasFor(command), keyword?.let(::formatMessage), name)
+            .joinToString(separator = " ")
+
+    /**
      * Writes the line an empty Home reads, naming the command that lists the others, so a Home
      * with nothing pinned and nothing printed still says that commands exist.
      */

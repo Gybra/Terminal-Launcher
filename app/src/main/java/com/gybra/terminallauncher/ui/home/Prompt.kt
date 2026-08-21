@@ -54,9 +54,9 @@ internal fun Prompt(
     cursor: PromptCursor,
     state: PromptState,
     actions: PromptActions,
+    focusRequester: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
-    val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     BackHandler(enabled = state.focused) {

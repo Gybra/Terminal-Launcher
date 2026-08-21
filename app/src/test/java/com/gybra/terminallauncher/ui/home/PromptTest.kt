@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.key.Key
@@ -223,6 +224,7 @@ class PromptTest {
         var cursor by mutableStateOf(PromptCursor.UNDERSCORE)
         val submissions = mutableListOf<String>()
         var clearFocus: () -> Unit = {}
+        val focusRequester = FocusRequester()
 
         @Composable
         fun Content() {
@@ -249,7 +251,10 @@ class PromptTest {
                                 composition = null,
                             )
                         },
+                        writeAppCommand = {},
+                        writeShortcutCommand = {},
                     ),
+                    focusRequester = focusRequester,
                 )
             }
         }

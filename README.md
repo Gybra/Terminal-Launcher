@@ -24,6 +24,7 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - shows a focusable prompt with keyboard input, Enter submission, and a focus-aware blinking cursor shaped by the selected shell;
 - keeps an in-memory terminal history of the twenty most recent submitted lines with their output, and with the applications and shortcuts they listed, which stay startable.
 - leaves Home at rest after starting anything: the prompt is cleared, and an empty Home invites the `help` command.
+- writes the command a row offers into the prompt on a long press, so pinning, unpinning, and shortcut commands are learned from Home itself.
 
 **Search and commands**
 
@@ -45,6 +46,8 @@ Further work is tracked in the [public roadmap](https://github.com/Gybra/Termina
 ## Using the launcher
 
 Type at the prompt. Matching applications appear right above it as you type; tap one to launch it, or press Enter when a single application matches. Enter always consumes the line, the way a desktop terminal does: the line joins the terminal history under the prompt that submitted it, the prompt is cleared, and an answer is written even when nothing was launched. A name matching nothing is answered with `no application matches`, and a name matching several is answered with its candidates, which stay tappable rather than launching something arbitrary. The commands that resolve a name, such as `pin` and `alias`, answer an unresolved name the same way and list the same startable candidates. Enter on an empty prompt does nothing, since a blank line would only push printed output out of the history. Tapping a row clears the prompt as well, since the tap answered what was typed: the pinned applications, the pinned shortcuts, whatever a command listed, and the search results all behave the same, and the history stays, so `clear` keeps its meaning.
+
+Holding a row writes the command it offers into the prompt instead of starting it: `unpin` for an application Home keeps, `pin` for one it only found, and the `shortcuts` command with its pinning or removing form for a shortcut. The line arrives ready to read and edit, with the prompt focused and the cursor at the end, and nothing runs until it is submitted. The command word is written in the case of the shell, so DOS writes `UNPIN`, while the name is left as the application carries it, since the parser resolves that name rather than the decorated one a list writes. Home teaches its own commands while it is used, without a menu.
 
 A label matches exactly, by prefix, by substring, or fuzzily when the typed characters appear in it in order, and a literal match always outranks a fuzzy one. Matches of the same strength are ordered by a score worth 50 for a pinned application plus one point per launch up to 20, then by the most recent launch, then by name. Ranking reads only the installed applications and the stored launch history, so the same input always produces the same list.
 

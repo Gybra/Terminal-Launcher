@@ -172,6 +172,15 @@ class UnixShellProfileTest {
     }
 
     @Test
+    fun `writes a command line with the name left as it is`() {
+        assertEquals("pin Mail Archive", profile.formatCommandLine(Command.PIN, name = "Mail Archive"))
+        assertEquals(
+            "shortcuts unpin Mail Inbox",
+            profile.formatCommandLine(Command.SHORTCUTS, keyword = "unpin", name = "Mail Inbox"),
+        )
+    }
+
+    @Test
     fun `invites the help command on an empty Home`() {
         assertEquals("type help to list the commands", profile.formatHelpInvitation())
     }

@@ -154,6 +154,15 @@ class DosShellProfileTest {
     }
 
     @Test
+    fun `writes a command line in upper case, keeping the name as it is`() {
+        assertEquals("PIN Mail Archive", profile.formatCommandLine(Command.PIN, name = "Mail Archive"))
+        assertEquals(
+            "SHORTCUTS UNPIN Mail Inbox",
+            profile.formatCommandLine(Command.SHORTCUTS, keyword = "unpin", name = "Mail Inbox"),
+        )
+    }
+
+    @Test
     fun `invites the help command on an empty Home in upper case`() {
         assertEquals("TYPE HELP TO LIST THE COMMANDS", profile.formatHelpInvitation())
     }
