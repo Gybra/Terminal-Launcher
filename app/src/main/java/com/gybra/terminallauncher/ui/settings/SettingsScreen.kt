@@ -54,10 +54,10 @@ public fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item(key = SettingsEntry.BACK.key) {
-            ActionLine(text = SettingsEntry.BACK.label, onClick = onBack)
+            ActionLine(text = state.write(SettingsEntry.BACK.label), onClick = onBack)
         }
         state.storageError?.let { error ->
-            item(key = SettingsEntry.STORAGE_ERROR.key) { TerminalText(error) }
+            item(key = SettingsEntry.STORAGE_ERROR.key) { TerminalText(state.write(error)) }
         }
         appearanceSettings(state = state, actions = actions)
         homeSettings(state = state, actions = actions)
@@ -70,22 +70,24 @@ private fun LazyListScope.appearanceSettings(
     state: SettingsUiState,
     actions: SettingsActions,
 ) {
-    item(key = SettingsEntry.APPEARANCE.key) { SectionTitle(SettingsEntry.APPEARANCE.label) }
-    item(key = SettingsEntry.SHELL.key) { TerminalText(SettingsEntry.SHELL.label) }
+    item(key = SettingsEntry.APPEARANCE.key) {
+        SectionTitle(state.write(SettingsEntry.APPEARANCE.label))
+    }
+    item(key = SettingsEntry.SHELL.key) { TerminalText(state.write(SettingsEntry.SHELL.label)) }
     ShellType.entries.forEach { shellType ->
         item(key = SettingsEntry.SHELL.optionKey(shellType)) {
             SelectionOption(
-                label = shellType.name,
-                selected = state.shellType == shellType,
+                label = state.write(shellType.name),
+                selected = state.shellProfile.type == shellType,
                 onClick = { actions.selectShell(shellType) },
             )
         }
     }
-    item(key = SettingsEntry.THEME.key) { TerminalText(SettingsEntry.THEME.label) }
+    item(key = SettingsEntry.THEME.key) { TerminalText(state.write(SettingsEntry.THEME.label)) }
     TerminalTheme.entries.forEach { terminalTheme ->
         item(key = SettingsEntry.THEME.optionKey(terminalTheme)) {
             SelectionOption(
-                label = terminalTheme.name,
+                label = state.write(terminalTheme.name),
                 selected = state.terminalTheme == terminalTheme,
                 onClick = { actions.selectTheme(terminalTheme) },
             )
@@ -100,35 +102,35 @@ private fun LazyListScope.homeSettings(
 ) {
     item(key = SettingsEntry.SHOW_CLOCK.key) {
         ToggleOption(
-            label = SettingsEntry.SHOW_CLOCK.label,
+            label = state.write(SettingsEntry.SHOW_CLOCK.label),
             checked = state.showClock,
             onCheckedChange = actions.setShowClock,
         )
     }
     item(key = SettingsEntry.SHOW_BATTERY.key) {
         ToggleOption(
-            label = SettingsEntry.SHOW_BATTERY.label,
+            label = state.write(SettingsEntry.SHOW_BATTERY.label),
             checked = state.showBattery,
             onCheckedChange = actions.setShowBattery,
         )
     }
     item(key = SettingsEntry.IMMERSIVE_MODE.key) {
         ToggleOption(
-            label = SettingsEntry.IMMERSIVE_MODE.label,
+            label = state.write(SettingsEntry.IMMERSIVE_MODE.label),
             checked = state.immersiveMode,
             onCheckedChange = actions.setImmersiveMode,
         )
     }
     item(key = SettingsEntry.DOUBLE_TAP_TO_LOCK.key) {
         ToggleOption(
-            label = SettingsEntry.DOUBLE_TAP_TO_LOCK.label,
+            label = state.write(SettingsEntry.DOUBLE_TAP_TO_LOCK.label),
             checked = state.doubleTapToLock,
             onCheckedChange = actions.setDoubleTapToLock,
         )
     }
     item(key = SettingsEntry.SHOW_PROMPT_PATH.key) {
         ToggleOption(
-            label = SettingsEntry.SHOW_PROMPT_PATH.label,
+            label = state.write(SettingsEntry.SHOW_PROMPT_PATH.label),
             checked = state.showPromptPath,
             onCheckedChange = actions.setShowPromptPath,
         )
@@ -139,26 +141,28 @@ private fun LazyListScope.unixSettings(
     state: SettingsUiState,
     actions: SettingsActions,
 ) {
-    item(key = SettingsEntry.UNIX.key) { SectionTitle(SettingsEntry.UNIX.label) }
+    item(key = SettingsEntry.UNIX.key) { SectionTitle(state.write(SettingsEntry.UNIX.label)) }
     item(key = SettingsEntry.USERNAME.key) {
         TextSetting(
-            label = SettingsEntry.USERNAME.label,
+            label = state.write(SettingsEntry.USERNAME.label),
             value = state.username,
             onValueChange = actions.setUsername,
         )
     }
     item(key = SettingsEntry.HOSTNAME.key) {
         TextSetting(
-            label = SettingsEntry.HOSTNAME.label,
+            label = state.write(SettingsEntry.HOSTNAME.label),
             value = state.hostname,
             onValueChange = actions.setHostname,
         )
     }
-    item(key = SettingsEntry.PROMPT_SYMBOL.key) { TerminalText(SettingsEntry.PROMPT_SYMBOL.label) }
+    item(key = SettingsEntry.PROMPT_SYMBOL.key) {
+        TerminalText(state.write(SettingsEntry.PROMPT_SYMBOL.label))
+    }
     PromptSymbol.entries.forEach { promptSymbol ->
         item(key = SettingsEntry.PROMPT_SYMBOL.optionKey(promptSymbol)) {
             SelectionOption(
-                label = promptSymbol.text,
+                label = state.write(promptSymbol.text),
                 selected = state.promptSymbol == promptSymbol,
                 onClick = { actions.selectPromptSymbol(promptSymbol) },
             )
@@ -170,18 +174,24 @@ private fun LazyListScope.dosSettings(
     state: SettingsUiState,
     actions: SettingsActions,
 ) {
-    item(key = SettingsEntry.DOS.key) { SectionTitle(SettingsEntry.DOS.label) }
-    item(key = SettingsEntry.DRIVE.key) { TerminalText(SettingsEntry.DRIVE.label) }
+    item(key = SettingsEntry.DOS.key) { SectionTitle(state.write(SettingsEntry.DOS.label)) }
+    item(key = SettingsEntry.DRIVE.key) { TerminalText(state.write(SettingsEntry.DRIVE.label)) }
     DosDrive.entries.forEach { dosDrive ->
         item(key = SettingsEntry.DRIVE.optionKey(dosDrive)) {
             SelectionOption(
-                label = "${dosDrive.name}:",
+                label = state.write("${dosDrive.name}:"),
                 selected = state.dosDrive == dosDrive,
                 onClick = { actions.selectDosDrive(dosDrive) },
             )
         }
     }
 }
+
+/**
+ * Writes [text] the way the selected shell writes a line, so the settings read in the same voice
+ * as Home instead of keeping a face of their own.
+ */
+private fun SettingsUiState.write(text: String): String = shellProfile.formatMessage(text)
 
 @Composable
 private fun SelectionOption(

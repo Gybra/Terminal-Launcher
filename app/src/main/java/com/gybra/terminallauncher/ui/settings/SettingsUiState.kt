@@ -2,11 +2,11 @@ package com.gybra.terminallauncher.ui.settings
 
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
-import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.shell.ShellProfile
 import com.gybra.terminallauncher.theme.TerminalTheme
 
 public data class SettingsUiState(
-    public val shellType: ShellType,
+    public val shellProfile: ShellProfile,
     public val terminalTheme: TerminalTheme,
     public val showClock: Boolean,
     public val showBattery: Boolean,

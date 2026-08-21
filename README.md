@@ -13,7 +13,7 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - registers as an Android Home application and renders edge to edge, in system monospace type, hiding the system bars until the user asks to keep them;
 - persists every preference in DataStore: shell, terminal theme, clock, battery, immersive mode, username, hostname, prompt symbol, prompt path visibility, DOS drive letter, pinned applications, pinned shortcuts, and how often and how recently each application is launched;
 - offers independent System, Green, Amber, and Monochrome terminal themes, and a status line carrying an optional live clock and the battery level, which is shown by default;
-- offers a minimal settings screen for shell, theme, clock, battery, immersive mode, double tap to lock, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter;
+- offers a minimal settings screen, written in the selected shell, for shell, theme, clock, battery, immersive mode, double tap to lock, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter;
 - answers the requests applications make to pin one of their shortcuts to Home, such as a browser adding a website, and keeps nothing until the user accepts;
 - locks the screen on a double tap, the way the power button does, once the user turns on the accessibility service Android requires for it.
 
@@ -94,7 +94,7 @@ Home is read from the bottom, the way a terminal is. The prompt is anchored unde
 
 Colour carries one distinction and only one: what can be started is written in the full terminal colour, and what is merely written, the status line, what a command printed, and the lines already submitted, is arrested to the second colour of the theme. A startable row is tall enough to be operated with a finger and centres its text in that height, while the written lines keep the tight spacing of a terminal, so a block of output reads as one block instead of a list of sentences. Pressing a startable row swaps the two colours for as long as it is held, the way a TTY marks a selection, which is the whole of the feedback a touch gets and costs the launcher no colour outside the selected theme.
 
-Settings are opened with the `settings` command, which `help` lists along with the others.
+Settings are opened with the `settings` command, which `help` lists along with the others. The screen reads in the selected shell, the way Home does: every section title, option, toggle, and the back row is written by `ShellProfile`, so DOS reads `< BACK`, `APPEARANCE`, and `[*] SHOW CLOCK` while Unix reads them lowercase. Choosing the other shell rewrites the screen where it stands, and Compose branches on nothing.
 
 `Immersive mode`, on by default, keeps the status and navigation bars hidden and brings them back only as transient bars on a swipe. Turning it off leaves the system bars on screen, and Home keeps its content clear of them.
 
