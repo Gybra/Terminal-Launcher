@@ -196,6 +196,84 @@ class HomeScreenTest {
     }
 
     @Test
+    fun `announces the results with what the shell counted`() {
+        val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(
+                    searchResults = listOf(SearchResult(app = app, match = Match.EXACT)),
+                    prompt = PromptState(input = "mai"),
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("1 match:").assertIsDisplayed().assertHasNoClickAction()
+    }
+
+    @Test
+    fun `says so when the typed line matches nothing`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(prompt = PromptState(input = "zzz")),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("no matches").assertIsDisplayed()
+    }
+
+    @Test
+    fun `announces nothing while the prompt is empty`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState(),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("no matches").assertDoesNotExist()
+    }
+
+    @Test
+    fun `closes the DOS results with what it counted, and says when it found none`() {
+        val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
+        var state by mutableStateOf(
+            homeState().copy(
+                shellProfile = DosShellProfile,
+                searchResults = listOf(SearchResult(app = app, match = Match.EXACT)),
+                prompt = PromptState(input = "MAI"),
+            ),
+        )
+        composeRule.setContent {
+            HomeScreen(
+                state = state,
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+        composeRule.onNodeWithText("1 File(s) found").assertIsDisplayed()
+
+        composeRule.runOnIdle {
+            state = state.copy(searchResults = emptyList(), prompt = PromptState(input = "ZZZ"))
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("File not found").assertIsDisplayed()
+    }
+
+    @Test
     fun `renders a matching pinned application as both a pinned row and a result`() {
         val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
 

@@ -10,6 +10,8 @@ public enum class HomeItem(public val key: String) {
     PINNED_FOOTER("pinned-footer"),
     SHORTCUT("shortcut"),
     SEARCH("search"),
+    SEARCH_HEADER("search-header"),
+    SEARCH_FOOTER("search-footer"),
     HISTORY("history"),
     ;
 

@@ -188,4 +188,16 @@ class DosShellProfileTest {
             profile.formatPinnedSection(context, items = 1).above,
         )
     }
+
+    @Test
+    fun `closes what the typed line matched the way DIR closes a listing`() {
+        assertEquals(
+            SectionLines(below = listOf("", "3 File(s) found")),
+            profile.formatSearchSection(matches = 3),
+        )
+        assertEquals(
+            SectionLines(below = listOf("File not found")),
+            profile.formatSearchSection(matches = 0),
+        )
+    }
 }

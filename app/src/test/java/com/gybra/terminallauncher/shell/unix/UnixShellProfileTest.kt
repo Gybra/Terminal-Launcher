@@ -190,6 +190,22 @@ class UnixShellProfileTest {
     }
 
     @Test
+    fun `announces what the typed line matched, counting the results`() {
+        assertEquals(
+            SectionLines(above = listOf("no matches")),
+            profile.formatSearchSection(matches = 0),
+        )
+        assertEquals(
+            SectionLines(above = listOf("1 match:")),
+            profile.formatSearchSection(matches = 1),
+        )
+        assertEquals(
+            SectionLines(above = listOf("3 matches:")),
+            profile.formatSearchSection(matches = 3),
+        )
+    }
+
+    @Test
     fun `invites the help command on an empty Home`() {
         assertEquals("type help to list the commands", profile.formatHelpInvitation())
     }
