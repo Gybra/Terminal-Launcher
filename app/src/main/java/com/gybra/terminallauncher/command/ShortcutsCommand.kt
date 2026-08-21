@@ -91,10 +91,14 @@ public class ShortcutsCommand(
     private fun CommandContext.answerUsage(): CommandResult =
         CommandResult.Output(shellProfile.formatUsage(id, usage))
 
-    private companion object {
-        const val PIN = "pin"
-        const val UNPIN = "unpin"
-        const val REFUSED =
+    public companion object {
+        /** The keyword asking for the pinning form, which Home writes on a long press. */
+        public const val PIN: String = "pin"
+
+        /** The keyword asking for the removing form, which Home writes on a long press. */
+        public const val UNPIN: String = "unpin"
+
+        private const val REFUSED =
             "android lists shortcuts only while terminal launcher is the home application"
     }
 }

@@ -447,6 +447,8 @@ class LauncherAppTest {
         updateValue = {},
         updateFocus = {},
         submit = {},
+        writeAppCommand = {},
+        writeShortcutCommand = {},
     )
 
     private data class ShellCase(

@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.doubleClick
@@ -18,6 +19,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.down
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.up
@@ -35,6 +37,7 @@ import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.theme.colors
 import com.gybra.terminallauncher.ui.TestTag
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -368,6 +371,8 @@ class HomeScreenTest {
         updateValue = {},
         updateFocus = {},
         submit = {},
+        writeAppCommand = {},
+        writeShortcutCommand = {},
     )
 
     @Test
@@ -399,6 +404,59 @@ class HomeScreenTest {
             .performClick()
 
         assertEquals(shortcut, startedShortcut)
+    }
+
+    @Test
+    fun `writes the command a held application offers and moves to the prompt`() {
+        val app = InstalledApp(packageName = "com.example.camera", label = "Camera")
+        var written: InstalledApp? = null
+        var launched: InstalledApp? = null
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    apps = listOf(app),
+                ),
+                onAppClick = { launched = it },
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions().copy(writeAppCommand = { written = it }),
+            )
+        }
+
+        composeRule.onNodeWithText("camera").performTouchInput { longClick() }
+
+        assertEquals(app, written)
+        assertNull(launched)
+        composeRule.onNodeWithTag(TestTag.PROMPT_INPUT.tag).assertIsFocused()
+    }
+
+    @Test
+    fun `writes the command a held shortcut offers`() {
+        val shortcut = AppShortcut(
+            packageName = "com.example.browser",
+            id = "new-tab",
+            label = "New Tab",
+        )
+        var written: AppShortcut? = null
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    shortcuts = listOf(shortcut),
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions().copy(writeShortcutCommand = { written = it }),
+            )
+        }
+
+        composeRule.onNodeWithText("new tab").performTouchInput { longClick() }
+
+        assertEquals(shortcut, written)
     }
 
     @Test

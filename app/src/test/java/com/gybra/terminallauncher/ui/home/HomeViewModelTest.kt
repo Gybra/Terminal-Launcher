@@ -461,6 +461,110 @@ class HomeViewModelTest {
         }
 
     @Test
+    fun `writes the unpinning command when a pinned application is held`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val preferencesRepository = RecordingPreferencesRepository(
+                initialPreferences = LauncherPreferences(pinnedPackages = setOf(mail.packageName)),
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.writeAppCommand(mail)
+            advanceUntilIdle()
+
+            assertEquals(
+                PromptState(input = "unpin Mail", selection = TextRange("unpin Mail".length)),
+                viewModel.uiState.value.prompt,
+            )
+        }
+
+    @Test
+    fun `writes the pinning command a held application offers, in the shell case`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val preferencesRepository = RecordingPreferencesRepository()
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.writeAppCommand(mail)
+            advanceUntilIdle()
+            assertEquals("pin Mail", viewModel.uiState.value.prompt.input)
+
+            preferencesRepository.emit(LauncherPreferences(shellType = ShellType.DOS))
+            advanceUntilIdle()
+            viewModel.writeAppCommand(mail)
+            advanceUntilIdle()
+
+            assertEquals("PIN Mail", viewModel.uiState.value.prompt.input)
+        }
+
+    @Test
+    fun `writes the shortcuts command a held shortcut offers`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val preferencesRepository = RecordingPreferencesRepository(
+                initialPreferences = LauncherPreferences(pinnedShortcuts = listOf(inbox)),
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.writeShortcutCommand(inbox)
+            advanceUntilIdle()
+            assertEquals("shortcuts unpin Mail Inbox", viewModel.uiState.value.prompt.input)
+
+            preferencesRepository.emit(LauncherPreferences())
+            advanceUntilIdle()
+            viewModel.writeShortcutCommand(inbox)
+            advanceUntilIdle()
+
+            assertEquals("shortcuts pin Mail Inbox", viewModel.uiState.value.prompt.input)
+        }
+
+    @Test
+    fun `leaves the prompt alone when a held shortcut has lost its application`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = emptyList()),
+                preferencesRepository = RecordingPreferencesRepository(
+                    initialPreferences = LauncherPreferences(pinnedShortcuts = listOf(inbox)),
+                ),
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.writeShortcutCommand(inbox)
+            advanceUntilIdle()
+
+            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+        }
+
+    @Test
     fun `invites the help command while Home holds nothing`() =
         runTest(mainDispatcherRule.dispatcher) {
             val preferencesRepository = RecordingPreferencesRepository()

@@ -1,7 +1,7 @@
 package com.gybra.terminallauncher.ui.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
@@ -49,6 +50,13 @@ public fun HomeScreen(
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalTerminalColors.current
+    val promptFocus = remember { FocusRequester() }
+    val rowActions = RowActions(
+        onAppClick = onAppClick,
+        onShortcutClick = onShortcutClick,
+        promptActions = promptActions,
+        promptFocus = promptFocus,
+    )
     val rows = rememberLazyListState()
     val lastRow = state.rowCount - 1
     LaunchedEffect(lastRow, state.history.lastOrNull()?.id, state.searchResults) {
@@ -78,21 +86,21 @@ public fun HomeScreen(
             verticalArrangement = Arrangement.Bottom,
         ) {
             helpInvitation(line = state.helpInvitation)
-            pinnedItems(state = state, onAppClick = onAppClick, onShortcutClick = onShortcutClick)
+            pinnedItems(state = state, rowActions = rowActions)
             terminalHistory(
                 entries = state.history,
                 shellProfile = state.shellProfile,
                 shellContext = state.shellContext,
-                onAppClick = onAppClick,
-                onShortcutClick = onShortcutClick,
+                rowActions = rowActions,
             )
-            searchResults(state = state, onAppClick = onAppClick)
+            searchResults(state = state, rowActions = rowActions)
         }
         Prompt(
             prompt = state.shellProfile.prompt(state.shellContext),
             cursor = state.shellProfile.cursor,
             state = state.prompt,
             actions = promptActions,
+            focusRequester = promptFocus,
         )
     }
 }
@@ -114,10 +122,32 @@ private fun LazyListScope.helpInvitation(line: String?) {
     }
 }
 
+/**
+ * What a row does when it is tapped and when it is held, carried together so every list writes
+ * rows that answer the same two gestures. A tap starts what the row names, while a long press
+ * only writes the command it offers and moves to the prompt, where the user reads it and submits.
+ */
+private class RowActions(
+    val onAppClick: (InstalledApp) -> Unit,
+    val onShortcutClick: (AppShortcut) -> Unit,
+    private val promptActions: PromptActions,
+    private val promptFocus: FocusRequester,
+) {
+    fun onAppLongClick(app: InstalledApp) {
+        promptActions.writeAppCommand(app)
+        promptFocus.requestFocus()
+    }
+
+    fun onShortcutLongClick(shortcut: AppShortcut) {
+        promptActions.writeShortcutCommand(shortcut)
+        promptFocus.requestFocus()
+    }
+}
+
 /** Lists what the typed line matches, right above the prompt that is matching it. */
 private fun LazyListScope.searchResults(
     state: HomeUiState,
-    onAppClick: (InstalledApp) -> Unit,
+    rowActions: RowActions,
 ) {
     items(
         items = state.searchResults,
@@ -125,7 +155,8 @@ private fun LazyListScope.searchResults(
     ) { result ->
         AppRow(
             displayName = state.shellProfile.formatAppName(result.app),
-            onClick = { onAppClick(result.app) },
+            onClick = { rowActions.onAppClick(result.app) },
+            onLongClick = { rowActions.onAppLongClick(result.app) },
         )
     }
 }
@@ -133,8 +164,7 @@ private fun LazyListScope.searchResults(
 /** Lists what Home keeps above the prompt: the pinned applications, then the pinned shortcuts. */
 private fun LazyListScope.pinnedItems(
     state: HomeUiState,
-    onAppClick: (InstalledApp) -> Unit,
-    onShortcutClick: (AppShortcut) -> Unit,
+    rowActions: RowActions,
 ) {
     items(
         items = state.apps,
@@ -142,7 +172,8 @@ private fun LazyListScope.pinnedItems(
     ) { app ->
         AppRow(
             displayName = state.shellProfile.formatAppName(app),
-            onClick = { onAppClick(app) },
+            onClick = { rowActions.onAppClick(app) },
+            onLongClick = { rowActions.onAppLongClick(app) },
         )
     }
     items(
@@ -151,7 +182,8 @@ private fun LazyListScope.pinnedItems(
     ) { shortcut ->
         AppRow(
             displayName = state.shellProfile.formatShortcutName(shortcut),
-            onClick = { onShortcutClick(shortcut) },
+            onClick = { rowActions.onShortcutClick(shortcut) },
+            onLongClick = { rowActions.onShortcutLongClick(shortcut) },
         )
     }
 }
@@ -164,8 +196,7 @@ private fun LazyListScope.terminalHistory(
     entries: List<TerminalEntry>,
     shellProfile: ShellProfile,
     shellContext: ShellContext,
-    onAppClick: (InstalledApp) -> Unit,
-    onShortcutClick: (AppShortcut) -> Unit,
+    rowActions: RowActions,
 ) {
     items(
         items = entries,
@@ -177,13 +208,15 @@ private fun LazyListScope.terminalHistory(
             entry.apps.forEach { app ->
                 AppRow(
                     displayName = shellProfile.formatAppName(app),
-                    onClick = { onAppClick(app) },
+                    onClick = { rowActions.onAppClick(app) },
+                    onLongClick = { rowActions.onAppLongClick(app) },
                 )
             }
             entry.shortcuts.forEach { shortcut ->
                 AppRow(
                     displayName = shellProfile.formatShortcutName(shortcut),
-                    onClick = { onShortcutClick(shortcut) },
+                    onClick = { rowActions.onShortcutClick(shortcut) },
+                    onLongClick = { rowActions.onShortcutLongClick(shortcut) },
                 )
             }
         }
@@ -205,12 +238,13 @@ private fun StatusLine(clock: String?, battery: String?) {
 /**
  * One startable line, written in full colour and tall enough to be operated reliably. Pressing it
  * swaps the two terminal colours, the way a TTY marks a selection, so the answer to a touch needs
- * no colour of its own.
+ * no colour of its own. Holding it writes the command it offers instead of starting it.
  */
 @Composable
 private fun AppRow(
     displayName: String,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     val colors = LocalTerminalColors.current
     val presses = remember { MutableInteractionSource() }
@@ -220,7 +254,12 @@ private fun AppRow(
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .background(if (pressed) colors.foreground else Color.Transparent)
-            .clickable(interactionSource = presses, indication = null, onClick = onClick),
+            .combinedClickable(
+                interactionSource = presses,
+                indication = null,
+                onLongClick = onLongClick,
+                onClick = onClick,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicText(
