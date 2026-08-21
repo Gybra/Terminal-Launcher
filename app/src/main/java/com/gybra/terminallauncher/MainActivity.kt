@@ -160,6 +160,7 @@ public class MainActivity : ComponentActivity() {
         )
         WindowCompat.getInsetsController(window, window.decorView).systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        applySystemBars(immersive = immersiveMode)
     }
 
     /**
