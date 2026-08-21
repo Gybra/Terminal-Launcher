@@ -105,20 +105,20 @@ class UnixShellProfileTest {
     @Test
     fun `formats help from command metadata using primary Unix aliases`() {
         val commands = listOf(
-            CommandSummary(id = Command.LIST_APPS, description = "List installed applications"),
+            CommandSummary(id = Command.LIST_APPS, description = "List installed apps"),
             CommandSummary(id = Command.HELP, description = "Show available commands"),
             CommandSummary(
                 id = Command.PIN,
-                description = "Pin an application to Home",
+                description = "Pin an app to Home",
                 usage = listOf("<application>"),
             ),
         )
 
         assertEquals(
             listOf(
-                "ls        List installed applications",
+                "ls        List installed apps",
                 "help      Show available commands",
-                "pin       Pin an application to Home",
+                "pin       Pin an app to Home",
                 "          pin <application>",
             ),
             profile.formatHelp(commands),

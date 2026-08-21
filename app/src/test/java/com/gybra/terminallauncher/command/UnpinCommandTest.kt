@@ -50,7 +50,7 @@ class UnpinCommandTest {
         val command = UnpinCommand(RecordingPreferencesRepository())
 
         assertEquals(Command.UNPIN, command.id)
-        assertEquals("Remove an application from Home", command.description)
+        assertEquals("Remove an app from Home", command.description)
     }
 
     private fun contextFor(

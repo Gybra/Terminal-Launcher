@@ -180,7 +180,7 @@ class ShortcutsCommandTest {
     @Test
     fun `answers to the shortcuts identifier`() {
         assertEquals(Command.SHORTCUTS, command().id)
-        assertEquals("List, pin, and remove application shortcuts", command().description)
+        assertEquals("Manage app shortcuts", command().description)
     }
 
     private fun available(vararg shortcuts: AppShortcut): PublishedShortcuts =

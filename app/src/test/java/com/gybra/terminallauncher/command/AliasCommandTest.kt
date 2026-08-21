@@ -121,7 +121,7 @@ class AliasCommandTest {
         val command = AliasCommand(RecordingPreferencesRepository())
 
         assertEquals(Command.ALIAS, command.id)
-        assertEquals("Name an application", command.description)
+        assertEquals("Name an app", command.description)
     }
 
     private val mailArchive =

@@ -24,6 +24,6 @@ class SettingsCommandTest {
     @Test
     fun `answers to the settings identifier`() {
         assertEquals(Command.SETTINGS, SettingsCommand.id)
-        assertEquals("Open the launcher settings", SettingsCommand.description)
+        assertEquals("Open launcher settings", SettingsCommand.description)
     }
 }

@@ -55,22 +55,22 @@ Anything that is not a registered command is treated as a search. Command names 
 
 | What it does | Unix | DOS |
 | --- | --- | --- |
-| List installed applications | `ls`, `dir` | `DIR` |
-| Describe the available commands and how they are called | `help` | `HELP` |
-| Pin an application to Home | `pin <application>` | `PIN <APPLICATION>` |
-| Remove an application from Home | `unpin <application>` | `UNPIN <APPLICATION>` |
-| List, pin, and remove application shortcuts | `shortcuts <application>` | `SHORTCUTS <APPLICATION>` |
-| Clear the terminal history | `clear`, `cls`, `clr` | `CLS` |
-| Name an application | `alias <name> <application>` | `ALIAS <NAME> <APPLICATION>` |
-| Open the Android details of an application | `info <application>` | `INFO <APPLICATION>` |
-| Ask Android to uninstall an application | `uninstall <application>` | `UNINSTALL <APPLICATION>` |
-| Report the battery level | `battery` | `BATTERY` |
-| Turn the torch on or off | `torch` | `TORCH` |
-| Open the Android settings | `android` | `ANDROID` |
-| Open the Wi-Fi settings | `wifi` | `WIFI` |
-| Open the Bluetooth settings | `bluetooth` | `BLUETOOTH` |
+| List installed apps | `ls`, `dir` | `DIR` |
+| Show available commands | `help` | `HELP` |
+| Pin an app to Home | `pin <application>` | `PIN <APPLICATION>` |
+| Remove an app from Home | `unpin <application>` | `UNPIN <APPLICATION>` |
+| Manage app shortcuts | `shortcuts <application>` | `SHORTCUTS <APPLICATION>` |
+| Clear the history | `clear`, `cls`, `clr` | `CLS` |
+| Name an app | `alias <name> <application>` | `ALIAS <NAME> <APPLICATION>` |
+| Show app details | `info <application>` | `INFO <APPLICATION>` |
+| Uninstall an app | `uninstall <application>` | `UNINSTALL <APPLICATION>` |
+| Report battery level | `battery` | `BATTERY` |
+| Toggle the torch | `torch` | `TORCH` |
+| Open Android settings | `android` | `ANDROID` |
+| Open Wi-Fi settings | `wifi` | `WIFI` |
+| Open Bluetooth settings | `bluetooth` | `BLUETOOTH` |
 | Restart the launcher | `restart` | `RESTART` |
-| Open the settings screen | `settings` | `SETTINGS` |
+| Open launcher settings | `settings` | `SETTINGS` |
 
 `help` writes every registered command with its description, and under it the ways it is invoked, so the arguments a command takes are visible before running it. A command writes those same lines back when it is called the wrong way.
 

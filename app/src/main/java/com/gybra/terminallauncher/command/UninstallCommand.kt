@@ -10,7 +10,7 @@ import com.gybra.terminallauncher.launcher.SystemScreen
 public object UninstallCommand : ApplicationCommand() {
     override val id: Command = Command.UNINSTALL
 
-    override val description: String = "Ask Android to uninstall an application"
+    override val description: String = "Uninstall an app"
 
     override suspend fun apply(app: InstalledApp, context: CommandContext): CommandResult =
         CommandResult.OpenSystemScreen(SystemScreen.Uninstall(app.packageName))

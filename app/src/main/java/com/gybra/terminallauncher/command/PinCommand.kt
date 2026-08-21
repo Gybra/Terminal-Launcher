@@ -9,7 +9,7 @@ public class PinCommand(
 ) : PinningCommand() {
     override val id: Command = Command.PIN
 
-    override val description: String = "Pin an application to Home"
+    override val description: String = "Pin an app to Home"
 
     override val outcome: String = "pinned"
 

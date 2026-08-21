@@ -4,7 +4,7 @@ package com.gybra.terminallauncher.command
 public object ListAppsCommand : LauncherCommand {
     override val id: Command = Command.LIST_APPS
 
-    override val description: String = "List installed applications"
+    override val description: String = "List installed apps"
 
     override suspend fun execute(context: CommandContext): CommandResult =
         CommandResult.Output(context.shellProfile.formatAppList(context.installedApps))

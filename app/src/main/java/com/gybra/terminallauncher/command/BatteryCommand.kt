@@ -8,7 +8,7 @@ public class BatteryCommand(
 ) : LauncherCommand {
     override val id: Command = Command.BATTERY
 
-    override val description: String = "Report the battery level"
+    override val description: String = "Report battery level"
 
     override suspend fun execute(context: CommandContext): CommandResult {
         val status = batteryRepository.readStatus()
