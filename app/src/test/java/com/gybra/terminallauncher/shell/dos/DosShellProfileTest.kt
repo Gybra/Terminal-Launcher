@@ -9,6 +9,7 @@ import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.PromptCursor
 import com.gybra.terminallauncher.shell.PromptSymbol
+import com.gybra.terminallauncher.shell.SectionLines
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellType
 import org.junit.Assert.assertEquals
@@ -165,5 +166,26 @@ class DosShellProfileTest {
     @Test
     fun `invites the help command on an empty Home in upper case`() {
         assertEquals("TYPE HELP TO LIST THE COMMANDS", profile.formatHelpInvitation())
+    }
+
+    @Test
+    fun `names the pinned section the way DIR names a listed directory`() {
+        assertEquals(
+            SectionLines(
+                above = listOf("Directory of C:\\HOME\\PINNED", ""),
+                below = listOf("", "3 File(s)"),
+            ),
+            profile.formatPinnedSection(contextAt(LauncherLocation.HOME), items = 3),
+        )
+    }
+
+    @Test
+    fun `names the pinned directory on the chosen drive, whatever the prompt shows`() {
+        val context = contextAt(LauncherLocation.HOME).copy(dosDrive = DosDrive.D, showPath = false)
+
+        assertEquals(
+            listOf("Directory of D:\\HOME\\PINNED", ""),
+            profile.formatPinnedSection(context, items = 1).above,
+        )
     }
 }
