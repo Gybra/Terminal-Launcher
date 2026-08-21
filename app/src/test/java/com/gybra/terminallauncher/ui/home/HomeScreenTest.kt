@@ -26,6 +26,7 @@ import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
+import com.gybra.terminallauncher.ui.TestTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -273,7 +274,7 @@ class HomeScreenTest {
         assertEquals(listOf(app), launched)
         assertEquals(0, locks)
 
-        composeRule.onNodeWithTag("home-list").performTouchInput { doubleClick(bottomCenter) }
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput { doubleClick(bottomCenter) }
         composeRule.waitForIdle()
 
         assertEquals(1, locks)
@@ -317,7 +318,7 @@ class HomeScreenTest {
             )
         }
 
-        composeRule.onNodeWithTag("home-list").performTouchInput { swipeUp() }
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput { swipeUp() }
         composeRule.waitForIdle()
 
         assertEquals(0, locks)

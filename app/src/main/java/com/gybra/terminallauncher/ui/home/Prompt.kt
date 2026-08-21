@@ -39,6 +39,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 
@@ -124,7 +125,7 @@ private fun PromptInput(
                 }
             }
             .semantics { contentDescription = "Prompt" }
-            .testTag("prompt-input"),
+            .testTag(TestTag.PROMPT_INPUT.tag),
     )
 }
 
