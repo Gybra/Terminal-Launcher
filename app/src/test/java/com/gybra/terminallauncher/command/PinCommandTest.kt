@@ -163,7 +163,7 @@ class PinCommandTest {
         val command = PinCommand(RecordingPreferencesRepository())
 
         assertEquals(Command.PIN, command.id)
-        assertEquals("Pin an application to Home", command.description)
+        assertEquals("Pin an app to Home", command.description)
     }
 
     private val mailArchive =

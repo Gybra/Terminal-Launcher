@@ -82,20 +82,20 @@ class DosShellProfileTest {
     @Test
     fun `formats help from command metadata with a DOS command count`() {
         val commands = listOf(
-            CommandSummary(id = Command.LIST_APPS, description = "List installed applications"),
+            CommandSummary(id = Command.LIST_APPS, description = "List installed apps"),
             CommandSummary(id = Command.HELP, description = "Show available commands"),
             CommandSummary(
                 id = Command.PIN,
-                description = "Pin an application to Home",
+                description = "Pin an app to Home",
                 usage = listOf("<application>"),
             ),
         )
 
         assertEquals(
             listOf(
-                "DIR       List installed applications",
+                "DIR       List installed apps",
                 "HELP      Show available commands",
-                "PIN       Pin an application to Home",
+                "PIN       Pin an app to Home",
                 "          PIN <APPLICATION>",
                 "",
                 "3 Command(s)",

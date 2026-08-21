@@ -44,7 +44,7 @@ class ListAppsCommandTest {
     @Test
     fun `answers to the list applications identifier`() {
         assertEquals(Command.LIST_APPS, ListAppsCommand.id)
-        assertEquals("List installed applications", ListAppsCommand.description)
+        assertEquals("List installed apps", ListAppsCommand.description)
     }
 
     private val apps = listOf(

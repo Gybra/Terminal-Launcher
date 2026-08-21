@@ -19,7 +19,7 @@ public class ShortcutsCommand(
 ) : LauncherCommand {
     override val id: Command = Command.SHORTCUTS
 
-    override val description: String = "List, pin, and remove application shortcuts"
+    override val description: String = "Manage app shortcuts"
 
     override val usage: List<String> = listOf(
         "<application>",

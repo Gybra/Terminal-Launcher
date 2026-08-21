@@ -74,9 +74,9 @@ class ApplicationScreenCommandTest {
     @Test
     fun `describes itself for help`() {
         assertEquals(Command.APP_INFO, AppInfoCommand.id)
-        assertEquals("Open the Android details of an application", AppInfoCommand.description)
+        assertEquals("Show app details", AppInfoCommand.description)
         assertEquals(Command.UNINSTALL, UninstallCommand.id)
-        assertEquals("Ask Android to uninstall an application", UninstallCommand.description)
+        assertEquals("Uninstall an app", UninstallCommand.description)
     }
 
     private val mailArchive =

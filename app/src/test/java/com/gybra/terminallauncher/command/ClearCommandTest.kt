@@ -25,6 +25,6 @@ class ClearCommandTest {
     @Test
     fun `answers to the clear identifier`() {
         assertEquals(Command.CLEAR, ClearCommand.id)
-        assertEquals("Clear the terminal history", ClearCommand.description)
+        assertEquals("Clear the history", ClearCommand.description)
     }
 }

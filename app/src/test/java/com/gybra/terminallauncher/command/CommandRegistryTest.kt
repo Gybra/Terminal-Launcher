@@ -60,14 +60,14 @@ class CommandRegistryTest {
     fun `summarizes registered commands in registration order`() {
         val registry = CommandRegistry(
             commands = listOf(
-                RecordingCommand(id = Command.LIST_APPS, description = "List installed applications"),
+                RecordingCommand(id = Command.LIST_APPS, description = "List installed apps"),
                 RecordingCommand(id = Command.HELP, description = "Show available commands"),
             ),
         )
 
         assertEquals(
             listOf(
-                CommandSummary(id = Command.LIST_APPS, description = "List installed applications"),
+                CommandSummary(id = Command.LIST_APPS, description = "List installed apps"),
                 CommandSummary(id = Command.HELP, description = "Show available commands"),
             ),
             registry.summaries,

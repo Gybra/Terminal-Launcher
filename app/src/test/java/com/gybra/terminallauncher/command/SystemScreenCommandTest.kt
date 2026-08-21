@@ -11,7 +11,7 @@ class SystemScreenCommandTest {
     fun `opens the destination it was registered with, whatever the arguments say`() = runTest {
         val command = SystemScreenCommand(
             id = Command.WIFI_SETTINGS,
-            description = "Open the Wi-Fi settings",
+            description = "Open Wi-Fi settings",
             screen = SystemScreen.WifiSettings,
         )
 
@@ -26,6 +26,6 @@ class SystemScreenCommandTest {
 
         assertEquals(CommandResult.OpenSystemScreen(SystemScreen.WifiSettings), result)
         assertEquals(Command.WIFI_SETTINGS, command.id)
-        assertEquals("Open the Wi-Fi settings", command.description)
+        assertEquals("Open Wi-Fi settings", command.description)
     }
 }

@@ -4,7 +4,7 @@ package com.gybra.terminallauncher.command
 public object SettingsCommand : LauncherCommand {
     override val id: Command = Command.SETTINGS
 
-    override val description: String = "Open the launcher settings"
+    override val description: String = "Open launcher settings"
 
     override suspend fun execute(context: CommandContext): CommandResult = CommandResult.OpenSettings
 }

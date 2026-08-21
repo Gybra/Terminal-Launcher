@@ -31,17 +31,17 @@ public fun launcherCommands(
     TorchCommand(torch),
     SystemScreenCommand(
         id = Command.ANDROID_SETTINGS,
-        description = "Open the Android settings",
+        description = "Open Android settings",
         screen = SystemScreen.AndroidSettings,
     ),
     SystemScreenCommand(
         id = Command.WIFI_SETTINGS,
-        description = "Open the Wi-Fi settings",
+        description = "Open Wi-Fi settings",
         screen = SystemScreen.WifiSettings,
     ),
     SystemScreenCommand(
         id = Command.BLUETOOTH_SETTINGS,
-        description = "Open the Bluetooth settings",
+        description = "Open Bluetooth settings",
         screen = SystemScreen.BluetoothSettings,
     ),
     ClearCommand,

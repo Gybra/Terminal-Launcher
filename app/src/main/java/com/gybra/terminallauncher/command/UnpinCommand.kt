@@ -9,7 +9,7 @@ public class UnpinCommand(
 ) : PinningCommand() {
     override val id: Command = Command.UNPIN
 
-    override val description: String = "Remove an application from Home"
+    override val description: String = "Remove an app from Home"
 
     override val outcome: String = "unpinned"
 
