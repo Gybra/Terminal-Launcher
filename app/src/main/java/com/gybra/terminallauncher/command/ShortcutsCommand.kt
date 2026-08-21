@@ -35,7 +35,7 @@ public class ShortcutsCommand(
                 if (shortcuts.isEmpty()) {
                     message("${shellProfile.formatAppName(app)} publishes no shortcuts")
                 } else {
-                    CommandResult.Output(shellProfile.formatShortcutList(shortcuts))
+                    CommandResult.Shortcuts(lines = emptyList(), shortcuts = shortcuts)
                 }
             }
         }
@@ -118,9 +118,9 @@ private suspend fun CommandContext.withResolvedShortcut(
     return when (matches.size) {
         0 -> message("no shortcut matches $name")
         1 -> action(matches.first())
-        else -> CommandResult.Output(
-            listOf(shellProfile.formatMessage("$name matches more than one shortcut")) +
-                shellProfile.formatShortcutList(matches),
+        else -> CommandResult.Shortcuts(
+            lines = listOf(shellProfile.formatMessage("$name matches more than one shortcut")),
+            shortcuts = matches,
         )
     }
 }

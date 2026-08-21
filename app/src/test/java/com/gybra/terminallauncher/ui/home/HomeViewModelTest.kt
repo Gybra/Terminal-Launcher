@@ -901,6 +901,45 @@ class HomeViewModelTest {
         }
 
     @Test
+    fun `keeps the shortcuts a command listed in the terminal history`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val shortcuts = RecordingCommand(
+                id = Command.SHORTCUTS,
+                result = CommandResult.Shortcuts(
+                    lines = listOf("mail publishes"),
+                    shortcuts = listOf(inbox),
+                ),
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(shortcuts),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "shortcuts mail"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(
+                    TerminalEntry(
+                        id = 0L,
+                        input = "shortcuts mail",
+                        output = listOf("mail publishes"),
+                        shortcuts = listOf(inbox),
+                    ),
+                ),
+                viewModel.uiState.value.history,
+            )
+        }
+
+    @Test
     fun `keeps the pin while a package is only replaced by an update`() =
         runTest(mainDispatcherRule.dispatcher) {
             val packageMonitor = FakePackageMonitor()

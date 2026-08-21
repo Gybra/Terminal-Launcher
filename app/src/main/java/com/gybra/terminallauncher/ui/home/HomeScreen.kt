@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
+import com.gybra.terminallauncher.shell.ShellContext
+import com.gybra.terminallauncher.shell.ShellProfile
 import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
@@ -66,7 +68,9 @@ public fun HomeScreen(
         }
         terminalHistory(
             entries = state.history,
-            prompt = state.shellProfile.prompt(state.shellContext),
+            shellProfile = state.shellProfile,
+            shellContext = state.shellContext,
+            onShortcutClick = onShortcutClick,
         )
         item(key = HomeItem.PROMPT.key) {
             Prompt(
@@ -113,14 +117,26 @@ private fun LazyListScope.pinnedItems(
     }
 }
 
-private fun LazyListScope.terminalHistory(entries: List<TerminalEntry>, prompt: String) {
+/** Writes what every submitted line printed, keeping the shortcuts it listed startable. */
+private fun LazyListScope.terminalHistory(
+    entries: List<TerminalEntry>,
+    shellProfile: ShellProfile,
+    shellContext: ShellContext,
+    onShortcutClick: (AppShortcut) -> Unit,
+) {
     items(
         items = entries,
         key = { entry -> HomeItem.HISTORY.rowKey(entry.id.toString()) },
     ) { entry ->
         Column {
-            TerminalLine(text = "$prompt ${entry.input}")
+            TerminalLine(text = "${shellProfile.prompt(shellContext)} ${entry.input}")
             entry.output.forEach { line -> TerminalLine(text = line) }
+            entry.shortcuts.forEach { shortcut ->
+                AppRow(
+                    displayName = shellProfile.formatShortcutName(shortcut),
+                    onClick = { onShortcutClick(shortcut) },
+                )
+            }
         }
     }
 }

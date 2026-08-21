@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.gybra.terminallauncher.command.CommandExecutor
 import com.gybra.terminallauncher.command.CommandResult
 import com.gybra.terminallauncher.launcher.AppRepository
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.launcher.BatteryRepository
 import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.InstalledApp
@@ -124,6 +125,11 @@ public class HomeViewModel(
             )
             when (result) {
                 is CommandResult.Output -> recordEntry(submittedInput, output = result.lines)
+                is CommandResult.Shortcuts -> recordEntry(
+                    input = submittedInput,
+                    output = result.lines,
+                    shortcuts = result.shortcuts,
+                )
                 CommandResult.ClearHistory -> eraseHistory()
                 CommandResult.OpenSettings ->
                     completeSubmission(submittedInput, SubmittedAction.OpenSettings)
@@ -193,12 +199,17 @@ public class HomeViewModel(
         }
     }
 
-    private fun recordEntry(input: String, output: List<String>) {
+    private fun recordEntry(
+        input: String,
+        output: List<String>,
+        shortcuts: List<AppShortcut> = emptyList(),
+    ) {
         history.update { entries ->
             val entry = TerminalEntry(
                 id = (entries.lastOrNull()?.id ?: -1L) + 1L,
                 input = input,
                 output = output,
+                shortcuts = shortcuts,
             )
             (entries + entry).takeLast(MAX_HISTORY_ENTRIES)
         }

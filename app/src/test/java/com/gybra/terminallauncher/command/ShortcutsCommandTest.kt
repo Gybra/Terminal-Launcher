@@ -6,8 +6,6 @@ import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.PublishedShortcuts
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.RecordingPreferencesRepository
-import com.gybra.terminallauncher.shell.ShellProfile
-import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -41,18 +39,10 @@ class ShortcutsCommandTest {
 
         val result = command.execute(context(arguments = listOf("browser")))
 
-        assertEquals(CommandResult.Output(listOf("new tab", "new window")), result)
-    }
-
-    @Test
-    fun `lists the shortcuts in the style of the running shell`() = runTest {
-        val command = command(published = mapOf(browser.packageName to available(newTab)))
-
-        val result = command.execute(
-            context(arguments = listOf("browser"), shellProfile = DosShellProfile),
+        assertEquals(
+            CommandResult.Shortcuts(lines = emptyList(), shortcuts = listOf(newTab, newWindow)),
+            result,
         )
-
-        assertEquals(CommandResult.Output(listOf("NEW TAB.LNK")), result)
     }
 
     @Test
@@ -107,8 +97,9 @@ class ShortcutsCommandTest {
         val result = command.execute(context(arguments = listOf("pin", "browser", "new")))
 
         assertEquals(
-            CommandResult.Output(
-                listOf("new matches more than one shortcut", "new tab", "new window"),
+            CommandResult.Shortcuts(
+                lines = listOf("new matches more than one shortcut"),
+                shortcuts = listOf(newTab, newWindow),
             ),
             result,
         )
@@ -197,12 +188,9 @@ class ShortcutsCommandTest {
         preferencesRepository = preferencesRepository,
     )
 
-    private fun context(
-        arguments: List<String>,
-        shellProfile: ShellProfile = UnixShellProfile,
-    ): CommandContext = CommandContext(
+    private fun context(arguments: List<String>): CommandContext = CommandContext(
         arguments = arguments,
-        shellProfile = shellProfile,
+        shellProfile = UnixShellProfile,
         installedApps = listOf(browser),
         registeredCommands = emptyList(),
     )
