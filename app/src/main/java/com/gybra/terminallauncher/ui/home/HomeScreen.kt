@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
+import com.gybra.terminallauncher.shell.SectionLines
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfile
 import com.gybra.terminallauncher.ui.TestTag
@@ -111,7 +112,19 @@ public fun HomeScreen(
  */
 private val HomeUiState.rowCount: Int
     get() = apps.size + shortcuts.size + history.size + searchResults.size +
-        (if (helpInvitation == null) 0 else 1)
+        (if (helpInvitation == null) 0 else 1) + pinnedSection.rowCount
+
+/** The lines the shell frames the pinned rows with, and none at all when Home holds none. */
+private val HomeUiState.pinnedSection: SectionLines
+    get() = if (apps.isEmpty() && shortcuts.isEmpty()) {
+        SectionLines()
+    } else {
+        shellProfile.formatPinnedSection(shellContext, items = apps.size + shortcuts.size)
+    }
+
+/** How many rows a section takes, since each side of it is written as one row of lines. */
+private val SectionLines.rowCount: Int
+    get() = listOf(above, below).count(List<String>::isNotEmpty)
 
 /** Writes the line an empty Home reads, which the shell wrote and nothing here can start. */
 private fun LazyListScope.helpInvitation(line: String?) {
@@ -166,6 +179,8 @@ private fun LazyListScope.pinnedItems(
     state: HomeUiState,
     rowActions: RowActions,
 ) {
+    val section = state.pinnedSection
+    sectionRow(item = HomeItem.PINNED_HEADER, lines = section.above)
     items(
         items = state.apps,
         key = InstalledApp::packageName,
@@ -185,6 +200,19 @@ private fun LazyListScope.pinnedItems(
             onClick = { rowActions.onShortcutClick(shortcut) },
             onLongClick = { rowActions.onShortcutLongClick(shortcut) },
         )
+    }
+    sectionRow(item = HomeItem.PINNED_FOOTER, lines = section.below)
+}
+
+/** Writes the lines a shell frames a block of rows with, which nothing here can start. */
+private fun LazyListScope.sectionRow(item: HomeItem, lines: List<String>) {
+    if (lines.isEmpty()) {
+        return
+    }
+    item(key = item.key) {
+        Column {
+            lines.forEach { line -> TerminalLine(text = line) }
+        }
     }
 }
 

@@ -9,6 +9,7 @@ import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.PromptCursor
 import com.gybra.terminallauncher.shell.PromptSymbol
+import com.gybra.terminallauncher.shell.SectionLines
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellType
 import org.junit.Assert.assertEquals
@@ -177,6 +178,14 @@ class UnixShellProfileTest {
         assertEquals(
             "shortcuts unpin Mail Inbox",
             profile.formatCommandLine(Command.SHORTCUTS, keyword = "unpin", name = "Mail Inbox"),
+        )
+    }
+
+    @Test
+    fun `names the pinned section the way ls names a listed directory`() {
+        assertEquals(
+            SectionLines(above = listOf("~/pinned:")),
+            profile.formatPinnedSection(contextAt(LauncherLocation.HOME), items = 3),
         )
     }
 

@@ -30,6 +30,14 @@ public interface ShellProfile {
     public fun formatAppList(apps: List<InstalledApp>): List<String> = apps.map(::formatAppName)
 
     /**
+     * Writes the lines that frame the applications and shortcuts pinned to Home, the way this
+     * shell announces a directory it is listing. [items] counts them together, since a listing
+     * counts the entries it writes rather than what kind each one is.
+     */
+    public fun formatPinnedSection(context: ShellContext, items: Int): SectionLines =
+        SectionLines(above = listOf("${formatPath(context)}/$PINNED_DIRECTORY:"))
+
+    /**
      * Describes [commands] with the primary alias of this shell, so optional aliases accepted only
      * for compatibility stay out of the help output. A command taking arguments is followed by the
      * ways it is invoked, indented under its description.
@@ -79,6 +87,9 @@ public interface ShellProfile {
         "${battery.percentage}%" + if (battery.charging) " charging" else "",
     )
 }
+
+/** The directory both shells name the pinned block after, written in the case of each. */
+internal const val PINNED_DIRECTORY: String = "pinned"
 
 private const val HELP_ALIAS_COLUMN_WIDTH = 10
 

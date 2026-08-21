@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsDisplayed
@@ -457,6 +458,66 @@ class HomeScreenTest {
         composeRule.onNodeWithText("new tab").performTouchInput { longClick() }
 
         assertEquals(shortcut, written)
+    }
+
+    @Test
+    fun `names the pinned rows with the inert section the shell writes`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(
+                    apps = listOf(InstalledApp(packageName = "com.example.mail", label = "Mail")),
+                    shortcuts = listOf(
+                        AppShortcut(packageName = "com.example.mail", id = "inbox", label = "Inbox"),
+                    ),
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("~/pinned:").assertIsDisplayed().assertHasNoClickAction()
+        val section = pixelsOf("~/pinned:")
+        assertTrue("Expected the arrested colour", section.contains(terminalColors().secondary))
+        assertTrue("Expected no full colour", !section.contains(terminalColors().foreground))
+    }
+
+    @Test
+    fun `closes the DOS pinned section with what it counted`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(
+                    shellProfile = DosShellProfile,
+                    apps = listOf(
+                        InstalledApp(packageName = "com.example.mail", label = "Mail"),
+                        InstalledApp(packageName = "com.example.maps", label = "Maps"),
+                    ),
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("Directory of C:\\HOME\\PINNED").assertIsDisplayed()
+        composeRule.onNodeWithText("2 File(s)").assertIsDisplayed()
+    }
+
+    @Test
+    fun `writes no pinned section when nothing is pinned`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState(),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("~/pinned:").assertDoesNotExist()
     }
 
     @Test

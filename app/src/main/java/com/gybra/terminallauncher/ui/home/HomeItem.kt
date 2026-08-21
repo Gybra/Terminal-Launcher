@@ -6,6 +6,8 @@ package com.gybra.terminallauncher.ui.home
  */
 public enum class HomeItem(public val key: String) {
     HELP_INVITATION("help-invitation"),
+    PINNED_HEADER("pinned-header"),
+    PINNED_FOOTER("pinned-footer"),
     SHORTCUT("shortcut"),
     SEARCH("search"),
     HISTORY("history"),
