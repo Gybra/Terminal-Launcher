@@ -15,7 +15,7 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - offers independent System, Green, Amber, and Monochrome terminal themes, and a status line carrying an optional live clock and the battery level, which is shown by default;
 - offers a minimal settings screen for shell, theme, clock, battery, immersive mode, double tap to lock, username, hostname, prompt symbol, prompt path visibility, and DOS drive letter;
 - answers the requests applications make to pin one of their shortcuts to Home, such as a browser adding a website, and keeps nothing until the user accepts;
-- locks the screen on a double tap, once the user grants the device admin that Android requires for it.
+- locks the screen on a double tap, the way the power button does, once the user turns on the accessibility service Android requires for it.
 
 **Shell metaphor**
 
@@ -73,7 +73,7 @@ Anything that is not a registered command is treated as a search. Command names 
 
 An application can also ask the launcher to keep one of its own shortcuts, which is what a browser does when it adds a website to Home. The launcher answers with a confirmation naming the shortcut and the application that asked for it, and keeps nothing until it is accepted. An accepted shortcut is listed on Home under the pinned applications, written as `new tab` on Unix and `NEW TAB.LNK` on DOS, and tapping it asks Android to start it. A shortcut is started by the package and the identifier Android published for it, never by an Intent the launcher builds or the asking application supplies. Uninstalling an application removes the shortcuts it published, while updating it keeps them; removing a single shortcut without its application is not possible yet.
 
-A double tap on the empty area of Home locks the screen. It works only while the launcher is an active device admin, which Android grants nowhere but in its own confirmation: the `Double tap to lock` setting starts that request, and the setting reads whether the admin is active rather than a stored answer. Turning it off gives the admin back, so the privilege never outlives the feature, and revoking it in the Android settings stops the gesture too. The rows, the prompt, and scrolling keep working as they did, because a tap Home already handles never reaches the gesture.
+A double tap on the empty area of Home locks the screen, the way the power button does, so fingerprint and face unlock keep working afterwards. It works only while the launcher accessibility service is on, which Android grants nowhere but in its own settings: the `Double tap to lock` setting sends the user there, and the setting reads whether the service is connected rather than a stored answer. Turning it off turns the service off, so the privilege never outlives the feature, and turning the service off in the Android settings stops the gesture too. The rows, the prompt, and scrolling keep working as they did, because a tap Home already handles never reaches the gesture.
 
 The prompt can be customized from the settings screen, and the customization is cosmetic only. The Unix prompt is written as `username@hostname:path$`, where the username and the hostname are kept usable as prompt tokens by dropping whitespace and control characters and keeping at most sixteen characters, and where the end symbol is `$`, `%`, or `>`. The DOS prompt is written as `C:\HOME>` on the chosen drive letter, `A`, `C`, or `D`. Hiding the path shortens the Unix prompt to `username@hostname$` and the DOS prompt to `C:\>`. A username or hostname cleared in the settings is left out of the prompt with its separator, so clearing both leaves `~$`.
 
@@ -89,7 +89,7 @@ The Android utility commands map to controlled Android functionality and nothing
 
 ## Safety model
 
-Locking the screen is the one privileged Android capability the launcher can hold. It is declared as a device admin whose policy is `force-lock` and nothing else, so no password rule, wipe, camera, or encryption policy is ever requested; the receiver carries no behavior beyond being the component Android names in that policy. The admin is granted only through the Android confirmation, is never requested at startup, and is given back the moment the setting is turned off. `lockNow()` is the only device-policy call the launcher makes.
+Locking the screen is the one privileged Android capability the launcher can hold. It is an accessibility service declaring the least it can: no window content, no gestures, and no accessibility event, so nothing on screen is ever read; the service carries no behavior beyond the lock. It is turned on only in the Android accessibility settings, is never requested at startup, and turns itself off the moment the setting is turned off. `performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)` is the only call it makes, which is the lock the power button performs: the launcher holds no device-admin privilege, and never forces the PIN that `DevicePolicyManager.lockNow()` would.
 
 The project never executes real shell commands. `Runtime.exec`, `ProcessBuilder`, `/bin/sh`, `su`, shell passthrough, arbitrary Intent URIs, and unregistered commands are outside the architecture. Prompt input is tokenized and matched against explicitly registered commands only, and anything else falls back to application search. Every command maps to a controlled Android API or an explicit safe Intent: an Intent is never built from prompt input, and the only package name that ever reaches one is a package discovered through `PackageManager` and resolved to exactly one application. Every future command must meet the same rule.
 
@@ -159,10 +159,10 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
           tap or Enter -> AppLauncher ----------> explicit package launch Intent
              shortcut tap -> ShortcutLauncher --> LauncherApps shortcut start
      pin request -> ShortcutPinRequests -------> LauncherApps pin item request
-           double tap -> DeviceLock ------------> DevicePolicyManager lockNow
+           double tap -> DeviceLock ------------> accessibility lock screen action
 ```
 
-- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery reading and observation, torch boundary, the screen lock with its device admin receiver, the named system destinations, and the pinned-shortcut model with its pin request and start boundaries;
+- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery reading and observation, torch boundary, the screen lock with its accessibility service, the named system destinations, and the pinned-shortcut model with its pin request and start boundaries;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
 - `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the registered help, application-list, history-clearing, pinning, aliasing, settings, and Android utility commands;
 - `search`: Compose-independent label matching and deterministic result ranking;
