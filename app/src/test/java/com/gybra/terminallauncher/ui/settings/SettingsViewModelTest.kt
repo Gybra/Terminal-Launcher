@@ -99,7 +99,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `asks Android for the device admin and gives it back`() =
+    fun `sends the user to the accessibility service and turns it off`() =
         runTest(mainDispatcherRule.dispatcher) {
             val viewModel = SettingsViewModel(FakePreferencesRepository(), deviceLock)
             advanceUntilIdle()
@@ -118,7 +118,7 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun `leaves the lock off when the user declines the device admin`() =
+    fun `leaves the lock off when the user leaves the service off`() =
         runTest(mainDispatcherRule.dispatcher) {
             val declined = FakeDeviceLock(requestGranted = false)
             val viewModel = SettingsViewModel(FakePreferencesRepository(), declined)
@@ -130,7 +130,7 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun `reads the device admin again when asked to refresh`() =
+    fun `reads the service again when asked to refresh`() =
         runTest(mainDispatcherRule.dispatcher) {
             val viewModel = SettingsViewModel(FakePreferencesRepository(), deviceLock)
             advanceUntilIdle()

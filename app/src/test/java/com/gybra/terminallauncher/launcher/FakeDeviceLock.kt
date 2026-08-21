@@ -1,6 +1,6 @@
 package com.gybra.terminallauncher.launcher
 
-/** A [DeviceLock] recording every call, so tests never touch device policy. */
+/** A [DeviceLock] recording every call, so tests never touch the accessibility service. */
 class FakeDeviceLock(
     override var enabled: Boolean = false,
     private val requestGranted: Boolean = true,

@@ -68,8 +68,8 @@ public class SettingsViewModel(
     }
 
     /**
-     * Asks the user for the device admin that locking the screen needs, or gives it back. The
-     * toggle follows what Android answers, so a request the user declines leaves it off.
+     * Sends the user where the accessibility service that locking the screen needs is turned
+     * on, or turns it off. The toggle follows Android, so a service left off leaves it off.
      */
     public fun setDoubleTapToLock(enabled: Boolean) {
         if (enabled) {
@@ -80,7 +80,7 @@ public class SettingsViewModel(
         refreshDeviceLock()
     }
 
-    /** Reads the device admin again, such as after the user answered the Android request. */
+    /** Reads the service again, such as after the user came back from the Android settings. */
     public fun refreshDeviceLock() {
         mutableUiState.value = mutableUiState.value.copy(doubleTapToLock = deviceLock.enabled)
     }
