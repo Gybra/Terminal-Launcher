@@ -57,6 +57,11 @@ public fun LauncherApp(
     }
 
     TerminalThemeProvider(theme = settingsState.terminalTheme) {
+        // Home is the root of the launcher task, so a Back nothing else answered would finish the
+        // activity and leave the system to start Home again, losing the terminal history with it.
+        // Registered first, so the settings below and the prompt inside Home are asked before it.
+        BackHandler(enabled = true) {}
+
         BackHandler(enabled = destination == LauncherDestination.SETTINGS) {
             destination = LauncherDestination.HOME
         }

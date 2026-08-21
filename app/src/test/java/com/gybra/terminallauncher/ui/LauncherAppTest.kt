@@ -12,6 +12,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -31,6 +32,7 @@ import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.theme.colors
 import com.gybra.terminallauncher.ui.home.HomeUiState
 import com.gybra.terminallauncher.ui.home.PromptActions
+import com.gybra.terminallauncher.ui.home.PromptState
 import com.gybra.terminallauncher.ui.home.SubmittedAction
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsEntry
@@ -132,6 +134,68 @@ class LauncherAppTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("user@android:~$", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `home answers system back itself so the launcher is not finished`() {
+        var backDispatcher: OnBackPressedDispatcher? = null
+        composeRule.setContent {
+            backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+            LauncherApp(
+                homeState = homeState(),
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
+                onLaunchShortcut = {},
+                onRowStart = {},
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+
+        composeRule.runOnIdle {
+            val dispatcher = checkNotNull(backDispatcher)
+            assertTrue("Back on Home was left to the activity", dispatcher.hasEnabledCallbacks())
+            dispatcher.onBackPressed()
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("user@android:~$", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `back releases the focused prompt before home answers it`() {
+        var state by mutableStateOf(homeState())
+        var backDispatcher: OnBackPressedDispatcher? = null
+        composeRule.setContent {
+            backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+            LauncherApp(
+                homeState = state,
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions().copy(
+                    updateFocus = { focused -> state = state.copy(prompt = PromptState(focused = focused)) },
+                ),
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
+                onLaunchShortcut = {},
+                onRowStart = {},
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+        composeRule.onNodeWithContentDescription("Prompt").performClick()
+        composeRule.waitForIdle()
+        assertTrue("Clicking the prompt did not focus it", state.prompt.focused)
+
+        composeRule.runOnIdle { checkNotNull(backDispatcher).onBackPressed() }
+        composeRule.waitForIdle()
+
+        assertEquals(false, state.prompt.focused)
     }
 
     @Test
