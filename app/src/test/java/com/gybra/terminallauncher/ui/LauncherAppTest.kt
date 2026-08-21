@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.SystemScreen
 import com.gybra.terminallauncher.shell.LauncherLocation
@@ -64,6 +65,7 @@ class LauncherAppTest {
                 submittedActions = flowOf(SubmittedAction.OpenSettings),
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onRowStart = {},
                 onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
@@ -90,6 +92,7 @@ class LauncherAppTest {
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onRowStart = {},
                 onLockScreen = { locks += 1 },
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
@@ -115,6 +118,7 @@ class LauncherAppTest {
                 submittedActions = flowOf(SubmittedAction.OpenSettings),
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onRowStart = {},
                 onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
@@ -142,6 +146,7 @@ class LauncherAppTest {
                 submittedActions = submittedActions,
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onRowStart = {},
                 onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
@@ -167,6 +172,7 @@ class LauncherAppTest {
                 submittedActions = submittedActions,
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onRowStart = {},
                 onLockScreen = {},
                 onOpenSystemScreen = { screen -> openedScreen = screen },
                 onRestartLauncher = {},
@@ -194,6 +200,7 @@ class LauncherAppTest {
                 submittedActions = submittedActions,
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onRowStart = {},
                 onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = { restarts += 1 },
@@ -220,6 +227,7 @@ class LauncherAppTest {
                 submittedActions = submittedActions,
                 onLaunchApp = { launched -> launchedApp = launched },
                 onLaunchShortcut = {},
+                onRowStart = {},
                 onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
@@ -230,6 +238,60 @@ class LauncherAppTest {
         composeRule.waitForIdle()
 
         assertEquals(app, launchedApp)
+    }
+
+    @Test
+    fun `consumes the prompt before starting a tapped application`() {
+        val app = InstalledApp(packageName = "com.example.camera", label = "Camera")
+        val started = mutableListOf<String>()
+        composeRule.setContent {
+            LauncherApp(
+                homeState = homeState(apps = listOf(app)),
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
+                submittedActions = emptyFlow(),
+                onLaunchApp = { started += "launched ${it.label}" },
+                onLaunchShortcut = {},
+                onRowStart = { started += "consumed" },
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+
+        composeRule.onNodeWithText("camera").performClick()
+
+        assertEquals(listOf("consumed", "launched Camera"), started)
+    }
+
+    @Test
+    fun `consumes the prompt before starting a tapped shortcut`() {
+        val shortcut = AppShortcut(
+            packageName = "com.example.browser",
+            id = "new-tab",
+            label = "New Tab",
+        )
+        val started = mutableListOf<String>()
+        composeRule.setContent {
+            LauncherApp(
+                homeState = homeState(shortcuts = listOf(shortcut)),
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
+                onLaunchShortcut = { started += "launched ${it.label}" },
+                onRowStart = { started += "consumed" },
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+
+        composeRule.onNodeWithText("new tab").performClick()
+
+        assertEquals(listOf("consumed", "launched New Tab"), started)
     }
 
     @Test
@@ -244,6 +306,7 @@ class LauncherAppTest {
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onRowStart = {},
                 onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
@@ -277,6 +340,7 @@ class LauncherAppTest {
                 submittedActions = emptyFlow(),
                 onLaunchApp = {},
                 onLaunchShortcut = {},
+                onRowStart = {},
                 onLockScreen = {},
                 onOpenSystemScreen = {},
                 onRestartLauncher = {},
@@ -336,6 +400,7 @@ class LauncherAppTest {
     private fun homeState(
         shellProfile: ShellProfile = UnixShellProfile,
         apps: List<InstalledApp> = emptyList(),
+        shortcuts: List<AppShortcut> = emptyList(),
     ): HomeUiState = HomeUiState(
         shellProfile = shellProfile,
         shellContext = ShellContext(
@@ -344,6 +409,7 @@ class LauncherAppTest {
             location = LauncherLocation.HOME,
         ),
         apps = apps,
+        shortcuts = shortcuts,
     )
 
     private fun settingsState(

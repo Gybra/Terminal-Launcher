@@ -57,6 +57,13 @@ public interface ShellProfile {
 
     public fun aliasesFor(command: Command): Set<String> = setOf(aliasFor(command))
 
+    /**
+     * Writes the line an empty Home reads, naming the command that lists the others, so a Home
+     * with nothing pinned and nothing printed still says that commands exist.
+     */
+    public fun formatHelpInvitation(): String =
+        formatMessage("type ${aliasFor(Command.HELP)} to list the commands")
+
     /** Writes the battery part of the line Home keeps above everything else. */
     public fun formatBattery(battery: BatteryStatus): String = formatMessage(
         "${battery.percentage}%" + if (battery.charging) " charging" else "",

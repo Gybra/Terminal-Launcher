@@ -23,6 +23,7 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - customizes the prompt cosmetically: Unix identity and end symbol, DOS drive letter, and path visibility in both shells;
 - shows a focusable prompt with keyboard input, Enter submission, and a focus-aware blinking cursor shaped by the selected shell;
 - keeps an in-memory terminal history of the twenty most recent submitted lines with their output, and with the applications and shortcuts they listed, which stay startable.
+- leaves Home at rest after starting anything: the prompt is cleared, and an empty Home invites the `help` command.
 
 **Search and commands**
 
@@ -43,7 +44,7 @@ Further work is tracked in the [public roadmap](https://github.com/Gybra/Termina
 
 ## Using the launcher
 
-Type at the prompt. Matching applications appear right above it as you type; tap one to launch it, or press Enter when a single application matches. Enter always consumes the line, the way a desktop terminal does: the line joins the terminal history under the prompt that submitted it, the prompt is cleared, and an answer is written even when nothing was launched. A name matching nothing is answered with `no application matches`, and a name matching several is answered with its candidates, which stay tappable rather than launching something arbitrary. The commands that resolve a name, such as `pin` and `alias`, answer an unresolved name the same way and list the same startable candidates. Enter on an empty prompt does nothing, since a blank line would only push printed output out of the history.
+Type at the prompt. Matching applications appear right above it as you type; tap one to launch it, or press Enter when a single application matches. Enter always consumes the line, the way a desktop terminal does: the line joins the terminal history under the prompt that submitted it, the prompt is cleared, and an answer is written even when nothing was launched. A name matching nothing is answered with `no application matches`, and a name matching several is answered with its candidates, which stay tappable rather than launching something arbitrary. The commands that resolve a name, such as `pin` and `alias`, answer an unresolved name the same way and list the same startable candidates. Enter on an empty prompt does nothing, since a blank line would only push printed output out of the history. Tapping a row clears the prompt as well, since the tap answered what was typed: the pinned applications, the pinned shortcuts, whatever a command listed, and the search results all behave the same, and the history stays, so `clear` keeps its meaning.
 
 A label matches exactly, by prefix, by substring, or fuzzily when the typed characters appear in it in order, and a literal match always outranks a fuzzy one. Matches of the same strength are ordered by a score worth 50 for a pinned application plus one point per launch up to 20, then by the most recent launch, then by name. Ranking reads only the installed applications and the stored launch history, so the same input always produces the same list.
 
@@ -93,6 +94,8 @@ Colour carries one distinction and only one: what can be started is written in t
 Settings are opened with the `settings` command, which `help` lists along with the others.
 
 `Immersive mode`, on by default, keeps the status and navigation bars hidden and brings them back only as transient bars on a swipe. Turning it off leaves the system bars on screen, and Home keeps its content clear of them.
+
+A Home with nothing pinned, nothing listed, and nothing printed writes one inert line inviting the `help` command, formatted by the shell, so it reads in upper case under DOS. It is a function of what Home holds rather than a stored state: it leaves as soon as something is pinned or a line is submitted, and it comes back when `clear` empties an unpinned Home.
 
 The terminal history lives in memory only and starts empty after every process restart, by design.
 

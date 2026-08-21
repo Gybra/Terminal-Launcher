@@ -142,6 +142,7 @@ public class MainActivity : ComponentActivity() {
                 submittedActions = homeViewModel.submittedActions,
                 onLaunchApp = appLauncher::launch,
                 onLaunchShortcut = shortcutLauncher::launch,
+                onRowStart = homeViewModel::clearPrompt,
                 onLockScreen = { deviceLock.lock() },
                 onOpenSystemScreen = systemScreenLauncher::open,
                 onRestartLauncher = ::recreate,

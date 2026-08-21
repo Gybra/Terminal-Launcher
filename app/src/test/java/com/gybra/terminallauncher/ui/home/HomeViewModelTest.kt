@@ -78,7 +78,10 @@ class HomeViewModelTest {
 
         advanceUntilIdle()
 
-        assertEquals(unixHomeState(apps = listOf(apps[1])), viewModel.uiState.value)
+        assertEquals(
+            unixHomeState(apps = listOf(apps[1]), helpInvitation = null),
+            viewModel.uiState.value,
+        )
     }
 
     @Test
@@ -103,7 +106,7 @@ class HomeViewModelTest {
         )
         advanceUntilIdle()
 
-        assertEquals(unixHomeState(apps = listOf(app)), viewModel.uiState.value)
+        assertEquals(unixHomeState(apps = listOf(app), helpInvitation = null), viewModel.uiState.value)
     }
 
     @Test
@@ -175,6 +178,7 @@ class HomeViewModelTest {
                     hostname = "phone",
                     location = LauncherLocation.HOME,
                 ),
+                helpInvitation = HELP_INVITATION,
                 statusClock = null,
             ),
             viewModel.uiState.value,
@@ -454,6 +458,115 @@ class HomeViewModelTest {
                 ),
                 viewModel.uiState.value.history,
             )
+        }
+
+    @Test
+    fun `invites the help command while Home holds nothing`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val preferencesRepository = RecordingPreferencesRepository()
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            assertEquals(HELP_INVITATION, viewModel.uiState.value.helpInvitation)
+
+            preferencesRepository.emit(LauncherPreferences(shellType = ShellType.DOS))
+            advanceUntilIdle()
+
+            assertEquals("TYPE HELP TO LIST THE COMMANDS", viewModel.uiState.value.helpInvitation)
+        }
+
+    @Test
+    fun `takes the invitation back as soon as Home holds something`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val preferencesRepository = RecordingPreferencesRepository()
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            preferencesRepository.emit(
+                LauncherPreferences(pinnedPackages = setOf(mail.packageName)),
+            )
+            advanceUntilIdle()
+            assertNull(viewModel.uiState.value.helpInvitation)
+
+            preferencesRepository.emit(LauncherPreferences(pinnedShortcuts = listOf(inbox)))
+            advanceUntilIdle()
+            assertNull(viewModel.uiState.value.helpInvitation)
+
+            preferencesRepository.emit(LauncherPreferences())
+            advanceUntilIdle()
+            viewModel.updatePromptValue(PromptState(input = "telegram"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertNull(viewModel.uiState.value.helpInvitation)
+        }
+
+    @Test
+    fun `writes the invitation again once a command clears an empty Home`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val clear = RecordingCommand(id = Command.CLEAR, result = CommandResult.ClearHistory)
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(clear),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "telegram"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+            assertNull(viewModel.uiState.value.helpInvitation)
+
+            viewModel.updatePromptValue(PromptState(input = "clear"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(HELP_INVITATION, viewModel.uiState.value.helpInvitation)
+        }
+
+    @Test
+    fun `clears the prompt when a row starts something and keeps the history`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = searchingViewModel()
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "telegram"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+            viewModel.updatePromptValue(PromptState(input = "mailb"))
+            viewModel.updatePromptFocus(focused = true)
+            advanceUntilIdle()
+
+            viewModel.clearPrompt()
+            advanceUntilIdle()
+
+            assertEquals(PromptState(focused = true), viewModel.uiState.value.prompt)
+            assertEquals(1, viewModel.uiState.value.history.size)
         }
 
     private val mail = InstalledApp(packageName = "com.example.mail", label = "Mail")
@@ -1123,10 +1236,14 @@ class HomeViewModelTest {
         packageMonitor = FakePackageMonitor(),
     )
 
-    private fun unixHomeState(apps: List<InstalledApp> = emptyList()): HomeUiState = HomeUiState(
+    private fun unixHomeState(
+        apps: List<InstalledApp> = emptyList(),
+        helpInvitation: String? = HELP_INVITATION,
+    ): HomeUiState = HomeUiState(
         shellProfile = UnixShellProfile,
         shellContext = defaultShellContext(),
         apps = apps,
+        helpInvitation = helpInvitation,
         statusClock = "22:10",
     )
 
@@ -1159,3 +1276,6 @@ class HomeViewModelTest {
     }
 
 }
+
+/** The line an empty Home reads, which the Unix profile writes as it is. */
+private const val HELP_INVITATION = "type help to list the commands"

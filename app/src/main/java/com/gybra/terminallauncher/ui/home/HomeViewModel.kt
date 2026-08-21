@@ -110,6 +110,17 @@ public class HomeViewModel(
     }
 
     /**
+     * Clears what is typed, leaving the history alone, so `clear` keeps its meaning. A submitted
+     * line clears the prompt, and so does a row that starts something, since the tap answered what
+     * was typed the way a submitted line does.
+     */
+    public fun clearPrompt() {
+        promptState.update { state ->
+            state.copy(input = "", selection = TextRange.Zero, composition = null)
+        }
+    }
+
+    /**
      * Runs the submitted input as a registered command, and otherwise searches it among the
      * installed applications. Every submitted line is consumed the way a terminal consumes it: it
      * joins the terminal history, the prompt is cleared, and an answer is written even when the
@@ -235,12 +246,6 @@ public class HomeViewModel(
         clearPrompt()
     }
 
-    private fun clearPrompt() {
-        promptState.update { state ->
-            state.copy(input = "", selection = TextRange.Zero, composition = null)
-        }
-    }
-
     private fun createUiState(
         installedApps: List<InstalledApp>,
         preferences: LauncherPreferences,
@@ -249,11 +254,13 @@ public class HomeViewModel(
         history: List<TerminalEntry>,
     ): HomeUiState {
         val shellProfile = ShellProfiles.forType(preferences.shellType)
+        val pinnedApps = installedApps
+            .filter { app -> app.packageName in preferences.pinnedPackages }
 
         return HomeUiState(
             shellProfile = shellProfile,
             shellContext = preferences.toShellContext(),
-            apps = installedApps.filter { app -> app.packageName in preferences.pinnedPackages },
+            apps = pinnedApps,
             shortcuts = preferences.pinnedShortcuts,
             searchResults = AppSearchEngine.search(
                 query = prompt.input,
@@ -262,6 +269,9 @@ public class HomeViewModel(
                 pinnedPackages = preferences.pinnedPackages,
             ),
             history = history,
+            helpInvitation = shellProfile.formatHelpInvitation().takeIf {
+                pinnedApps.isEmpty() && preferences.pinnedShortcuts.isEmpty() && history.isEmpty()
+            },
             statusClock = deviceStatus.clockText
                 .takeIf { preferences.showClock && it.isNotEmpty() },
             statusBattery = deviceStatus.battery

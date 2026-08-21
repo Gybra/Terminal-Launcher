@@ -170,4 +170,9 @@ class UnixShellProfileTest {
         assertEquals("42%", profile.formatBattery(battery))
         assertEquals("42% charging", profile.formatBattery(battery.copy(charging = true)))
     }
+
+    @Test
+    fun `invites the help command on an empty Home`() {
+        assertEquals("type help to list the commands", profile.formatHelpInvitation())
+    }
 }
