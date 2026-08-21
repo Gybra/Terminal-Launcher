@@ -38,6 +38,20 @@ public interface ShellProfile {
         SectionLines(above = listOf("${formatPath(context)}/$PINNED_DIRECTORY:"))
 
     /**
+     * Writes the lines that frame what the typed line matches, announcing how many were found and
+     * saying so when there were none, since a search with no result must not read like a search
+     * that never ran.
+     */
+    public fun formatSearchSection(matches: Int): SectionLines =
+        SectionLines(above = listOf(formatMessage(countMatches(matches))))
+
+    private fun countMatches(matches: Int): String = when (matches) {
+        0 -> "no matches"
+        1 -> "1 match:"
+        else -> "$matches matches:"
+    }
+
+    /**
      * Describes [commands] with the primary alias of this shell, so optional aliases accepted only
      * for compatibility stay out of the help output. A command taking arguments is followed by the
      * ways it is invoked, indented under its description.

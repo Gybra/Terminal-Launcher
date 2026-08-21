@@ -112,7 +112,7 @@ public fun HomeScreen(
  */
 private val HomeUiState.rowCount: Int
     get() = apps.size + shortcuts.size + history.size + searchResults.size +
-        (if (helpInvitation == null) 0 else 1) + pinnedSection.rowCount
+        (if (helpInvitation == null) 0 else 1) + pinnedSection.rowCount + searchSection.rowCount
 
 /** The lines the shell frames the pinned rows with, and none at all when Home holds none. */
 private val HomeUiState.pinnedSection: SectionLines
@@ -120,6 +120,14 @@ private val HomeUiState.pinnedSection: SectionLines
         SectionLines()
     } else {
         shellProfile.formatPinnedSection(shellContext, items = apps.size + shortcuts.size)
+    }
+
+/** The lines the shell frames the results with, and none at all while the prompt is empty. */
+private val HomeUiState.searchSection: SectionLines
+    get() = if (prompt.input.isBlank()) {
+        SectionLines()
+    } else {
+        shellProfile.formatSearchSection(matches = searchResults.size)
     }
 
 /** How many rows a section takes, since each side of it is written as one row of lines. */
@@ -162,6 +170,8 @@ private fun LazyListScope.searchResults(
     state: HomeUiState,
     rowActions: RowActions,
 ) {
+    val section = state.searchSection
+    sectionRow(item = HomeItem.SEARCH_HEADER, lines = section.above)
     items(
         items = state.searchResults,
         key = { result -> HomeItem.SEARCH.rowKey(result.app.packageName) },
@@ -172,6 +182,7 @@ private fun LazyListScope.searchResults(
             onLongClick = { rowActions.onAppLongClick(result.app) },
         )
     }
+    sectionRow(item = HomeItem.SEARCH_FOOTER, lines = section.below)
 }
 
 /** Lists what Home keeps above the prompt: the pinned applications, then the pinned shortcuts. */

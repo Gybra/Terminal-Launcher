@@ -73,6 +73,15 @@ public object DosShellProfile : ShellProfile {
         )
     }
 
+    /** Closes the results the way DIR closes a listing, with the message it answers an empty one with. */
+    override fun formatSearchSection(matches: Int): SectionLines = SectionLines(
+        below = if (matches == 0) {
+            listOf("File not found")
+        } else {
+            listOf("", "${fileCount(matches)} found")
+        },
+    )
+
     override fun formatHelp(commands: List<CommandSummary>): List<String> =
         super.formatHelp(commands) + listOf("", "${commands.size} Command(s)")
 
