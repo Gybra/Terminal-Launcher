@@ -24,6 +24,7 @@ These rules apply to humans and coding agents. Optimize for a small codebase tha
 - Prefer `val`, immutable collections, immutable UI state, pure functions, and expression bodies when they remain readable.
 - Use named arguments when multiple adjacent parameters share a type or when a Boolean argument would be ambiguous.
 - Keep nullability explicit. Prefer guard clauses and sealed/data types over sentinel values and deeply nested conditionals.
+- Name a string that identifies or labels something. Compose list keys, test tags, and user-facing labels come from an enum or a named constant, so a screen and its test read the same value instead of repeating a literal, and renaming one is a compile-time change. A literal is left in place only where it is written once and read nowhere else.
 - Public boundary declarations require explicit visibility and explicit non-`Unit` return types. Overrides may rely on inherited visibility. Add KDoc only for public contracts or non-obvious behavior.
 - Keep one principal public type per file. Closely related private declarations may share its file.
 - Order class members so the public workflow reads top-down; place private implementation details near the code that uses them.

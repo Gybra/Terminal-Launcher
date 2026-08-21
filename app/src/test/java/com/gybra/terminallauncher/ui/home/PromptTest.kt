@@ -30,6 +30,7 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
+import com.gybra.terminallauncher.ui.TestTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -168,7 +169,7 @@ class PromptTest {
     }
 
     private fun cursorHasVisiblePixels(): Boolean {
-        val pixels = composeRule.onNodeWithTag("prompt-input").captureToImage().toPixelMap()
+        val pixels = composeRule.onNodeWithTag(TestTag.PROMPT_INPUT.tag).captureToImage().toPixelMap()
         return (0 until pixels.width).any { x ->
             (0 until pixels.height).any { y -> pixels[x, y] != Color.Black }
         }

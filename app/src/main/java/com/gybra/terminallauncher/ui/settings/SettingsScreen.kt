@@ -32,6 +32,7 @@ import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
+import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 
@@ -48,13 +49,15 @@ public fun SettingsScreen(
             .fillMaxSize()
             .background(colors.background)
             .windowInsetsPadding(WindowInsets.systemBars)
-            .testTag("settings-list"),
+            .testTag(TestTag.SETTINGS_LIST.tag),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        item(key = "back") { ActionLine(text = "< back", onClick = onBack) }
+        item(key = SettingsEntry.BACK.key) {
+            ActionLine(text = SettingsEntry.BACK.label, onClick = onBack)
+        }
         state.storageError?.let { error ->
-            item(key = "storage-error") { TerminalText(error) }
+            item(key = SettingsEntry.STORAGE_ERROR.key) { TerminalText(error) }
         }
         appearanceSettings(state = state, actions = actions)
         homeSettings(state = state, actions = actions)
@@ -67,10 +70,10 @@ private fun LazyListScope.appearanceSettings(
     state: SettingsUiState,
     actions: SettingsActions,
 ) {
-    item(key = "appearance") { SectionTitle("Appearance") }
-    item(key = "shell") { TerminalText("Shell") }
+    item(key = SettingsEntry.APPEARANCE.key) { SectionTitle(SettingsEntry.APPEARANCE.label) }
+    item(key = SettingsEntry.SHELL.key) { TerminalText(SettingsEntry.SHELL.label) }
     ShellType.entries.forEach { shellType ->
-        item(key = "shell-${shellType.name}") {
+        item(key = SettingsEntry.SHELL.optionKey(shellType)) {
             SelectionOption(
                 label = shellType.name,
                 selected = state.shellType == shellType,
@@ -78,9 +81,9 @@ private fun LazyListScope.appearanceSettings(
             )
         }
     }
-    item(key = "theme") { TerminalText("Theme") }
+    item(key = SettingsEntry.THEME.key) { TerminalText(SettingsEntry.THEME.label) }
     TerminalTheme.entries.forEach { terminalTheme ->
-        item(key = "theme-${terminalTheme.name}") {
+        item(key = SettingsEntry.THEME.optionKey(terminalTheme)) {
             SelectionOption(
                 label = terminalTheme.name,
                 selected = state.terminalTheme == terminalTheme,
@@ -95,37 +98,37 @@ private fun LazyListScope.homeSettings(
     state: SettingsUiState,
     actions: SettingsActions,
 ) {
-    item(key = "clock") {
+    item(key = SettingsEntry.SHOW_CLOCK.key) {
         ToggleOption(
-            label = "Show clock",
+            label = SettingsEntry.SHOW_CLOCK.label,
             checked = state.showClock,
             onCheckedChange = actions.setShowClock,
         )
     }
-    item(key = "battery") {
+    item(key = SettingsEntry.SHOW_BATTERY.key) {
         ToggleOption(
-            label = "Show battery",
+            label = SettingsEntry.SHOW_BATTERY.label,
             checked = state.showBattery,
             onCheckedChange = actions.setShowBattery,
         )
     }
-    item(key = "immersive-mode") {
+    item(key = SettingsEntry.IMMERSIVE_MODE.key) {
         ToggleOption(
-            label = "Immersive mode",
+            label = SettingsEntry.IMMERSIVE_MODE.label,
             checked = state.immersiveMode,
             onCheckedChange = actions.setImmersiveMode,
         )
     }
-    item(key = "double-tap-to-lock") {
+    item(key = SettingsEntry.DOUBLE_TAP_TO_LOCK.key) {
         ToggleOption(
-            label = "Double tap to lock",
+            label = SettingsEntry.DOUBLE_TAP_TO_LOCK.label,
             checked = state.doubleTapToLock,
             onCheckedChange = actions.setDoubleTapToLock,
         )
     }
-    item(key = "prompt-path") {
+    item(key = SettingsEntry.SHOW_PROMPT_PATH.key) {
         ToggleOption(
-            label = "Show path in prompt",
+            label = SettingsEntry.SHOW_PROMPT_PATH.label,
             checked = state.showPromptPath,
             onCheckedChange = actions.setShowPromptPath,
         )
@@ -136,24 +139,24 @@ private fun LazyListScope.unixSettings(
     state: SettingsUiState,
     actions: SettingsActions,
 ) {
-    item(key = "unix") { SectionTitle("Unix") }
-    item(key = "username") {
+    item(key = SettingsEntry.UNIX.key) { SectionTitle(SettingsEntry.UNIX.label) }
+    item(key = SettingsEntry.USERNAME.key) {
         TextSetting(
-            label = "Username",
+            label = SettingsEntry.USERNAME.label,
             value = state.username,
             onValueChange = actions.setUsername,
         )
     }
-    item(key = "hostname") {
+    item(key = SettingsEntry.HOSTNAME.key) {
         TextSetting(
-            label = "Hostname",
+            label = SettingsEntry.HOSTNAME.label,
             value = state.hostname,
             onValueChange = actions.setHostname,
         )
     }
-    item(key = "prompt-symbol") { TerminalText("Prompt symbol") }
+    item(key = SettingsEntry.PROMPT_SYMBOL.key) { TerminalText(SettingsEntry.PROMPT_SYMBOL.label) }
     PromptSymbol.entries.forEach { promptSymbol ->
-        item(key = "prompt-symbol-${promptSymbol.name}") {
+        item(key = SettingsEntry.PROMPT_SYMBOL.optionKey(promptSymbol)) {
             SelectionOption(
                 label = promptSymbol.text,
                 selected = state.promptSymbol == promptSymbol,
@@ -167,10 +170,10 @@ private fun LazyListScope.dosSettings(
     state: SettingsUiState,
     actions: SettingsActions,
 ) {
-    item(key = "dos") { SectionTitle("DOS") }
-    item(key = "drive") { TerminalText("Drive") }
+    item(key = SettingsEntry.DOS.key) { SectionTitle(SettingsEntry.DOS.label) }
+    item(key = SettingsEntry.DRIVE.key) { TerminalText(SettingsEntry.DRIVE.label) }
     DosDrive.entries.forEach { dosDrive ->
-        item(key = "drive-${dosDrive.name}") {
+        item(key = SettingsEntry.DRIVE.optionKey(dosDrive)) {
             SelectionOption(
                 label = "${dosDrive.name}:",
                 selected = state.dosDrive == dosDrive,

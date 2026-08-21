@@ -18,6 +18,7 @@ import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
+import com.gybra.terminallauncher.ui.TestTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -40,8 +41,8 @@ class SettingsScreenTest {
 
         composeRule.onNodeWithText("(*) UNIX").assertIsDisplayed()
         composeRule.onNodeWithText("( ) DOS").performClick()
-        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("[*] Show clock"))
-        composeRule.onNodeWithText("[*] Show clock").performClick()
+        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(toggleText(SettingsEntry.SHOW_CLOCK, checked = true)))
+        composeRule.onNodeWithText(toggleText(SettingsEntry.SHOW_CLOCK, checked = true)).performClick()
 
         assertEquals(ShellType.DOS, harness.state.shellType)
         assertFalse(harness.state.showClock)
@@ -60,7 +61,7 @@ class SettingsScreenTest {
         )
         selectionOrder.forEach { theme ->
             val optionText = "( ) ${theme.name}"
-            composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(optionText))
+            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(optionText))
             composeRule.onNodeWithText(optionText).performClick()
 
             assertEquals(theme, harness.state.terminalTheme)
@@ -73,14 +74,14 @@ class SettingsScreenTest {
         composeRule.setContent { harness.Content() }
 
         composeRule
-            .onNodeWithTag("settings-list")
-            .performScrollToNode(hasContentDescription("Username"))
-        composeRule.onNodeWithContentDescription("Username").performTextReplacement("oreste")
+            .onNodeWithTag(TestTag.SETTINGS_LIST.tag)
+            .performScrollToNode(hasContentDescription(SettingsEntry.USERNAME.label))
+        composeRule.onNodeWithContentDescription(SettingsEntry.USERNAME.label).performTextReplacement("oreste")
         composeRule
-            .onNodeWithTag("settings-list")
-            .performScrollToNode(hasContentDescription("Hostname"))
+            .onNodeWithTag(TestTag.SETTINGS_LIST.tag)
+            .performScrollToNode(hasContentDescription(SettingsEntry.HOSTNAME.label))
         composeRule
-            .onNodeWithContentDescription("Hostname")
+            .onNodeWithContentDescription(SettingsEntry.HOSTNAME.label)
             .performTextReplacement("phone")
 
         assertEquals("oreste", harness.state.username)
@@ -94,7 +95,7 @@ class SettingsScreenTest {
 
         listOf(PromptSymbol.PERCENT, PromptSymbol.ARROW, PromptSymbol.DOLLAR).forEach { symbol ->
             val optionText = "( ) ${symbol.text}"
-            composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(optionText))
+            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(optionText))
             composeRule.onNodeWithText(optionText).performClick()
 
             assertEquals(symbol, harness.state.promptSymbol)
@@ -108,7 +109,7 @@ class SettingsScreenTest {
 
         listOf(DosDrive.A, DosDrive.D, DosDrive.C).forEach { drive ->
             val optionText = "( ) ${drive.name}:"
-            composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(optionText))
+            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(optionText))
             composeRule.onNodeWithText(optionText).performClick()
 
             assertEquals(drive, harness.state.dosDrive)
@@ -120,8 +121,8 @@ class SettingsScreenTest {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
 
-        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("[*] Show battery"))
-        composeRule.onNodeWithText("[*] Show battery").performClick()
+        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(toggleText(SettingsEntry.SHOW_BATTERY, checked = true)))
+        composeRule.onNodeWithText(toggleText(SettingsEntry.SHOW_BATTERY, checked = true)).performClick()
 
         assertFalse(harness.state.showBattery)
     }
@@ -131,8 +132,8 @@ class SettingsScreenTest {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
 
-        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("[*] Immersive mode"))
-        composeRule.onNodeWithText("[*] Immersive mode").performClick()
+        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(toggleText(SettingsEntry.IMMERSIVE_MODE, checked = true)))
+        composeRule.onNodeWithText(toggleText(SettingsEntry.IMMERSIVE_MODE, checked = true)).performClick()
 
         assertFalse(harness.state.immersiveMode)
     }
@@ -143,9 +144,9 @@ class SettingsScreenTest {
         composeRule.setContent { harness.Content() }
 
         composeRule
-            .onNodeWithTag("settings-list")
-            .performScrollToNode(hasText("[*] Show path in prompt"))
-        composeRule.onNodeWithText("[*] Show path in prompt").performClick()
+            .onNodeWithTag(TestTag.SETTINGS_LIST.tag)
+            .performScrollToNode(hasText(toggleText(SettingsEntry.SHOW_PROMPT_PATH, checked = true)))
+        composeRule.onNodeWithText(toggleText(SettingsEntry.SHOW_PROMPT_PATH, checked = true)).performClick()
 
         assertFalse(harness.state.showPromptPath)
     }
@@ -163,8 +164,8 @@ class SettingsScreenTest {
 
         composeRule.onNodeWithText("(*) DOS").assertIsDisplayed()
         composeRule.onNodeWithText("Unable to save preferences").assertIsDisplayed()
-        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("[ ] Show clock"))
-        composeRule.onNodeWithText("[ ] Show clock").assertIsDisplayed()
+        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(toggleText(SettingsEntry.SHOW_CLOCK, checked = false)))
+        composeRule.onNodeWithText(toggleText(SettingsEntry.SHOW_CLOCK, checked = false)).assertIsDisplayed()
     }
 
     @Test
@@ -172,10 +173,13 @@ class SettingsScreenTest {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
 
-        composeRule.onNodeWithText("< back").performClick()
+        composeRule.onNodeWithText(SettingsEntry.BACK.label).performClick()
 
         assertTrue(harness.wentBack)
     }
+
+    private fun toggleText(entry: SettingsEntry, checked: Boolean): String =
+        "[${if (checked) "*" else " "}] ${entry.label}"
 
     private fun defaultState(): SettingsUiState = SettingsUiState(
         shellType = ShellType.UNIX,

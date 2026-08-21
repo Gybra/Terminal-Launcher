@@ -168,7 +168,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
 - `search`: Compose-independent label matching and deterministic result ranking;
 - `shell`: shell context, locations, profile selection, and all DOS/Unix presentation rules;
 - `theme`: shell-independent terminal theme and color definitions;
-- `ui`: terminal typography, theme provider, and the destination the launcher renders;
+- `ui`: terminal typography, theme provider, the destination the launcher renders, and the named list keys, labels, and test tags the screens and their tests share;
 - `ui/home`: immutable UI state, screen-level ViewModel, terminal history, and stateless Compose rendering;
 - `ui/settings`: immutable settings state, preference coordination, and stateless controls;
 - `ui/pin`: immutable confirmation state, the answer to one pin request, and its stateless screen;

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.PinnedShortcut
+import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 
@@ -47,17 +48,17 @@ public fun HomeScreen(
             .pointerInput(onLockScreen) {
                 detectTapGestures(onDoubleTap = { onLockScreen() })
             }
-            .testTag("home-list"),
+            .testTag(TestTag.HOME_LIST.tag),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         if (state.statusClock != null || state.statusBattery != null) {
-            item(key = "status") {
+            item(key = HomeItem.STATUS.key) {
                 StatusLine(clock = state.statusClock, battery = state.statusBattery)
             }
         }
         pinnedItems(state = state, onAppClick = onAppClick, onShortcutClick = onShortcutClick)
-        item(key = "settings") {
+        item(key = HomeItem.SETTINGS.key) {
             AppRow(
                 displayName = state.shellProfile.aliasFor(Command.SETTINGS),
                 onClick = onSettingsClick,
@@ -67,7 +68,7 @@ public fun HomeScreen(
             entries = state.history,
             prompt = state.shellProfile.prompt(state.shellContext),
         )
-        item(key = "prompt") {
+        item(key = HomeItem.PROMPT.key) {
             Prompt(
                 prompt = state.shellProfile.prompt(state.shellContext),
                 state = state.prompt,
@@ -76,7 +77,7 @@ public fun HomeScreen(
         }
         items(
             items = state.searchResults,
-            key = { result -> "search-${result.app.packageName}" },
+            key = { result -> HomeItem.SEARCH.rowKey(result.app.packageName) },
         ) { result ->
             AppRow(
                 displayName = state.shellProfile.formatAppName(result.app),
@@ -103,7 +104,7 @@ private fun LazyListScope.pinnedItems(
     }
     items(
         items = state.shortcuts,
-        key = { shortcut -> "shortcut-${shortcut.packageName}-${shortcut.id}" },
+        key = { shortcut -> HomeItem.SHORTCUT.rowKey("${shortcut.packageName}-${shortcut.id}") },
     ) { shortcut ->
         AppRow(
             displayName = state.shellProfile.formatShortcutName(shortcut),
@@ -115,7 +116,7 @@ private fun LazyListScope.pinnedItems(
 private fun LazyListScope.terminalHistory(entries: List<TerminalEntry>, prompt: String) {
     items(
         items = entries,
-        key = { entry -> "history-${entry.id}" },
+        key = { entry -> HomeItem.HISTORY.rowKey(entry.id.toString()) },
     ) { entry ->
         Column {
             TerminalLine(text = "$prompt ${entry.input}")

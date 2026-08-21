@@ -31,6 +31,7 @@ import com.gybra.terminallauncher.ui.home.HomeUiState
 import com.gybra.terminallauncher.ui.home.PromptActions
 import com.gybra.terminallauncher.ui.home.SubmittedAction
 import com.gybra.terminallauncher.ui.settings.SettingsActions
+import com.gybra.terminallauncher.ui.settings.SettingsEntry
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.emptyFlow
@@ -68,9 +69,9 @@ class LauncherAppTest {
         }
 
         composeRule.onNodeWithText("settings").performClick()
-        composeRule.onNodeWithText("Appearance").assertIsDisplayed()
+        composeRule.onNodeWithText(SettingsEntry.APPEARANCE.label).assertIsDisplayed()
 
-        composeRule.onNodeWithText("< back").performClick()
+        composeRule.onNodeWithText(SettingsEntry.BACK.label).performClick()
         composeRule.onNodeWithText("user@android:~$", substring = true).assertIsDisplayed()
     }
 
@@ -92,7 +93,7 @@ class LauncherAppTest {
             )
         }
 
-        composeRule.onNodeWithTag("home-list").performTouchInput { doubleClick(bottomCenter) }
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput { doubleClick(bottomCenter) }
         composeRule.waitForIdle()
 
         assertEquals(1, locks)
@@ -147,7 +148,7 @@ class LauncherAppTest {
         composeRule.runOnIdle { submittedActions.tryEmit(SubmittedAction.OpenSettings) }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Appearance").assertIsDisplayed()
+        composeRule.onNodeWithText(SettingsEntry.APPEARANCE.label).assertIsDisplayed()
     }
 
     @Test
@@ -316,13 +317,13 @@ class LauncherAppTest {
     }
 
     private fun assertBackgroundColor(color: Color) {
-        val pixels = composeRule.onNodeWithTag("home-list").captureToImage().toPixelMap()
+        val pixels = composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).captureToImage().toPixelMap()
         val actual = pixels[pixels.width - 1, pixels.height - 1]
         assertTrue("Expected $color but rendered $actual", actual == color)
     }
 
     private fun assertRenderedColor(color: Color) {
-        val pixels = composeRule.onNodeWithTag("home-list").captureToImage().toPixelMap()
+        val pixels = composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).captureToImage().toPixelMap()
         val colorFound = (0 until pixels.width).any { x ->
             (0 until pixels.height).any { y -> pixels[x, y] == color }
         }
