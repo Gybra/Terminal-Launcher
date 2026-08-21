@@ -38,6 +38,9 @@ public interface PreferencesRepository {
     /** Keeps [shortcut] on Home, replacing what was stored for the same shortcut. */
     public suspend fun pinShortcut(shortcut: AppShortcut)
 
+    /** Removes [shortcut] from Home, leaving every other shortcut of its application pinned. */
+    public suspend fun unpinShortcut(shortcut: AppShortcut)
+
     /** Removes every shortcut of [packageName] from Home, such as after an uninstall. */
     public suspend fun unpinShortcuts(packageName: String)
 

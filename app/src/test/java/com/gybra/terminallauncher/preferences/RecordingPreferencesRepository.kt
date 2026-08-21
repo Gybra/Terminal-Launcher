@@ -99,6 +99,12 @@ class RecordingPreferencesRepository(
         }
     }
 
+    override suspend fun unpinShortcut(shortcut: AppShortcut) {
+        write("unpinShortcut(${shortcut.packageName}, ${shortcut.id})") { preferences ->
+            preferences.copy(pinnedShortcuts = preferences.pinnedShortcuts - shortcut)
+        }
+    }
+
     override suspend fun unpinShortcuts(packageName: String) {
         write("unpinShortcuts($packageName)") { preferences ->
             preferences.copy(

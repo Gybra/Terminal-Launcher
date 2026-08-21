@@ -46,6 +46,7 @@ public object UnixShellProfile : ShellProfile {
         Command.HELP -> "help"
         Command.PIN -> "pin"
         Command.UNPIN -> "unpin"
+        Command.SHORTCUTS -> "shortcuts"
         Command.SETTINGS -> "settings"
         Command.ALIAS -> "alias"
         Command.BATTERY -> "battery"

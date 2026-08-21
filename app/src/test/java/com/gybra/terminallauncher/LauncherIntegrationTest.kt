@@ -5,6 +5,7 @@ import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.launcherCommands
 import com.gybra.terminallauncher.launcher.FakeAppRepository
 import com.gybra.terminallauncher.launcher.FakeBatteryRepository
+import com.gybra.terminallauncher.launcher.FakeShortcutRepository
 import com.gybra.terminallauncher.launcher.FakeTorch
 import com.gybra.terminallauncher.launcher.FakeLauncherClock
 import com.gybra.terminallauncher.launcher.FakeShortcutPinRequest
@@ -102,6 +103,7 @@ class LauncherIntegrationTest {
                     "help      Show available commands",
                     "pin       Pin an application to Home",
                     "unpin     Remove an application from Home",
+                "shortcuts List, pin, and remove application shortcuts",
                     "alias     Name an application",
                     "info      Open the Android details of an application",
                     "uninstall Ask Android to uninstall an application",
@@ -302,6 +304,7 @@ class LauncherIntegrationTest {
                     commands = launcherCommands(
                         preferencesRepository = preferencesRepository,
                         batteryRepository = FakeBatteryRepository(),
+                        shortcutRepository = FakeShortcutRepository(),
                         torch = FakeTorch(TorchState.ON, TorchState.OFF),
                     ),
                 ),

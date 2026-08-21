@@ -312,6 +312,8 @@ class SettingsViewModelTest {
 
         override suspend fun pinShortcut(shortcut: AppShortcut) = unsupported()
 
+        override suspend fun unpinShortcut(shortcut: AppShortcut) = unsupported()
+
         override suspend fun unpinShortcuts(packageName: String) = unsupported()
 
         override suspend fun setAlias(name: String, packageName: String) = unsupported()
@@ -370,6 +372,8 @@ class SettingsViewModelTest {
         override suspend fun unpinPackage(packageName: String) = unsupported()
 
         override suspend fun pinShortcut(shortcut: AppShortcut) = unsupported()
+
+        override suspend fun unpinShortcut(shortcut: AppShortcut) = unsupported()
 
         override suspend fun unpinShortcuts(packageName: String) = unsupported()
 

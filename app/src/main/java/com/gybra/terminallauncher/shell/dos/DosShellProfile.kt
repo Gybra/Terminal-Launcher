@@ -42,6 +42,7 @@ public object DosShellProfile : ShellProfile {
         Command.HELP -> "HELP"
         Command.PIN -> "PIN"
         Command.UNPIN -> "UNPIN"
+        Command.SHORTCUTS -> "SHORTCUTS"
         Command.SETTINGS -> "SETTINGS"
         Command.ALIAS -> "ALIAS"
         Command.BATTERY -> "BATTERY"

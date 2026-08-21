@@ -122,6 +122,17 @@ public class DataStorePreferencesRepository(
         }
     }
 
+    override suspend fun unpinShortcut(shortcut: AppShortcut) {
+        require(shortcut.packageName.isNotBlank()) { "Package name must not be blank" }
+        require(shortcut.id.isNotBlank()) { "Shortcut id must not be blank" }
+        dataStore.edit { preferences ->
+            val stored = preferences[Keys.pinnedShortcuts] ?: return@edit
+            preferences[Keys.pinnedShortcuts] = stored
+                .filterNot { entry -> entry.startsWith(shortcut.storedPrefix()) }
+                .toSet()
+        }
+    }
+
     override suspend fun unpinShortcuts(packageName: String) {
         require(packageName.isNotBlank()) { "Package name must not be blank" }
         dataStore.edit { preferences ->
