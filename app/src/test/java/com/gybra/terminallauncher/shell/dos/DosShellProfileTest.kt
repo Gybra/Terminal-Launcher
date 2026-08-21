@@ -133,17 +133,10 @@ class DosShellProfileTest {
     }
 
     @Test
-    fun `writes the status line in upper case, leaving out what is hidden`() {
+    fun `writes the battery part of the status line in upper case`() {
         val battery = BatteryStatus(percentage = 42, charging = true)
 
-        assertEquals(
-            "22:10 42% CHARGING",
-            profile.formatStatus(clockText = "22:10", battery = battery),
-        )
-        assertEquals(
-            "22:10 42%",
-            profile.formatStatus(clockText = "22:10", battery = battery.copy(charging = false)),
-        )
-        assertEquals("", profile.formatStatus(clockText = null, battery = null))
+        assertEquals("42% CHARGING", profile.formatBattery(battery))
+        assertEquals("42%", profile.formatBattery(battery.copy(charging = false)))
     }
 }

@@ -79,7 +79,7 @@ The prompt can be customized from the settings screen, and the customization is 
 
 No drive, path, or symbol reaches a filesystem or grants a privilege: nothing exists behind them, and the launcher navigates no directories. The path shown is a fixed label for where the launcher is, not a working directory.
 
-Home keeps one status line above everything else, written in the style of the selected shell: `22:10 42% charging` on Unix and `22:10 42% CHARGING` on DOS. The clock and the battery are each turned off in the settings screen, both are shown by default, and hiding both leaves no line at all. The battery follows the device instead of being read once, and a device reporting no level shows none rather than a number the launcher made up.
+Home keeps one status line above everything else, with the clock on the left and the battery on the right, each written in the style of the selected shell: `42% charging` on Unix and `42% CHARGING` on DOS. The clock and the battery are each turned off in the settings screen, both are shown by default, hiding one leaves the other on its own side, and hiding both leaves no line at all. The battery follows the device instead of being read once, and a device reporting no level shows none rather than a number the launcher made up.
 
 The terminal history lives in memory only and starts empty after every process restart, by design.
 

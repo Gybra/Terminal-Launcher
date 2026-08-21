@@ -151,16 +151,10 @@ class UnixShellProfileTest {
     }
 
     @Test
-    fun `writes the status line in lower case, leaving out what is hidden`() {
+    fun `writes the battery part of the status line in lower case`() {
         val battery = BatteryStatus(percentage = 42, charging = false)
 
-        assertEquals("22:10 42%", profile.formatStatus(clockText = "22:10", battery = battery))
-        assertEquals(
-            "22:10 42% charging",
-            profile.formatStatus(clockText = "22:10", battery = battery.copy(charging = true)),
-        )
-        assertEquals("42%", profile.formatStatus(clockText = null, battery = battery))
-        assertEquals("22:10", profile.formatStatus(clockText = "22:10", battery = null))
-        assertEquals("", profile.formatStatus(clockText = null, battery = null))
+        assertEquals("42%", profile.formatBattery(battery))
+        assertEquals("42% charging", profile.formatBattery(battery.copy(charging = true)))
     }
 }

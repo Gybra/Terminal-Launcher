@@ -237,11 +237,11 @@ public class HomeViewModel(
                 pinnedPackages = preferences.pinnedPackages,
             ),
             history = history,
-            statusText = shellProfile.formatStatus(
-                clockText = deviceStatus.clockText
-                    .takeIf { preferences.showClock && it.isNotEmpty() },
-                battery = deviceStatus.battery.takeIf { preferences.showBattery },
-            ).takeIf(String::isNotEmpty),
+            statusClock = deviceStatus.clockText
+                .takeIf { preferences.showClock && it.isNotEmpty() },
+            statusBattery = deviceStatus.battery
+                ?.takeIf { preferences.showBattery }
+                ?.let(shellProfile::formatBattery),
             prompt = prompt,
         )
     }

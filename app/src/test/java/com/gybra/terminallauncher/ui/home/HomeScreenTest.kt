@@ -7,14 +7,17 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.doubleClick
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.width
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.PinnedShortcut
 import com.gybra.terminallauncher.search.SearchResult
@@ -110,7 +113,7 @@ class HomeScreenTest {
 
     @Test
     fun `removes the status line when reactive state hides it`() {
-        var state by mutableStateOf(homeState(statusText = "22:10"))
+        var state by mutableStateOf(homeState(statusClock = "22:10"))
 
         composeRule.setContent {
             HomeScreen(
@@ -124,7 +127,7 @@ class HomeScreenTest {
         }
 
         composeRule.onNodeWithText("22:10").assertIsDisplayed()
-        state = state.copy(statusText = null)
+        state = state.copy(statusClock = null)
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("22:10").assertDoesNotExist()
@@ -321,14 +324,59 @@ class HomeScreenTest {
         composeRule.onNodeWithText("app 0").assertDoesNotExist()
     }
 
+    @Test
+    fun `keeps the clock on the left and the battery on the right of the status line`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState(statusClock = "22:10", statusBattery = "42%"),
+                onAppClick = {},
+                onShortcutClick = {},
+                onSettingsClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        val clock = composeRule.onNodeWithText("22:10").getUnclippedBoundsInRoot()
+        val battery = composeRule.onNodeWithText("42%").getUnclippedBoundsInRoot()
+        val screenWidth = composeRule.onRoot().getUnclippedBoundsInRoot().width
+
+        assertTrue(clock.left < screenWidth / 2)
+        assertTrue(battery.left > clock.right)
+        assertTrue(battery.right > screenWidth / 2)
+    }
+
+    @Test
+    fun `keeps the battery on the right when the clock is hidden`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState(statusBattery = "42%"),
+                onAppClick = {},
+                onShortcutClick = {},
+                onSettingsClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        val battery = composeRule.onNodeWithText("42%").getUnclippedBoundsInRoot()
+        val screenWidth = composeRule.onRoot().getUnclippedBoundsInRoot().width
+
+        assertTrue(battery.left > screenWidth / 2)
+    }
+
     private fun manyApps(): List<InstalledApp> = List(30) { index ->
         InstalledApp(packageName = "com.example.app$index", label = "App $index")
     }
 
-    private fun homeState(statusText: String? = null): HomeUiState = HomeUiState(
+    private fun homeState(
+        statusClock: String? = null,
+        statusBattery: String? = null,
+    ): HomeUiState = HomeUiState(
         shellProfile = UnixShellProfile,
         shellContext = defaultShellContext(),
-        statusText = statusText,
+        statusClock = statusClock,
+        statusBattery = statusBattery,
     )
 
     private fun defaultShellContext(): ShellContext = ShellContext(

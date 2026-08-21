@@ -138,7 +138,7 @@ class HomeViewModelTest {
                 apps = listOf(app),
                 shellProfile = DosShellProfile,
                 shellContext = defaultShellContext(),
-                statusText = "22:10",
+                statusClock = "22:10",
             ),
             viewModel.uiState.value,
         )
@@ -175,14 +175,14 @@ class HomeViewModelTest {
                     hostname = "phone",
                     location = LauncherLocation.HOME,
                 ),
-                statusText = null,
+                statusClock = null,
             ),
             viewModel.uiState.value,
         )
     }
 
     @Test
-    fun `writes the clock and the battery on one status line`() =
+    fun `writes the clock and the battery as the two sides of the status line`() =
         runTest(mainDispatcherRule.dispatcher) {
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(),
@@ -197,7 +197,8 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            assertEquals("22:10 42% charging", viewModel.uiState.value.statusText)
+            assertEquals("22:10", viewModel.uiState.value.statusClock)
+            assertEquals("42% charging", viewModel.uiState.value.statusBattery)
         }
 
     @Test
@@ -218,27 +219,29 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            assertEquals("22:10 42%", viewModel.uiState.value.statusText)
+            assertEquals("42%", viewModel.uiState.value.statusBattery)
 
             batteryRepository.emit(BatteryStatus(percentage = 41, charging = false))
             advanceUntilIdle()
 
-            assertEquals("22:10 41%", viewModel.uiState.value.statusText)
+            assertEquals("41%", viewModel.uiState.value.statusBattery)
 
             preferencesRepository.emit(LauncherPreferences(showBattery = false))
             advanceUntilIdle()
 
-            assertEquals("22:10", viewModel.uiState.value.statusText)
+            assertEquals("22:10", viewModel.uiState.value.statusClock)
+            assertNull(viewModel.uiState.value.statusBattery)
 
             preferencesRepository.emit(LauncherPreferences(showClock = false))
             advanceUntilIdle()
 
-            assertEquals("41%", viewModel.uiState.value.statusText)
+            assertNull(viewModel.uiState.value.statusClock)
+            assertEquals("41%", viewModel.uiState.value.statusBattery)
 
             batteryRepository.emit(null)
             advanceUntilIdle()
 
-            assertNull(viewModel.uiState.value.statusText)
+            assertNull(viewModel.uiState.value.statusBattery)
         }
 
     @Test
@@ -1013,7 +1016,7 @@ class HomeViewModelTest {
         shellProfile = UnixShellProfile,
         shellContext = defaultShellContext(),
         apps = apps,
-        statusText = "22:10",
+        statusClock = "22:10",
     )
 
     private fun defaultShellContext(): ShellContext = ShellContext(
