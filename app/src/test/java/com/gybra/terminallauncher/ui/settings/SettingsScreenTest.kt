@@ -79,12 +79,10 @@ class SettingsScreenTest {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
 
-        val selectionOrder = listOf(
-            TerminalTheme.GREEN,
-            TerminalTheme.AMBER,
-            TerminalTheme.MONOCHROME,
-            TerminalTheme.SYSTEM,
-        )
+        // The selected theme is written as `(*)`, so it is clicked last, once something else holds it.
+        val selectionOrder = TerminalTheme.entries.filterNot { theme ->
+            theme == harness.state.terminalTheme
+        } + harness.state.terminalTheme
         selectionOrder.forEach { theme ->
             val option = optionText(theme.name)
             composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(option))

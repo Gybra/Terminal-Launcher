@@ -5,4 +5,6 @@ public enum class TerminalTheme {
     GREEN,
     AMBER,
     MONOCHROME,
+    C64,
+    SOLARIZED,
 }
