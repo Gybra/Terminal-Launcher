@@ -9,6 +9,9 @@ import com.gybra.terminallauncher.launcher.AppShortcut
 public interface ShellProfile {
     public val type: ShellType
 
+    /** The shape this shell writes its prompt cursor as. */
+    public val cursor: PromptCursor
+
     public fun prompt(context: ShellContext): String
 
     public fun formatAppName(app: InstalledApp): String

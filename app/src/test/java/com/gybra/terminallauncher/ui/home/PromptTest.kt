@@ -30,6 +30,7 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
+import com.gybra.terminallauncher.shell.PromptCursor
 import com.gybra.terminallauncher.ui.TestTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -157,6 +158,32 @@ class PromptTest {
         composeRule.onNodeWithText("telegram").assertIsDisplayed()
     }
 
+    @Test
+    fun `writes the cursor as the shell shapes it`() {
+        val harness = PromptHarness()
+        setPromptContent(harness, RecordingKeyboardController())
+
+        val underscoreRows = paintedRows()
+        val underscoreColumns = paintedColumns()
+        composeRule.runOnIdle { harness.cursor = PromptCursor.BLOCK }
+        composeRule.waitForIdle()
+        val blockRows = paintedRows()
+        val blockColumns = paintedColumns()
+
+        assertTrue(
+            "Expected the block to paint more of the line",
+            blockRows.size > underscoreRows.size,
+        )
+        assertTrue(
+            "Expected the block to reach above the underscore",
+            blockRows.min() < underscoreRows.min(),
+        )
+        assertTrue(
+            "Expected the block to cover the character the underscore marks",
+            blockColumns.size >= underscoreColumns.size,
+        )
+    }
+
     private fun setPromptContent(
         harness: PromptHarness,
         keyboard: RecordingKeyboardController,
@@ -168,6 +195,22 @@ class PromptTest {
         }
     }
 
+    /** The lines of the prompt carrying any paint, which is what tells the two shapes apart. */
+    private fun paintedRows(): Set<Int> {
+        val pixels = composeRule.onNodeWithTag(TestTag.PROMPT_INPUT.tag).captureToImage().toPixelMap()
+        return (0 until pixels.height)
+            .filter { y -> (0 until pixels.width).any { x -> pixels[x, y] != Color.Black } }
+            .toSet()
+    }
+
+    /** The columns of the prompt carrying any paint, which is how wide a shape is drawn. */
+    private fun paintedColumns(): Set<Int> {
+        val pixels = composeRule.onNodeWithTag(TestTag.PROMPT_INPUT.tag).captureToImage().toPixelMap()
+        return (0 until pixels.width)
+            .filter { x -> (0 until pixels.height).any { y -> pixels[x, y] != Color.Black } }
+            .toSet()
+    }
+
     private fun cursorHasVisiblePixels(): Boolean {
         val pixels = composeRule.onNodeWithTag(TestTag.PROMPT_INPUT.tag).captureToImage().toPixelMap()
         return (0 until pixels.width).any { x ->
@@ -177,6 +220,7 @@ class PromptTest {
 
     private inner class PromptHarness {
         var state by mutableStateOf(PromptState())
+        var cursor by mutableStateOf(PromptCursor.UNDERSCORE)
         val submissions = mutableListOf<String>()
         var clearFocus: () -> Unit = {}
 
@@ -192,6 +236,7 @@ class PromptTest {
             ) {
                 Prompt(
                     prompt = "user@android:~$",
+                    cursor = cursor,
                     state = state,
                     actions = PromptActions(
                         updateValue = { value -> state = value },

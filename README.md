@@ -19,9 +19,9 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 
 **Shell metaphor**
 
-- DOS and Unix shell profiles own prompts, paths, application names, lists, help, command aliases, and message style, so no DOS or Unix branch exists in Compose;
+- DOS and Unix shell profiles own prompts, paths, application names, lists, help, command aliases, message style, and the shape of the prompt cursor, so no DOS or Unix branch exists in Compose;
 - customizes the prompt cosmetically: Unix identity and end symbol, DOS drive letter, and path visibility in both shells;
-- shows a focusable prompt with keyboard input, Enter submission, and a focus-aware blinking cursor;
+- shows a focusable prompt with keyboard input, Enter submission, and a focus-aware blinking cursor shaped by the selected shell;
 - keeps an in-memory terminal history of the twenty most recent submitted lines with their output.
 
 **Search and commands**
@@ -80,7 +80,7 @@ The same shortcuts are reachable from the prompt, without waiting for the applic
 
 A double tap on the empty area of Home locks the screen, the way the power button does, so fingerprint and face unlock keep working afterwards. It works only while the launcher accessibility service is on, which Android grants nowhere but in its own settings: the `Double tap to lock` setting sends the user there, and the setting reads whether the service is connected rather than a stored answer. Turning it off turns the service off, so the privilege never outlives the feature, and turning the service off in the Android settings stops the gesture too. The rows, the prompt, and scrolling keep working as they did, because a tap Home already handles never reaches the gesture.
 
-The prompt can be customized from the settings screen, and the customization is cosmetic only. The Unix prompt is written as `username@hostname:path$`, where the username and the hostname are kept usable as prompt tokens by dropping whitespace and control characters and keeping at most sixteen characters, and where the end symbol is `$`, `%`, or `>`. The DOS prompt is written as `C:\HOME>` on the chosen drive letter, `A`, `C`, or `D`. Hiding the path shortens the Unix prompt to `username@hostname$` and the DOS prompt to `C:\>`. A username or hostname cleared in the settings is left out of the prompt with its separator, so clearing both leaves `~$`.
+The prompt can be customized from the settings screen, and the customization is cosmetic only. The Unix prompt is written as `username@hostname:path$`, where the username and the hostname are kept usable as prompt tokens by dropping whitespace and control characters and keeping at most sixteen characters, and where the end symbol is `$`, `%`, or `>`. The DOS prompt is written as `C:\HOME>` on the chosen drive letter, `A`, `C`, or `D`. Hiding the path shortens the Unix prompt to `username@hostname$` and the DOS prompt to `C:\>`. A username or hostname cleared in the settings is left out of the prompt with its separator, so clearing both leaves `~$`. The cursor is not a setting: the shell decides its shape, and DOS fills the character cell with a block while Unix marks the position with the line under it, so choosing a shell changes the cursor with everything else.
 
 No drive, path, or symbol reaches a filesystem or grants a privilege: nothing exists behind them, and the launcher navigates no directories. The path shown is a fixed label for where the launcher is, not a working directory.
 

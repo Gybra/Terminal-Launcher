@@ -7,6 +7,7 @@ import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.LauncherLocation
+import com.gybra.terminallauncher.shell.PromptCursor
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellType
@@ -102,6 +103,11 @@ class DosShellProfileTest {
             profile.formatHelp(commands),
         )
         assertEquals(listOf("", "0 Command(s)"), profile.formatHelp(emptyList()))
+    }
+
+    @Test
+    fun `writes the cursor as a filled block`() {
+        assertEquals(PromptCursor.BLOCK, profile.cursor)
     }
 
     @Test
