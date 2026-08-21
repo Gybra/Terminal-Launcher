@@ -3,6 +3,7 @@ package com.gybra.terminallauncher.command
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.search.AppSearchEngine
 import com.gybra.terminallauncher.search.SearchResult
+import com.gybra.terminallauncher.shell.ShellProfile
 
 /** Writes [text] as a single result line in the style of the running shell. */
 internal fun CommandContext.message(text: String): CommandResult =
@@ -18,18 +19,29 @@ internal suspend fun CommandContext.withResolvedApp(
     action: suspend (InstalledApp) -> CommandResult,
 ): CommandResult {
     val results = AppSearchEngine.search(query = query, apps = installedApps)
-    val app = AppSearchEngine.unambiguousMatch(results) ?: return reject(query = query, results = results)
+    val app = AppSearchEngine.unambiguousMatch(results)
+        ?: return shellProfile.rejectAppQuery(query = query, results = results)
 
     return action(app)
 }
 
-private fun CommandContext.reject(query: String, results: List<SearchResult>): CommandResult {
-    if (results.isEmpty()) {
-        return message("no application matches $query")
+/**
+ * Answers a [query] that named no single application among [results]. The prompt writes the same
+ * answer when a submitted line resolves to nothing, so both report an unresolved name once, and
+ * the candidates are carried rather than written out so they stay startable.
+ */
+internal fun ShellProfile.rejectAppQuery(
+    query: String,
+    results: List<SearchResult>,
+): CommandResult.Listing {
+    val answer = if (results.isEmpty()) {
+        "no application matches $query"
+    } else {
+        "$query matches more than one application"
     }
 
-    return CommandResult.Output(
-        listOf(shellProfile.formatMessage("$query matches more than one application")) +
-            shellProfile.formatAppList(results.map(SearchResult::app)),
+    return CommandResult.Listing(
+        lines = listOf(formatMessage(answer)),
+        apps = results.map(SearchResult::app),
     )
 }

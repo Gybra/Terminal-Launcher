@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gybra.terminallauncher.command.CommandExecutor
 import com.gybra.terminallauncher.command.CommandResult
+import com.gybra.terminallauncher.command.rejectAppQuery
 import com.gybra.terminallauncher.launcher.AppRepository
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.launcher.BatteryRepository
@@ -15,7 +16,6 @@ import com.gybra.terminallauncher.launcher.PackageMonitor
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.search.AppSearchEngine
-import com.gybra.terminallauncher.search.SearchResult
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfiles
@@ -111,13 +111,18 @@ public class HomeViewModel(
 
     /**
      * Runs the submitted input as a registered command, and otherwise searches it among the
-     * installed applications. Consumed input joins the terminal history and clears the prompt, so
-     * only ambiguous queries and their results stay on screen.
+     * installed applications. Every submitted line is consumed the way a terminal consumes it: it
+     * joins the terminal history, the prompt is cleared, and an answer is written even when the
+     * line named nothing. An empty line is the one exception, since a blank entry would only push
+     * printed output out of the capped history.
      */
     public fun submitPrompt() {
         viewModelScope.launch {
             val state = uiState.value
             val submittedInput = state.prompt.input
+            if (submittedInput.isBlank()) {
+                return@launch
+            }
             val result = commandExecutor.execute(
                 input = submittedInput,
                 shellProfile = state.shellProfile,
@@ -125,9 +130,10 @@ public class HomeViewModel(
             )
             when (result) {
                 is CommandResult.Output -> recordEntry(submittedInput, output = result.lines)
-                is CommandResult.Shortcuts -> recordEntry(
+                is CommandResult.Listing -> recordEntry(
                     input = submittedInput,
                     output = result.lines,
+                    apps = result.apps,
                     shortcuts = result.shortcuts,
                 )
                 CommandResult.ClearHistory -> eraseHistory()
@@ -140,18 +146,24 @@ public class HomeViewModel(
                     )
                 CommandResult.RestartLauncher ->
                     completeSubmission(submittedInput, SubmittedAction.RestartLauncher)
-                CommandResult.Search -> launchSubmittedApp(submittedInput, state.searchResults)
+                CommandResult.Search -> launchSubmittedApp(submittedInput, state)
             }
         }
     }
 
-    private suspend fun launchSubmittedApp(
-        submittedInput: String,
-        searchResults: List<SearchResult>,
-    ) {
+    /**
+     * Starts the one application the submitted line names. A line naming none or several is
+     * answered the way a command answers an unresolved name, keeping the candidates startable.
+     */
+    private suspend fun launchSubmittedApp(submittedInput: String, state: HomeUiState) {
         val resolvedApp = aliasedApp(submittedInput)
-            ?: AppSearchEngine.unambiguousMatch(searchResults)
-            ?: return
+            ?: AppSearchEngine.unambiguousMatch(state.searchResults)
+        if (resolvedApp == null) {
+            val rejection = state.shellProfile
+                .rejectAppQuery(query = submittedInput, results = state.searchResults)
+            recordEntry(submittedInput, output = rejection.lines, apps = rejection.apps)
+            return
+        }
         recordLaunch(resolvedApp.packageName)
         completeSubmission(submittedInput, SubmittedAction.LaunchApp(resolvedApp))
     }
@@ -202,6 +214,7 @@ public class HomeViewModel(
     private fun recordEntry(
         input: String,
         output: List<String>,
+        apps: List<InstalledApp> = emptyList(),
         shortcuts: List<AppShortcut> = emptyList(),
     ) {
         history.update { entries ->
@@ -209,6 +222,7 @@ public class HomeViewModel(
                 id = (entries.lastOrNull()?.id ?: -1L) + 1L,
                 input = input,
                 output = output,
+                apps = apps,
                 shortcuts = shortcuts,
             )
             (entries + entry).takeLast(MAX_HISTORY_ENTRIES)

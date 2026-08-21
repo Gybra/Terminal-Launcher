@@ -40,7 +40,7 @@ class ShortcutsCommandTest {
         val result = command.execute(context(arguments = listOf("browser")))
 
         assertEquals(
-            CommandResult.Shortcuts(lines = emptyList(), shortcuts = listOf(newTab, newWindow)),
+            CommandResult.Listing(lines = emptyList(), shortcuts = listOf(newTab, newWindow)),
             result,
         )
     }
@@ -70,7 +70,13 @@ class ShortcutsCommandTest {
     fun `answers an application matching nothing`() = runTest {
         val result = command().execute(context(arguments = listOf("ledger")))
 
-        assertEquals(CommandResult.Output(listOf("no application matches ledger")), result)
+        assertEquals(
+            CommandResult.Listing(
+                lines = listOf("no application matches ledger"),
+                apps = emptyList(),
+            ),
+            result,
+        )
     }
 
     @Test
@@ -97,7 +103,7 @@ class ShortcutsCommandTest {
         val result = command.execute(context(arguments = listOf("pin", "browser", "new")))
 
         assertEquals(
-            CommandResult.Shortcuts(
+            CommandResult.Listing(
                 lines = listOf("new matches more than one shortcut"),
                 shortcuts = listOf(newTab, newWindow),
             ),

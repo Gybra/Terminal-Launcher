@@ -90,8 +90,9 @@ class AliasCommandTest {
         val result = command.execute(contextFor(UnixShellProfile, listOf("m", "mail a")))
 
         assertEquals(
-            CommandResult.Output(
-                listOf("mail a matches more than one application", "mail archive", "mail assistant"),
+            CommandResult.Listing(
+                lines = listOf("mail a matches more than one application"),
+                apps = listOf(mailArchive, mailAssistant),
             ),
             result,
         )
@@ -105,7 +106,13 @@ class AliasCommandTest {
 
         val result = command.execute(contextFor(UnixShellProfile, listOf("browser", "telegram")))
 
-        assertEquals(CommandResult.Output(listOf("no application matches telegram")), result)
+        assertEquals(
+            CommandResult.Listing(
+                lines = listOf("no application matches telegram"),
+                apps = emptyList(),
+            ),
+            result,
+        )
         assertEquals(emptyList<String>(), preferencesRepository.writes)
     }
 
@@ -117,6 +124,11 @@ class AliasCommandTest {
         assertEquals("Name an application", command.description)
     }
 
+    private val mailArchive =
+        InstalledApp(packageName = "org.example.archive", label = "Mail Archive")
+    private val mailAssistant =
+        InstalledApp(packageName = "org.example.assistant", label = "Mail Assistant")
+
     private fun contextFor(
         shellProfile: ShellProfile,
         arguments: List<String>,
@@ -126,8 +138,8 @@ class AliasCommandTest {
         installedApps = listOf(
             InstalledApp(packageName = "org.example.firefox", label = "Firefox"),
             InstalledApp(packageName = "org.example.mail", label = "Mail"),
-            InstalledApp(packageName = "org.example.archive", label = "Mail Archive"),
-            InstalledApp(packageName = "org.example.assistant", label = "Mail Assistant"),
+            mailArchive,
+            mailAssistant,
         ),
         registeredCommands = Command.entries.map { command ->
             CommandSummary(id = command, description = "Registered command")

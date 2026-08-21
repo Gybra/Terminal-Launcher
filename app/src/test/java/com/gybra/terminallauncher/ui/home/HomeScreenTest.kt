@@ -402,6 +402,41 @@ class HomeScreenTest {
     }
 
     @Test
+    fun `starts an application listed in the terminal history when it is tapped`() {
+        val app = InstalledApp(packageName = "com.example.mailbox", label = "Mailbox")
+        var launched: InstalledApp? = null
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    history = listOf(
+                        TerminalEntry(
+                            id = 0L,
+                            input = "mailb",
+                            output = listOf("mailb matches more than one application"),
+                            apps = listOf(app),
+                        ),
+                    ),
+                ),
+                onAppClick = { launched = it },
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("mailb matches more than one application").assertIsDisplayed()
+        composeRule
+            .onNodeWithText("mailbox")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+            .performClick()
+
+        assertEquals(app, launched)
+    }
+
+    @Test
     fun `starts a shortcut listed in the terminal history when it is tapped`() {
         val shortcut = AppShortcut(
             packageName = "org.example.browser",
