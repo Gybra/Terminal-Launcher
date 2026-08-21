@@ -56,7 +56,7 @@ Anything that is not a registered command is treated as a search. Command names 
 | Pin an application to Home | `pin <application>` | `PIN <APPLICATION>` |
 | Remove an application from Home | `unpin <application>` | `UNPIN <APPLICATION>` |
 | List, pin, and remove application shortcuts | `shortcuts <application>` | `SHORTCUTS <APPLICATION>` |
-| Clear the terminal history | `clear`, `cls` | `CLS` |
+| Clear the terminal history | `clear`, `cls`, `clr` | `CLS` |
 | Name an application | `alias <name> <application>` | `ALIAS <NAME> <APPLICATION>` |
 | Open the Android details of an application | `info <application>` | `INFO <APPLICATION>` |
 | Ask Android to uninstall an application | `uninstall <application>` | `UNINSTALL <APPLICATION>` |
