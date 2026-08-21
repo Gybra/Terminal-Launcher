@@ -55,7 +55,6 @@ class HomeScreenTest {
                 ),
                 onAppClick = { clickedApp = it },
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -83,7 +82,6 @@ class HomeScreenTest {
                 ),
                 onAppClick = {},
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -103,7 +101,6 @@ class HomeScreenTest {
                 ),
                 onAppClick = {},
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -121,7 +118,6 @@ class HomeScreenTest {
                 state = state,
                 onAppClick = {},
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -142,7 +138,6 @@ class HomeScreenTest {
                 state = state,
                 onAppClick = {},
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -159,25 +154,6 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `forwards settings clicks`() {
-        var settingsClicked = false
-        composeRule.setContent {
-            HomeScreen(
-                state = homeState(),
-                onAppClick = {},
-                onShortcutClick = {},
-                onSettingsClick = { settingsClicked = true },
-                onLockScreen = {},
-                promptActions = emptyPromptActions(),
-            )
-        }
-
-        composeRule.onNodeWithText("settings").performClick()
-
-        assertTrue(settingsClicked)
-    }
-
-    @Test
     fun `renders shell-formatted search results and forwards clicks`() {
         val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
         var clickedApp: InstalledApp? = null
@@ -191,7 +167,6 @@ class HomeScreenTest {
                 ),
                 onAppClick = { clickedApp = it },
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -220,7 +195,6 @@ class HomeScreenTest {
                 ),
                 onAppClick = {},
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -242,7 +216,6 @@ class HomeScreenTest {
                 ),
                 onAppClick = {},
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -263,7 +236,6 @@ class HomeScreenTest {
                 state = homeState().copy(apps = listOf(app)),
                 onAppClick = { launchedApp -> launched += launchedApp },
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = { locks += 1 },
                 promptActions = emptyPromptActions(),
             )
@@ -274,7 +246,7 @@ class HomeScreenTest {
         assertEquals(listOf(app), launched)
         assertEquals(0, locks)
 
-        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput { doubleClick(bottomCenter) }
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput { doubleClick(topCenter) }
         composeRule.waitForIdle()
 
         assertEquals(1, locks)
@@ -291,7 +263,6 @@ class HomeScreenTest {
                 state = homeState().copy(apps = listOf(app)),
                 onAppClick = { launchedApp -> launched += launchedApp },
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = { locks += 1 },
                 promptActions = emptyPromptActions(),
             )
@@ -312,7 +283,6 @@ class HomeScreenTest {
                 state = homeState().copy(apps = manyApps()),
                 onAppClick = {},
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = { locks += 1 },
                 promptActions = emptyPromptActions(),
             )
@@ -332,7 +302,6 @@ class HomeScreenTest {
                 state = homeState(statusClock = "22:10", statusBattery = "42%"),
                 onAppClick = {},
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -354,7 +323,6 @@ class HomeScreenTest {
                 state = homeState(statusBattery = "42%"),
                 onAppClick = {},
                 onShortcutClick = {},
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -409,7 +377,6 @@ class HomeScreenTest {
                 ),
                 onAppClick = {},
                 onShortcutClick = { startedShortcut = it },
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -448,7 +415,6 @@ class HomeScreenTest {
                 ),
                 onAppClick = {},
                 onShortcutClick = { startedShortcut = it },
-                onSettingsClick = {},
                 onLockScreen = {},
                 promptActions = emptyPromptActions(),
             )
@@ -461,5 +427,82 @@ class HomeScreenTest {
             .performClick()
 
         assertEquals(shortcut, startedShortcut)
+    }
+
+    @Test
+    fun `keeps the prompt anchored while the rows scroll`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(apps = manyApps()),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        val anchored = composeRule.onNodeWithTag(TestTag.PROMPT_INPUT.tag).getUnclippedBoundsInRoot()
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput { swipeUp() }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag(TestTag.PROMPT_INPUT.tag).assertIsDisplayed()
+        assertEquals(
+            anchored,
+            composeRule.onNodeWithTag(TestTag.PROMPT_INPUT.tag).getUnclippedBoundsInRoot(),
+        )
+    }
+
+    @Test
+    fun `keeps the status line visible while the rows scroll`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState(statusClock = "22:10").copy(apps = manyApps()),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput { swipeUp() }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("22:10").assertIsDisplayed()
+    }
+
+    @Test
+    fun `scrolls the newest printed line into view`() {
+        var state by mutableStateOf(homeState().copy(apps = manyApps()))
+        composeRule.setContent {
+            HomeScreen(
+                state = state,
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        state = state.copy(
+            history = listOf(TerminalEntry(id = 0L, input = "battery", output = listOf("87%"))),
+        )
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("87%").assertIsDisplayed()
+    }
+
+    @Test
+    fun `keeps no settings row on Home`() {
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState(),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithText("settings").assertDoesNotExist()
     }
 }
