@@ -22,7 +22,7 @@ Terminal Launcher v0.1 is a complete, self-contained Home application.
 - DOS and Unix shell profiles own prompts, paths, application names, lists, help, command aliases, message style, and the shape of the prompt cursor, so no DOS or Unix branch exists in Compose;
 - customizes the prompt cosmetically: Unix identity and end symbol, DOS drive letter, and path visibility in both shells;
 - shows a focusable prompt with keyboard input, Enter submission, and a focus-aware blinking cursor shaped by the selected shell;
-- keeps an in-memory terminal history of the twenty most recent submitted lines with their output.
+- keeps an in-memory terminal history of the twenty most recent submitted lines with their output, and with the applications and shortcuts they listed, which stay startable.
 
 **Search and commands**
 
@@ -43,7 +43,7 @@ Further work is tracked in the [public roadmap](https://github.com/Gybra/Termina
 
 ## Using the launcher
 
-Type at the prompt. Matching applications appear right above it as you type; tap one to launch it, or press Enter when a single application matches. Ambiguous input stays on screen with its matches rather than launching something arbitrary.
+Type at the prompt. Matching applications appear right above it as you type; tap one to launch it, or press Enter when a single application matches. Enter always consumes the line, the way a desktop terminal does: the line joins the terminal history under the prompt that submitted it, the prompt is cleared, and an answer is written even when nothing was launched. A name matching nothing is answered with `no application matches`, and a name matching several is answered with its candidates, which stay tappable rather than launching something arbitrary. The commands that resolve a name, such as `pin` and `alias`, answer an unresolved name the same way and list the same startable candidates. Enter on an empty prompt does nothing, since a blank line would only push printed output out of the history.
 
 A label matches exactly, by prefix, by substring, or fuzzily when the typed characters appear in it in order, and a literal match always outranks a fuzzy one. Matches of the same strength are ordered by a score worth 50 for a pinned application plus one point per launch up to 20, then by the most recent launch, then by name. Ranking reads only the installed applications and the stored launch history, so the same input always produces the same list.
 

@@ -428,7 +428,7 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `keeps ambiguous results visible on submit`() =
+    fun `consumes an ambiguous line and keeps its candidates startable`() =
         runTest(mainDispatcherRule.dispatcher) {
             val viewModel = searchingViewModel()
             startCollecting(viewModel)
@@ -442,10 +442,17 @@ class HomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(emptyList<SubmittedAction>(), actions)
-            assertEquals(PromptState(input = "mailb"), viewModel.uiState.value.prompt)
+            assertEquals(PromptState(), viewModel.uiState.value.prompt)
             assertEquals(
-                listOf(mailbox, mailboxPro),
-                viewModel.uiState.value.searchResults.map(SearchResult::app),
+                listOf(
+                    TerminalEntry(
+                        id = 0L,
+                        input = "mailb",
+                        output = listOf("mailb matches more than one application"),
+                        apps = listOf(mailbox, mailboxPro),
+                    ),
+                ),
+                viewModel.uiState.value.history,
             )
         }
 
@@ -557,18 +564,44 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `records nothing while the submitted query stays ambiguous`() =
+    fun `consumes a line matching no application and answers it`() =
         runTest(mainDispatcherRule.dispatcher) {
             val viewModel = searchingViewModel()
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "mailb"))
+            viewModel.updatePromptValue(PromptState(input = "telegram"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+            assertEquals(
+                listOf(
+                    TerminalEntry(
+                        id = 0L,
+                        input = "telegram",
+                        output = listOf("no application matches telegram"),
+                    ),
+                ),
+                viewModel.uiState.value.history,
+            )
+        }
+
+    @Test
+    fun `leaves an empty line alone instead of answering it`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = searchingViewModel()
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "   "))
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
 
             assertEquals(emptyList<TerminalEntry>(), viewModel.uiState.value.history)
+            assertEquals(PromptState(input = "   "), viewModel.uiState.value.prompt)
         }
 
     @Test
@@ -905,7 +938,7 @@ class HomeViewModelTest {
         runTest(mainDispatcherRule.dispatcher) {
             val shortcuts = RecordingCommand(
                 id = Command.SHORTCUTS,
-                result = CommandResult.Shortcuts(
+                result = CommandResult.Listing(
                     lines = listOf("mail publishes"),
                     shortcuts = listOf(inbox),
                 ),
@@ -933,6 +966,45 @@ class HomeViewModelTest {
                         input = "shortcuts mail",
                         output = listOf("mail publishes"),
                         shortcuts = listOf(inbox),
+                    ),
+                ),
+                viewModel.uiState.value.history,
+            )
+        }
+
+    @Test
+    fun `keeps the applications a command listed in the terminal history`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val pin = RecordingCommand(
+                id = Command.PIN,
+                result = CommandResult.Listing(
+                    lines = listOf("mail matches more than one application"),
+                    apps = listOf(mailbox, mailboxPro),
+                ),
+            )
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mailbox, mailboxPro)),
+                preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(pin),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "pin mail"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(
+                    TerminalEntry(
+                        id = 0L,
+                        input = "pin mail",
+                        output = listOf("mail matches more than one application"),
+                        apps = listOf(mailbox, mailboxPro),
                     ),
                 ),
                 viewModel.uiState.value.history,

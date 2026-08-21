@@ -82,6 +82,7 @@ public fun HomeScreen(
                 entries = state.history,
                 shellProfile = state.shellProfile,
                 shellContext = state.shellContext,
+                onAppClick = onAppClick,
                 onShortcutClick = onShortcutClick,
             )
             searchResults(state = state, onAppClick = onAppClick)
@@ -144,11 +145,15 @@ private fun LazyListScope.pinnedItems(
     }
 }
 
-/** Writes what every submitted line printed, keeping the shortcuts it listed startable. */
+/**
+ * Writes what every submitted line printed, keeping the applications and shortcuts it listed
+ * startable.
+ */
 private fun LazyListScope.terminalHistory(
     entries: List<TerminalEntry>,
     shellProfile: ShellProfile,
     shellContext: ShellContext,
+    onAppClick: (InstalledApp) -> Unit,
     onShortcutClick: (AppShortcut) -> Unit,
 ) {
     items(
@@ -158,6 +163,12 @@ private fun LazyListScope.terminalHistory(
         Column {
             TerminalLine(text = "${shellProfile.prompt(shellContext)} ${entry.input}")
             entry.output.forEach { line -> TerminalLine(text = line) }
+            entry.apps.forEach { app ->
+                AppRow(
+                    displayName = shellProfile.formatAppName(app),
+                    onClick = { onAppClick(app) },
+                )
+            }
             entry.shortcuts.forEach { shortcut ->
                 AppRow(
                     displayName = shellProfile.formatShortcutName(shortcut),

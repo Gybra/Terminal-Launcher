@@ -38,8 +38,9 @@ class ApplicationScreenCommandTest {
         val result = UninstallCommand.execute(contextFor(UnixShellProfile, listOf("mail")))
 
         assertEquals(
-            CommandResult.Output(
-                listOf("mail matches more than one application", "mail archive", "mail assistant"),
+            CommandResult.Listing(
+                lines = listOf("mail matches more than one application"),
+                apps = listOf(mailArchive, mailAssistant),
             ),
             result,
         )
@@ -49,7 +50,13 @@ class ApplicationScreenCommandTest {
     fun `reports an argument matching no application`() = runTest {
         val result = AppInfoCommand.execute(contextFor(UnixShellProfile, listOf("telegram")))
 
-        assertEquals(CommandResult.Output(listOf("no application matches telegram")), result)
+        assertEquals(
+            CommandResult.Listing(
+                lines = listOf("no application matches telegram"),
+                apps = emptyList(),
+            ),
+            result,
+        )
     }
 
     @Test
@@ -72,6 +79,11 @@ class ApplicationScreenCommandTest {
         assertEquals("Ask Android to uninstall an application", UninstallCommand.description)
     }
 
+    private val mailArchive =
+        InstalledApp(packageName = "org.example.archive", label = "Mail Archive")
+    private val mailAssistant =
+        InstalledApp(packageName = "org.example.assistant", label = "Mail Assistant")
+
     private fun contextFor(
         shellProfile: ShellProfile,
         arguments: List<String>,
@@ -80,8 +92,8 @@ class ApplicationScreenCommandTest {
         shellProfile = shellProfile,
         installedApps = listOf(
             InstalledApp(packageName = "org.example.camera", label = "Camera"),
-            InstalledApp(packageName = "org.example.archive", label = "Mail Archive"),
-            InstalledApp(packageName = "org.example.assistant", label = "Mail Assistant"),
+            mailArchive,
+            mailAssistant,
         ),
         registeredCommands = emptyList(),
     )

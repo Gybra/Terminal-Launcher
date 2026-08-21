@@ -3,6 +3,7 @@ package com.gybra.terminallauncher.command
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.RecordingPreferencesRepository
+import com.gybra.terminallauncher.search.AppSearchEngine
 import com.gybra.terminallauncher.shell.ShellProfile
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
@@ -52,8 +53,9 @@ class PinCommandTest {
         val result = command.execute(contextFor(UnixShellProfile, listOf("mail a")))
 
         assertEquals(
-            CommandResult.Output(
-                listOf("mail a matches more than one application", "mail archive", "mail assistant"),
+            CommandResult.Listing(
+                lines = listOf("mail a matches more than one application"),
+                apps = listOf(mailArchive, mailAssistant),
             ),
             result,
         )
@@ -78,15 +80,9 @@ class PinCommandTest {
         )
 
         assertEquals(
-            CommandResult.Output(
-                listOf(
-                    "mail matches more than one application",
-                    "mail 1",
-                    "mail 2",
-                    "mail 3",
-                    "mail 4",
-                    "mail 5",
-                ),
+            CommandResult.Listing(
+                lines = listOf("mail matches more than one application"),
+                apps = manyApps.take(AppSearchEngine.MAX_RESULTS),
             ),
             result,
         )
@@ -100,7 +96,13 @@ class PinCommandTest {
 
         val result = command.execute(contextFor(UnixShellProfile, listOf("telegram")))
 
-        assertEquals(CommandResult.Output(listOf("no application matches telegram")), result)
+        assertEquals(
+            CommandResult.Listing(
+                lines = listOf("no application matches telegram"),
+                apps = emptyList(),
+            ),
+            result,
+        )
         assertEquals(emptyList<String>(), preferencesRepository.writes)
     }
 
@@ -124,7 +126,10 @@ class PinCommandTest {
             command.execute(contextFor(DosShellProfile, listOf("camera"))),
         )
         assertEquals(
-            CommandResult.Output(listOf("NO APPLICATION MATCHES TELEGRAM")),
+            CommandResult.Listing(
+                lines = listOf("NO APPLICATION MATCHES TELEGRAM"),
+                apps = emptyList(),
+            ),
             command.execute(contextFor(DosShellProfile, listOf("telegram"))),
         )
         assertEquals(
@@ -132,14 +137,9 @@ class PinCommandTest {
             command.execute(contextFor(DosShellProfile, emptyList())),
         )
         assertEquals(
-            CommandResult.Output(
-                listOf(
-                    "MAIL A MATCHES MORE THAN ONE APPLICATION",
-                    "MAIL ARCHIVE.EXE",
-                    "MAIL ASSISTANT.EXE",
-                    "",
-                    "2 File(s)",
-                ),
+            CommandResult.Listing(
+                lines = listOf("MAIL A MATCHES MORE THAN ONE APPLICATION"),
+                apps = listOf(mailArchive, mailAssistant),
             ),
             command.execute(contextFor(DosShellProfile, listOf("mail a"))),
         )
@@ -166,6 +166,11 @@ class PinCommandTest {
         assertEquals("Pin an application to Home", command.description)
     }
 
+    private val mailArchive =
+        InstalledApp(packageName = "org.example.archive", label = "Mail Archive")
+    private val mailAssistant =
+        InstalledApp(packageName = "org.example.assistant", label = "Mail Assistant")
+
     private fun contextFor(
         shellProfile: ShellProfile,
         arguments: List<String>,
@@ -175,8 +180,8 @@ class PinCommandTest {
         installedApps = listOf(
             InstalledApp(packageName = "org.example.camera", label = "Camera"),
             InstalledApp(packageName = "org.example.mail", label = "Mail"),
-            InstalledApp(packageName = "org.example.archive", label = "Mail Archive"),
-            InstalledApp(packageName = "org.example.assistant", label = "Mail Assistant"),
+            mailArchive,
+            mailAssistant,
         ),
         registeredCommands = emptyList(),
     )

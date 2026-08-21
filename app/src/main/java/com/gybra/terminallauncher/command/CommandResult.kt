@@ -1,6 +1,7 @@
 package com.gybra.terminallauncher.command
 
 import com.gybra.terminallauncher.launcher.AppShortcut
+import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.SystemScreen
 
 /** What the launcher does with submitted prompt input. */
@@ -9,12 +10,15 @@ public sealed interface CommandResult {
     public data class Output(public val lines: List<String>) : CommandResult
 
     /**
-     * A registered command listed [shortcuts] under [lines]. The launcher writes the lines and
-     * keeps the shortcuts as rows, so the one that is tapped starts.
+     * A registered command listed [apps] or [shortcuts] under [lines]. The launcher writes the
+     * lines and keeps what was listed as rows, so the one that is tapped starts. Both lists are
+     * empty when a name resolved to nothing, so an unresolved name is answered the same way
+     * whether or not it left candidates behind.
      */
-    public data class Shortcuts(
+    public data class Listing(
         public val lines: List<String>,
-        public val shortcuts: List<AppShortcut>,
+        public val apps: List<InstalledApp> = emptyList(),
+        public val shortcuts: List<AppShortcut> = emptyList(),
     ) : CommandResult
 
     /** A registered command asked the launcher to erase the terminal history. */
