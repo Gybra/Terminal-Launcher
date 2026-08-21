@@ -88,6 +88,7 @@ public fun HomeScreen(
         }
         Prompt(
             prompt = state.shellProfile.prompt(state.shellContext),
+            cursor = state.shellProfile.cursor,
             state = state.prompt,
             actions = promptActions,
         )

@@ -7,6 +7,7 @@ import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.LauncherLocation
+import com.gybra.terminallauncher.shell.PromptCursor
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellType
@@ -15,6 +16,11 @@ import org.junit.Test
 
 class UnixShellProfileTest {
     private val profile = UnixShellProfile
+
+    @Test
+    fun `writes the cursor as an underscore`() {
+        assertEquals(PromptCursor.UNDERSCORE, profile.cursor)
+    }
 
     @Test
     fun `formats Unix prompts using identity and location`() {

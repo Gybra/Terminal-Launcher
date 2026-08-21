@@ -5,6 +5,7 @@ import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.LauncherLocation
+import com.gybra.terminallauncher.shell.PromptCursor
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfile
 import com.gybra.terminallauncher.shell.ShellType
@@ -12,6 +13,8 @@ import java.util.Locale
 
 public object DosShellProfile : ShellProfile {
     override val type: ShellType = ShellType.DOS
+
+    override val cursor: PromptCursor = PromptCursor.BLOCK
 
     override fun prompt(context: ShellContext): String = "${formatPath(context)}>"
 

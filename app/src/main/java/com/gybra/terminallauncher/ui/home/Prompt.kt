@@ -28,8 +28,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -39,6 +42,8 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.gybra.terminallauncher.shell.PromptCursor
+import com.gybra.terminallauncher.ui.TERMINAL_FONT_SIZE
 import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
@@ -46,6 +51,7 @@ import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 @Composable
 internal fun Prompt(
     prompt: String,
+    cursor: PromptCursor,
     state: PromptState,
     actions: PromptActions,
     modifier: Modifier = Modifier,
@@ -70,6 +76,7 @@ internal fun Prompt(
         val colors = LocalTerminalColors.current
         BasicText(text = "$prompt ", style = terminalTextStyle(colors.foreground))
         PromptInput(
+            cursor = cursor,
             state = state,
             actions = actions,
             modifier = Modifier
@@ -81,6 +88,7 @@ internal fun Prompt(
 
 @Composable
 private fun PromptInput(
+    cursor: PromptCursor,
     state: PromptState,
     actions: PromptActions,
     modifier: Modifier,
@@ -104,13 +112,11 @@ private fun PromptInput(
             .drawWithContent {
                 drawContent()
                 if (state.selection.collapsed) {
-                    textLayout?.getCursorRect(state.selection.end)?.let { cursor ->
-                        val baseline = cursor.bottom - CURSOR_BOTTOM_OFFSET.toPx()
-                        drawLine(
+                    textLayout?.getCursorRect(state.selection.end)?.let { position ->
+                        drawCursor(
+                            shape = cursor,
+                            position = position,
                             color = colors.foreground,
-                            start = Offset(cursor.left, baseline),
-                            end = Offset(cursor.left + CURSOR_WIDTH.toPx(), baseline),
-                            strokeWidth = CURSOR_STROKE_WIDTH.toPx(),
                             alpha = cursorAlpha,
                         )
                     }
@@ -141,6 +147,34 @@ internal fun PromptState.withTextFieldValue(value: TextFieldValue): PromptState 
     composition = value.composition,
 )
 
+/** Draws the cursor the way the shell writes it: filling the character cell, or under it. */
+private fun DrawScope.drawCursor(
+    shape: PromptCursor,
+    position: Rect,
+    color: Color,
+    alpha: Float,
+) {
+    val cell = TERMINAL_FONT_SIZE.toPx() * MONOSPACE_ADVANCE
+    when (shape) {
+        PromptCursor.BLOCK -> drawRect(
+            color = color,
+            topLeft = position.topLeft,
+            size = Size(cell, position.height),
+            alpha = alpha,
+        )
+        PromptCursor.UNDERSCORE -> {
+            val baseline = position.bottom - CURSOR_BOTTOM_OFFSET.toPx()
+            drawLine(
+                color = color,
+                start = Offset(position.left, baseline),
+                end = Offset(position.left + cell, baseline),
+                strokeWidth = CURSOR_STROKE_WIDTH.toPx(),
+                alpha = alpha,
+            )
+        }
+    }
+}
+
 @Composable
 private fun focusedCursorAlpha(): Float {
     val transition = rememberInfiniteTransition(label = "prompt cursor")
@@ -157,6 +191,8 @@ private fun focusedCursorAlpha(): Float {
 }
 
 private const val CURSOR_BLINK_MILLIS = 500
-private val CURSOR_WIDTH = 10.dp
+
+/** A monospace character advances six tenths of its size, which is the cell the cursor covers. */
+private const val MONOSPACE_ADVANCE = 0.6f
 private val CURSOR_STROKE_WIDTH = 2.dp
 private val CURSOR_BOTTOM_OFFSET = 2.dp
