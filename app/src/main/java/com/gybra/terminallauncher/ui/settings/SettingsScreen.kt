@@ -53,6 +53,7 @@ public fun SettingsScreen(
             item(key = "storage-error") { TerminalText(error) }
         }
         appearanceSettings(state = state, actions = actions)
+        homeSettings(state = state, actions = actions)
         unixSettings(state = state, actions = actions)
         dosSettings(state = state, actions = actions)
     }
@@ -83,6 +84,13 @@ private fun LazyListScope.appearanceSettings(
             )
         }
     }
+}
+
+/** Lists what Home shows and how it behaves, under the same section as the appearance. */
+private fun LazyListScope.homeSettings(
+    state: SettingsUiState,
+    actions: SettingsActions,
+) {
     item(key = "clock") {
         ToggleOption(
             label = "Show clock",
