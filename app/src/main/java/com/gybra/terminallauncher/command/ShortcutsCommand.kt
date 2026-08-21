@@ -21,9 +21,15 @@ public class ShortcutsCommand(
 
     override val description: String = "List, pin, and remove application shortcuts"
 
+    override val usage: List<String> = listOf(
+        "<application>",
+        "$PIN <application> <shortcut>",
+        "$UNPIN <application> <shortcut>",
+    )
+
     override suspend fun execute(context: CommandContext): CommandResult =
         when (context.arguments.firstOrNull()?.lowercase(Locale.ROOT)) {
-            null -> context.usage()
+            null -> context.answerUsage()
             PIN -> context.pin(context.arguments.drop(1))
             UNPIN -> context.unpin(context.arguments.drop(1))
             else -> context.list(context.arguments.joinToString(separator = " "))
@@ -66,9 +72,9 @@ public class ShortcutsCommand(
         arguments: List<String>,
         action: suspend (InstalledApp, String) -> CommandResult,
     ): CommandResult {
-        val appName = arguments.firstOrNull() ?: return usage()
+        val appName = arguments.firstOrNull() ?: return answerUsage()
         val name = arguments.drop(1).joinToString(separator = " ")
-        if (name.isBlank()) return usage()
+        if (name.isBlank()) return answerUsage()
 
         return withResolvedApp(appName) { app -> action(app, name) }
     }
@@ -82,17 +88,8 @@ public class ShortcutsCommand(
         is PublishedShortcuts.Available -> action(published.shortcuts)
     }
 
-    private fun CommandContext.usage(): CommandResult {
-        val alias = shellProfile.aliasFor(id)
-
-        return CommandResult.Output(
-            listOf(
-                "usage: $alias <application>",
-                "       $alias pin <application> <shortcut>",
-                "       $alias unpin <application> <shortcut>",
-            ).map(shellProfile::formatMessage),
-        )
-    }
+    private fun CommandContext.answerUsage(): CommandResult =
+        CommandResult.Output(shellProfile.formatUsage(id, usage))
 
     private companion object {
         const val PIN = "pin"

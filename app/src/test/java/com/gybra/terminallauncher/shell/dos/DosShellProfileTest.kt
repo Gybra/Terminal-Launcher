@@ -83,14 +83,21 @@ class DosShellProfileTest {
         val commands = listOf(
             CommandSummary(id = Command.LIST_APPS, description = "List installed applications"),
             CommandSummary(id = Command.HELP, description = "Show available commands"),
+            CommandSummary(
+                id = Command.PIN,
+                description = "Pin an application to Home",
+                usage = listOf("<application>"),
+            ),
         )
 
         assertEquals(
             listOf(
                 "DIR       List installed applications",
                 "HELP      Show available commands",
+                "PIN       Pin an application to Home",
+                "          PIN <APPLICATION>",
                 "",
-                "2 Command(s)",
+                "3 Command(s)",
             ),
             profile.formatHelp(commands),
         )

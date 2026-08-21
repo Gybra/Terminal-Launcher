@@ -8,13 +8,15 @@ import com.gybra.terminallauncher.launcher.InstalledApp
  * is answered with the usage line of the running shell.
  */
 public abstract class ApplicationCommand : LauncherCommand {
+    override val usage: List<String> = listOf("<application>")
+
     /** Acts on the [app] the argument resolved to and reports what the launcher does next. */
     protected abstract suspend fun apply(app: InstalledApp, context: CommandContext): CommandResult
 
     final override suspend fun execute(context: CommandContext): CommandResult {
         val query = context.arguments.joinToString(separator = " ")
         if (query.isBlank()) {
-            return context.message("usage: ${context.shellProfile.aliasFor(id)} <application>")
+            return CommandResult.Output(context.shellProfile.formatUsage(id, usage))
         }
 
         return context.withResolvedApp(query) { app -> apply(app, context) }

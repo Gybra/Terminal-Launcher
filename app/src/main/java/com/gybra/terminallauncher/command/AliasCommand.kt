@@ -16,11 +16,13 @@ public class AliasCommand(
 
     override val description: String = "Name an application"
 
+    override val usage: List<String> = listOf("<name> <application>")
+
     override suspend fun execute(context: CommandContext): CommandResult {
         val name = context.arguments.firstOrNull()?.lowercase(Locale.ROOT)
         val query = context.arguments.drop(1).joinToString(separator = " ")
         if (name.isNullOrBlank() || query.isBlank()) {
-            return context.message("usage: ${context.shellProfile.aliasFor(id)} <name> <application>")
+            return CommandResult.Output(context.shellProfile.formatUsage(id, usage))
         }
         if (context.isCommandName(name)) {
             return context.message("$name is a command name")

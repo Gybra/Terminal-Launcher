@@ -52,7 +52,7 @@ Anything that is not a registered command is treated as a search. Command names 
 | What it does | Unix | DOS |
 | --- | --- | --- |
 | List installed applications | `ls`, `dir` | `DIR` |
-| Describe the available commands | `help` | `HELP` |
+| Describe the available commands and how they are called | `help` | `HELP` |
 | Pin an application to Home | `pin <application>` | `PIN <APPLICATION>` |
 | Remove an application from Home | `unpin <application>` | `UNPIN <APPLICATION>` |
 | List, pin, and remove application shortcuts | `shortcuts <application>` | `SHORTCUTS <APPLICATION>` |
@@ -67,6 +67,8 @@ Anything that is not a registered command is treated as a search. Command names 
 | Open the Bluetooth settings | `bluetooth` | `BLUETOOTH` |
 | Restart the launcher | `restart` | `RESTART` |
 | Open the settings screen | `settings` | `SETTINGS` |
+
+`help` writes every registered command with its description, and under it the ways it is invoked, so the arguments a command takes are visible before running it. A command writes those same lines back when it is called the wrong way.
 
 `alias` names an application so submitting that name launches it, for example `alias browser firefox`. Aliases persist across restarts, are matched without case, and are replaced by defining the same name again. A registered command is always resolved before an alias, and a name any shell already uses for a command is refused rather than allowed to shadow it, so no alias can ever take over `ls`, `clear`, or any other command.
 
