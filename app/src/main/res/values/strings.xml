@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Terminal Launcher</string>
+    <string name="accessibility_service_label">Terminal Launcher screen lock</string>
+    <string name="accessibility_service_description">Lets Terminal Launcher lock the screen when you double tap Home, the way the power button does. It reads nothing on screen.</string>
 </resources>

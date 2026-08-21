@@ -1,15 +1,15 @@
 package com.gybra.terminallauncher.launcher
 
 public interface DeviceLock {
-    /** Whether the launcher may lock the screen, which is what the device admin grants. */
+    /** Whether the launcher may lock the screen, which is what the accessibility service grants. */
     public val enabled: Boolean
 
     /** Locks the screen, reporting whether Android accepted it. */
     public fun lock(): Boolean
 
-    /** Asks the user for the device admin, reporting whether Android could show the request. */
+    /** Sends the user where the service is turned on, reporting whether Android could show it. */
     public fun requestEnable(): Boolean
 
-    /** Gives the device admin back, so the launcher can no longer lock the screen. */
+    /** Turns the service off, so the launcher can no longer lock the screen. */
     public fun disable()
 }
