@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -46,8 +47,10 @@ public fun HomeScreen(
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        state.statusText?.let { statusText ->
-            item(key = "status") { TerminalLine(text = statusText) }
+        if (state.statusClock != null || state.statusBattery != null) {
+            item(key = "status") {
+                StatusLine(clock = state.statusClock, battery = state.statusBattery)
+            }
         }
         pinnedItems(state = state, onAppClick = onAppClick, onShortcutClick = onShortcutClick)
         item(key = "settings") {
@@ -114,6 +117,18 @@ private fun LazyListScope.terminalHistory(entries: List<TerminalEntry>, prompt: 
             TerminalLine(text = "$prompt ${entry.input}")
             entry.output.forEach { line -> TerminalLine(text = line) }
         }
+    }
+}
+
+/** Places the status parts on the two sides of the line, the way a status bar reads. */
+@Composable
+private fun StatusLine(clock: String?, battery: String?) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        TerminalLine(text = clock.orEmpty())
+        TerminalLine(text = battery.orEmpty())
     }
 }
 
