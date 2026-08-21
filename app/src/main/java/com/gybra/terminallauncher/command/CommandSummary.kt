@@ -4,4 +4,5 @@ package com.gybra.terminallauncher.command
 public data class CommandSummary(
     public val id: Command,
     public val description: String,
+    public val usage: List<String> = emptyList(),
 )

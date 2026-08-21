@@ -101,12 +101,19 @@ class UnixShellProfileTest {
         val commands = listOf(
             CommandSummary(id = Command.LIST_APPS, description = "List installed applications"),
             CommandSummary(id = Command.HELP, description = "Show available commands"),
+            CommandSummary(
+                id = Command.PIN,
+                description = "Pin an application to Home",
+                usage = listOf("<application>"),
+            ),
         )
 
         assertEquals(
             listOf(
                 "ls        List installed applications",
                 "help      Show available commands",
+                "pin       Pin an application to Home",
+                "          pin <application>",
             ),
             profile.formatHelp(commands),
         )

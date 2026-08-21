@@ -18,7 +18,11 @@ public class CommandRegistry(
 
     /** Metadata of every registered command, in registration order. */
     public val summaries: List<CommandSummary> = commands.map { command ->
-        CommandSummary(id = command.id, description = command.description)
+        CommandSummary(
+            id = command.id,
+            description = command.description,
+            usage = command.usage,
+        )
     }
 
     /**

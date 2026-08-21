@@ -28,11 +28,29 @@ public interface ShellProfile {
 
     /**
      * Describes [commands] with the primary alias of this shell, so optional aliases accepted only
-     * for compatibility stay out of the help output.
+     * for compatibility stay out of the help output. A command taking arguments is followed by the
+     * ways it is invoked, indented under its description.
      */
-    public fun formatHelp(commands: List<CommandSummary>): List<String> = commands.map { command ->
-        aliasFor(command.id).padEnd(HELP_ALIAS_COLUMN_WIDTH) + command.description
-    }
+    public fun formatHelp(commands: List<CommandSummary>): List<String> =
+        commands.flatMap { command ->
+            listOf(aliasFor(command.id).padEnd(HELP_ALIAS_COLUMN_WIDTH) + command.description) +
+                command.usage.map { form ->
+                    " ".repeat(HELP_ALIAS_COLUMN_WIDTH) + formatInvocation(command.id, form)
+                }
+        }
+
+    /**
+     * Writes how [command] is invoked, one line per accepted form, the first one prefixed the way
+     * a shell answers a wrong invocation.
+     */
+    public fun formatUsage(command: Command, forms: List<String>): List<String> =
+        forms.mapIndexed { index, form ->
+            val prefix = if (index == 0) USAGE_PREFIX else " ".repeat(USAGE_PREFIX.length)
+            formatMessage(prefix) + formatInvocation(command, form)
+        }
+
+    private fun formatInvocation(command: Command, form: String): String =
+        formatMessage("${aliasFor(command)} $form")
 
     public fun aliasesFor(command: Command): Set<String> = setOf(aliasFor(command))
 
@@ -43,3 +61,5 @@ public interface ShellProfile {
 }
 
 private const val HELP_ALIAS_COLUMN_WIDTH = 10
+
+private const val USAGE_PREFIX = "usage: "
