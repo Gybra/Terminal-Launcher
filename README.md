@@ -88,6 +88,8 @@ Home keeps one status line fixed above everything else, where scrolling never ta
 
 Home is read from the bottom, the way a terminal is. The prompt is anchored under everything else and stays there: the software keyboard pushes it up instead of covering it, and the rows above it never move it. Between the status line and the prompt, the pinned applications, the pinned shortcuts, the terminal history, and the search results share one scrolling region that rests on the bottom, so a Home holding little keeps it within reach of the thumb rather than hanging from the top of the screen. Whatever is printed or listed last is scrolled into view, so the answer to a command sits next to the line that asked for it.
 
+Colour carries one distinction and only one: what can be started is written in the full terminal colour, and what is merely written, the status line, what a command printed, and the lines already submitted, is arrested to the second colour of the theme. A startable row is tall enough to be operated with a finger and centres its text in that height, while the written lines keep the tight spacing of a terminal, so a block of output reads as one block instead of a list of sentences. Pressing a startable row swaps the two colours for as long as it is held, the way a TTY marks a selection, which is the whole of the feedback a touch gets and costs the launcher no colour outside the selected theme.
+
 Settings are opened with the `settings` command, which `help` lists along with the others.
 
 `Immersive mode`, on by default, keeps the status and navigation bars hidden and brings them back only as transient bars on a swipe. Turning it off leaves the system bars on screen, and Home keeps its content clear of them.
