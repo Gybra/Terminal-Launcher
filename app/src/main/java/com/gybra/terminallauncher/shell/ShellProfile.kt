@@ -26,9 +26,6 @@ public interface ShellProfile {
 
     public fun formatAppList(apps: List<InstalledApp>): List<String> = apps.map(::formatAppName)
 
-    public fun formatShortcutList(shortcuts: List<AppShortcut>): List<String> =
-        shortcuts.map(::formatShortcutName)
-
     /**
      * Describes [commands] with the primary alias of this shell, so optional aliases accepted only
      * for compatibility stay out of the help output.

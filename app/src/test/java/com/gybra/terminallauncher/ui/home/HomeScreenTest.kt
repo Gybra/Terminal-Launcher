@@ -423,4 +423,43 @@ class HomeScreenTest {
 
         assertEquals(shortcut, startedShortcut)
     }
+
+    @Test
+    fun `starts a shortcut listed in the terminal history when it is tapped`() {
+        val shortcut = AppShortcut(
+            packageName = "org.example.browser",
+            id = "new-tab",
+            label = "New Tab",
+        )
+        var startedShortcut: AppShortcut? = null
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = DosShellProfile,
+                    shellContext = defaultShellContext(),
+                    history = listOf(
+                        TerminalEntry(
+                            id = 0L,
+                            input = "SHORTCUTS BROWSER",
+                            output = emptyList(),
+                            shortcuts = listOf(shortcut),
+                        ),
+                    ),
+                ),
+                onAppClick = {},
+                onShortcutClick = { startedShortcut = it },
+                onSettingsClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule
+            .onNodeWithText("NEW TAB.LNK")
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+            .performClick()
+
+        assertEquals(shortcut, startedShortcut)
+    }
 }
