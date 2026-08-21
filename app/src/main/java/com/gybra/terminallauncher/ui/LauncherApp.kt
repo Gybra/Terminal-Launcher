@@ -60,7 +60,6 @@ public fun LauncherApp(
                 state = homeState,
                 onAppClick = onLaunchApp,
                 onShortcutClick = onLaunchShortcut,
-                onSettingsClick = { destination = LauncherDestination.SETTINGS },
                 onLockScreen = onLockScreen,
                 promptActions = promptActions,
             )

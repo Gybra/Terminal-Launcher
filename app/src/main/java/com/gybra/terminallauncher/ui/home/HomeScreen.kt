@@ -4,25 +4,28 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.ShellContext
@@ -36,58 +39,76 @@ public fun HomeScreen(
     state: HomeUiState,
     onAppClick: (InstalledApp) -> Unit,
     onShortcutClick: (AppShortcut) -> Unit,
-    onSettingsClick: () -> Unit,
     onLockScreen: () -> Unit,
     promptActions: PromptActions,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalTerminalColors.current
-    LazyColumn(
+    val rows = rememberLazyListState()
+    val lastRow = state.rowCount - 1
+    LaunchedEffect(lastRow, state.history.lastOrNull()?.id, state.searchResults) {
+        if (lastRow >= 0) {
+            rows.animateScrollToItem(lastRow)
+        }
+    }
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(colors.background)
-            .windowInsetsPadding(WindowInsets.systemBars)
             .pointerInput(onLockScreen) {
                 detectTapGestures(onDoubleTap = { onLockScreen() })
             }
-            .testTag(TestTag.HOME_LIST.tag),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            .windowInsetsPadding(WindowInsets.systemBars)
+            .imePadding()
+            .padding(horizontal = 24.dp, vertical = 32.dp),
     ) {
         if (state.statusClock != null || state.statusBattery != null) {
-            item(key = HomeItem.STATUS.key) {
-                StatusLine(clock = state.statusClock, battery = state.statusBattery)
-            }
+            StatusLine(clock = state.statusClock, battery = state.statusBattery)
         }
-        pinnedItems(state = state, onAppClick = onAppClick, onShortcutClick = onShortcutClick)
-        item(key = HomeItem.SETTINGS.key) {
-            AppRow(
-                displayName = state.shellProfile.aliasFor(Command.SETTINGS),
-                onClick = onSettingsClick,
+        LazyColumn(
+            state = rows,
+            modifier = Modifier
+                .weight(1f)
+                .testTag(TestTag.HOME_LIST.tag),
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Bottom),
+        ) {
+            pinnedItems(state = state, onAppClick = onAppClick, onShortcutClick = onShortcutClick)
+            terminalHistory(
+                entries = state.history,
+                shellProfile = state.shellProfile,
+                shellContext = state.shellContext,
+                onShortcutClick = onShortcutClick,
             )
+            searchResults(state = state, onAppClick = onAppClick)
         }
-        terminalHistory(
-            entries = state.history,
-            shellProfile = state.shellProfile,
-            shellContext = state.shellContext,
-            onShortcutClick = onShortcutClick,
+        Prompt(
+            prompt = state.shellProfile.prompt(state.shellContext),
+            state = state.prompt,
+            actions = promptActions,
         )
-        item(key = HomeItem.PROMPT.key) {
-            Prompt(
-                prompt = state.shellProfile.prompt(state.shellContext),
-                state = state.prompt,
-                actions = promptActions,
-            )
-        }
-        items(
-            items = state.searchResults,
-            key = { result -> HomeItem.SEARCH.rowKey(result.app.packageName) },
-        ) { result ->
-            AppRow(
-                displayName = state.shellProfile.formatAppName(result.app),
-                onClick = { onAppClick(result.app) },
-            )
-        }
+    }
+}
+
+/**
+ * How many rows the scrolling region holds, so Home can reach its last one and keep what just
+ * happened next to the prompt.
+ */
+private val HomeUiState.rowCount: Int
+    get() = apps.size + shortcuts.size + history.size + searchResults.size
+
+/** Lists what the typed line matches, right above the prompt that is matching it. */
+private fun LazyListScope.searchResults(
+    state: HomeUiState,
+    onAppClick: (InstalledApp) -> Unit,
+) {
+    items(
+        items = state.searchResults,
+        key = { result -> HomeItem.SEARCH.rowKey(result.app.packageName) },
+    ) { result ->
+        AppRow(
+            displayName = state.shellProfile.formatAppName(result.app),
+            onClick = { onAppClick(result.app) },
+        )
     }
 }
 

@@ -5,9 +5,6 @@ package com.gybra.terminallauncher.ui.home
  * A row listing something the device carries names it through [rowKey].
  */
 public enum class HomeItem(public val key: String) {
-    STATUS("status"),
-    SETTINGS("settings"),
-    PROMPT("prompt"),
     SHORTCUT("shortcut"),
     SEARCH("search"),
     HISTORY("history"),

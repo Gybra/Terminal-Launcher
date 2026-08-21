@@ -43,7 +43,7 @@ Further work is tracked in the [public roadmap](https://github.com/Gybra/Termina
 
 ## Using the launcher
 
-Type at the prompt. Matching applications appear under it as you type; tap one to launch it, or press Enter when a single application matches. Ambiguous input stays on screen with its matches rather than launching something arbitrary.
+Type at the prompt. Matching applications appear right above it as you type; tap one to launch it, or press Enter when a single application matches. Ambiguous input stays on screen with its matches rather than launching something arbitrary.
 
 A label matches exactly, by prefix, by substring, or fuzzily when the typed characters appear in it in order, and a literal match always outranks a fuzzy one. Matches of the same strength are ordered by a score worth 50 for a pinned application plus one point per launch up to 20, then by the most recent launch, then by name. Ranking reads only the installed applications and the stored launch history, so the same input always produces the same list.
 
@@ -84,7 +84,11 @@ The prompt can be customized from the settings screen, and the customization is 
 
 No drive, path, or symbol reaches a filesystem or grants a privilege: nothing exists behind them, and the launcher navigates no directories. The path shown is a fixed label for where the launcher is, not a working directory.
 
-Home keeps one status line above everything else, with the clock on the left and the battery on the right, each written in the style of the selected shell: `42% charging` on Unix and `42% CHARGING` on DOS. The clock and the battery are each turned off in the settings screen, both are shown by default, hiding one leaves the other on its own side, and hiding both leaves no line at all. The battery follows the device instead of being read once, and a device reporting no level shows none rather than a number the launcher made up.
+Home keeps one status line fixed above everything else, where scrolling never takes it away, with the clock on the left and the battery on the right, each written in the style of the selected shell: `42% charging` on Unix and `42% CHARGING` on DOS. The clock and the battery are each turned off in the settings screen, both are shown by default, hiding one leaves the other on its own side, and hiding both leaves no line at all. The battery follows the device instead of being read once, and a device reporting no level shows none rather than a number the launcher made up.
+
+Home is read from the bottom, the way a terminal is. The prompt is anchored under everything else and stays there: the software keyboard pushes it up instead of covering it, and the rows above it never move it. Between the status line and the prompt, the pinned applications, the pinned shortcuts, the terminal history, and the search results share one scrolling region that rests on the bottom, so a Home holding little keeps it within reach of the thumb rather than hanging from the top of the screen. Whatever is printed or listed last is scrolled into view, so the answer to a command sits next to the line that asked for it.
+
+Settings are opened with the `settings` command, which `help` lists along with the others.
 
 `Immersive mode`, on by default, keeps the status and navigation bars hidden and brings them back only as transient bars on a swipe. Turning it off leaves the system bars on screen, and Home keeps its content clear of them.
 

@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.doubleClick
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -35,6 +36,7 @@ import com.gybra.terminallauncher.ui.settings.SettingsEntry
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -59,7 +61,7 @@ class LauncherAppTest {
                 settingsState = settingsState(),
                 settingsActions = emptySettingsActions(),
                 promptActions = emptyPromptActions(),
-                submittedActions = emptyFlow(),
+                submittedActions = flowOf(SubmittedAction.OpenSettings),
                 onLaunchApp = {},
                 onLaunchShortcut = {},
                 onLockScreen = {},
@@ -68,7 +70,6 @@ class LauncherAppTest {
             )
         }
 
-        composeRule.onNodeWithText("settings").performClick()
         composeRule.onNodeWithText(SettingsEntry.APPEARANCE.label).assertIsDisplayed()
 
         composeRule.onNodeWithText(SettingsEntry.BACK.label).performClick()
@@ -80,7 +81,9 @@ class LauncherAppTest {
         var locks = 0
         composeRule.setContent {
             LauncherApp(
-                homeState = homeState(),
+                homeState = homeState(
+                    apps = listOf(InstalledApp(packageName = "com.example.mail", label = "Mail")),
+                ),
                 settingsState = settingsState(),
                 settingsActions = emptySettingsActions(),
                 promptActions = emptyPromptActions(),
@@ -93,7 +96,7 @@ class LauncherAppTest {
             )
         }
 
-        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput { doubleClick(bottomCenter) }
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput { doubleClick(topCenter) }
         composeRule.waitForIdle()
 
         assertEquals(1, locks)
@@ -109,7 +112,7 @@ class LauncherAppTest {
                 settingsState = settingsState(),
                 settingsActions = emptySettingsActions(),
                 promptActions = emptyPromptActions(),
-                submittedActions = emptyFlow(),
+                submittedActions = flowOf(SubmittedAction.OpenSettings),
                 onLaunchApp = {},
                 onLaunchShortcut = {},
                 onLockScreen = {},
@@ -117,7 +120,7 @@ class LauncherAppTest {
                 onRestartLauncher = {},
             )
         }
-        composeRule.onNodeWithText("settings").performClick()
+        composeRule.onNodeWithText(SettingsEntry.APPEARANCE.label).assertIsDisplayed()
 
         composeRule.runOnIdle {
             checkNotNull(backDispatcher).onBackPressed()
@@ -317,13 +320,13 @@ class LauncherAppTest {
     }
 
     private fun assertBackgroundColor(color: Color) {
-        val pixels = composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).captureToImage().toPixelMap()
+        val pixels = composeRule.onRoot().captureToImage().toPixelMap()
         val actual = pixels[pixels.width - 1, pixels.height - 1]
         assertTrue("Expected $color but rendered $actual", actual == color)
     }
 
     private fun assertRenderedColor(color: Color) {
-        val pixels = composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).captureToImage().toPixelMap()
+        val pixels = composeRule.onRoot().captureToImage().toPixelMap()
         val colorFound = (0 until pixels.width).any { x ->
             (0 until pixels.height).any { y -> pixels[x, y] == color }
         }
