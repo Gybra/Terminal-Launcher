@@ -7,7 +7,7 @@ import com.gybra.terminallauncher.launcher.Torch
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 
 /**
- * Every command the launcher registers, in the order help lists them. The composition root and
+ * Every command the launcher registers, grouped and ordered the way help writes them. The composition root and
  * the tests share this list, so what ships is what is verified.
  */
 public fun launcherCommands(
@@ -17,16 +17,15 @@ public fun launcherCommands(
     torch: Torch,
 ): List<LauncherCommand> = listOf(
     ListAppsCommand,
-    HelpCommand,
+    AppInfoCommand,
+    UninstallCommand,
+    AliasCommand(preferencesRepository),
     PinCommand(preferencesRepository),
     UnpinCommand(preferencesRepository),
     ShortcutsCommand(
         shortcutRepository = shortcutRepository,
         preferencesRepository = preferencesRepository,
     ),
-    AliasCommand(preferencesRepository),
-    AppInfoCommand,
-    UninstallCommand,
     BatteryCommand(batteryRepository),
     TorchCommand(torch),
     SystemScreenCommand(
@@ -44,7 +43,8 @@ public fun launcherCommands(
         description = "Open Bluetooth settings",
         screen = SystemScreen.BluetoothSettings,
     ),
+    HelpCommand,
     ClearCommand,
-    RestartCommand,
     SettingsCommand,
+    RestartCommand,
 )

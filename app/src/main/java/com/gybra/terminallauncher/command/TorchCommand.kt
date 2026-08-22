@@ -9,6 +9,8 @@ public class TorchCommand(
 ) : LauncherCommand {
     override val id: Command = Command.TORCH
 
+    override val group: CommandGroup = CommandGroup.DEVICE
+
     override val description: String = "Toggle the torch"
 
     override suspend fun execute(context: CommandContext): CommandResult = when (torch.toggle()) {

@@ -14,6 +14,8 @@ public class AliasCommand(
 ) : LauncherCommand {
     override val id: Command = Command.ALIAS
 
+    override val group: CommandGroup = CommandGroup.APPS
+
     override val description: String = "Name an app"
 
     override val usage: List<String> = listOf("<name> <application>")

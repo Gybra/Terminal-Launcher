@@ -11,7 +11,7 @@ import org.junit.Test
 class CommandRegistryTest {
     @Test
     fun `resolves the Unix alias of a registered command`() {
-        val listApps = RecordingCommand(id = Command.LIST_APPS)
+        val listApps = RecordingCommand(id = Command.LIST_APPS, group = CommandGroup.APPS)
         val registry = CommandRegistry(commands = listOf(listApps))
 
         assertSame(listApps, registry.resolve(name = "ls", shellProfile = UnixShellProfile))
@@ -19,7 +19,7 @@ class CommandRegistryTest {
 
     @Test
     fun `resolves the DOS alias of a registered command`() {
-        val listApps = RecordingCommand(id = Command.LIST_APPS)
+        val listApps = RecordingCommand(id = Command.LIST_APPS, group = CommandGroup.APPS)
         val registry = CommandRegistry(commands = listOf(listApps))
 
         assertSame(listApps, registry.resolve(name = "DIR", shellProfile = DosShellProfile))
@@ -36,14 +36,14 @@ class CommandRegistryTest {
 
     @Test
     fun `resolves nothing for an alias of another shell`() {
-        val registry = CommandRegistry(commands = listOf(RecordingCommand(id = Command.LIST_APPS)))
+        val registry = CommandRegistry(commands = listOf(RecordingCommand(id = Command.LIST_APPS, group = CommandGroup.APPS)))
 
         assertNull(registry.resolve(name = "ls", shellProfile = DosShellProfile))
     }
 
     @Test
     fun `resolves nothing for an unregistered command`() {
-        val registry = CommandRegistry(commands = listOf(RecordingCommand(id = Command.LIST_APPS)))
+        val registry = CommandRegistry(commands = listOf(RecordingCommand(id = Command.LIST_APPS, group = CommandGroup.APPS)))
 
         assertNull(registry.resolve(name = "help", shellProfile = UnixShellProfile))
     }
@@ -60,15 +60,27 @@ class CommandRegistryTest {
     fun `summarizes registered commands in registration order`() {
         val registry = CommandRegistry(
             commands = listOf(
-                RecordingCommand(id = Command.LIST_APPS, description = "List installed apps"),
+                RecordingCommand(
+                    id = Command.LIST_APPS,
+                    group = CommandGroup.APPS,
+                    description = "List installed apps",
+                ),
                 RecordingCommand(id = Command.HELP, description = "Show available commands"),
             ),
         )
 
         assertEquals(
             listOf(
-                CommandSummary(id = Command.LIST_APPS, description = "List installed apps"),
-                CommandSummary(id = Command.HELP, description = "Show available commands"),
+                CommandSummary(
+                    id = Command.LIST_APPS,
+                    group = CommandGroup.APPS,
+                    description = "List installed apps",
+                ),
+                CommandSummary(
+                    id = Command.HELP,
+                    group = CommandGroup.LAUNCHER,
+                    description = "Show available commands",
+                ),
             ),
             registry.summaries,
         )

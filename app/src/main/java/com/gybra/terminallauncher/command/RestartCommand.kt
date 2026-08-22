@@ -7,6 +7,8 @@ package com.gybra.terminallauncher.command
 public object RestartCommand : LauncherCommand {
     override val id: Command = Command.RESTART
 
+    override val group: CommandGroup = CommandGroup.LAUNCHER
+
     override val description: String = "Restart the launcher"
 
     override suspend fun execute(context: CommandContext): CommandResult =

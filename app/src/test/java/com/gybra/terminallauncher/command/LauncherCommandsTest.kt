@@ -5,6 +5,7 @@ import com.gybra.terminallauncher.launcher.FakeShortcutRepository
 import com.gybra.terminallauncher.launcher.FakeTorch
 import com.gybra.terminallauncher.launcher.TorchState
 import com.gybra.terminallauncher.preferences.RecordingPreferencesRepository
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -17,6 +18,13 @@ class LauncherCommandsTest {
                 command.description.length <= MAX_DESCRIPTION_LENGTH,
             )
         }
+    }
+
+    @Test
+    fun `registers the commands grouped the way help writes them`() {
+        val groups = registeredCommands().map(LauncherCommand::group)
+
+        assertEquals(groups.sortedBy(CommandGroup::ordinal), groups)
     }
 
     private fun registeredCommands(): List<LauncherCommand> = launcherCommands(

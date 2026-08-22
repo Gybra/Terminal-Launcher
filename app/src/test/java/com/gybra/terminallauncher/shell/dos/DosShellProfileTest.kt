@@ -1,6 +1,7 @@
 package com.gybra.terminallauncher.shell.dos
 
 import com.gybra.terminallauncher.command.Command
+import com.gybra.terminallauncher.command.CommandGroup
 import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.InstalledApp
@@ -83,10 +84,11 @@ class DosShellProfileTest {
     @Test
     fun `formats help from command metadata with a DOS command count`() {
         val commands = listOf(
-            CommandSummary(id = Command.LIST_APPS, description = "List installed apps"),
-            CommandSummary(id = Command.HELP, description = "Show available commands"),
+            CommandSummary(id = Command.LIST_APPS, group = CommandGroup.APPS, description = "List installed apps"),
+            CommandSummary(id = Command.HELP, group = CommandGroup.LAUNCHER, description = "Show available commands"),
             CommandSummary(
                 id = Command.PIN,
+                group = CommandGroup.HOME,
                 description = "Pin an app to Home",
                 usage = listOf("<application>"),
             ),
@@ -94,10 +96,15 @@ class DosShellProfileTest {
 
         assertEquals(
             listOf(
+                "APPS",
                 "DIR       List installed apps",
-                "HELP      Show available commands",
+                "",
+                "HOME",
                 "PIN       Pin an app to Home",
-                "          PIN <APPLICATION>",
+                "  PIN <APPLICATION>",
+                "",
+                "LAUNCHER",
+                "HELP      Show available commands",
                 "",
                 "3 Command(s)",
             ),

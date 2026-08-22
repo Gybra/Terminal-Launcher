@@ -14,7 +14,7 @@ A label matches exactly, by prefix, by substring, or fuzzily when the typed char
 
 ## Commands and aliases
 
-`help` writes every registered command with its description, and under it the ways it is invoked, so the arguments a command takes are visible before running it. A command writes those same lines back when it is called the wrong way.
+`help` writes every registered command under the group it acts on, the applications, Home, the device, and the launcher itself, one group after another with a blank line between them, and under each command the ways it is invoked, indented by two spaces, so the arguments a command takes are visible before running it. Every command declares its group, so one cannot be registered without saying where it is written, and the groups are written in the order they are declared rather than the order the commands were registered. A command writes those same invocation lines back when it is called the wrong way.
 
 `alias` names an application so submitting that name launches it, for example `alias browser firefox`. Aliases persist across restarts, are matched without case, and are replaced by defining the same name again. A registered command is always resolved before an alias, and a name any shell already uses for a command is refused rather than allowed to shadow it, so no alias can ever take over `ls`, `clear`, or any other command.
 

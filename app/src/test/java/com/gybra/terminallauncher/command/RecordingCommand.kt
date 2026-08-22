@@ -5,6 +5,7 @@ import java.io.IOException
 /** A [LauncherCommand] that records how the engine invoked it. */
 class RecordingCommand(
     override val id: Command,
+    override val group: CommandGroup = CommandGroup.LAUNCHER,
     override val description: String = "Recorded command",
     private val result: CommandResult = CommandResult.Output(emptyList()),
     private val failure: IOException? = null,

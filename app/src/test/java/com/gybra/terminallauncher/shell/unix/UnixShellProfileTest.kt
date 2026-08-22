@@ -1,6 +1,7 @@
 package com.gybra.terminallauncher.shell.unix
 
 import com.gybra.terminallauncher.command.Command
+import com.gybra.terminallauncher.command.CommandGroup
 import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.InstalledApp
@@ -106,10 +107,11 @@ class UnixShellProfileTest {
     @Test
     fun `formats help from command metadata using primary Unix aliases`() {
         val commands = listOf(
-            CommandSummary(id = Command.LIST_APPS, description = "List installed apps"),
-            CommandSummary(id = Command.HELP, description = "Show available commands"),
+            CommandSummary(id = Command.LIST_APPS, group = CommandGroup.APPS, description = "List installed apps"),
+            CommandSummary(id = Command.HELP, group = CommandGroup.LAUNCHER, description = "Show available commands"),
             CommandSummary(
                 id = Command.PIN,
+                group = CommandGroup.HOME,
                 description = "Pin an app to Home",
                 usage = listOf("<application>"),
             ),
@@ -117,14 +119,46 @@ class UnixShellProfileTest {
 
         assertEquals(
             listOf(
+                "apps",
                 "ls        List installed apps",
-                "help      Show available commands",
+                "",
+                "home",
                 "pin       Pin an app to Home",
-                "          pin <application>",
+                "  pin <application>",
+                "",
+                "launcher",
+                "help      Show available commands",
             ),
             profile.formatHelp(commands),
         )
         assertEquals(emptyList<String>(), profile.formatHelp(emptyList()))
+    }
+
+    @Test
+    fun `writes the groups in their own order and leaves out the empty ones`() {
+        val commands = listOf(
+            CommandSummary(
+                id = Command.RESTART,
+                group = CommandGroup.LAUNCHER,
+                description = "Restart the launcher",
+            ),
+            CommandSummary(
+                id = Command.LIST_APPS,
+                group = CommandGroup.APPS,
+                description = "List installed apps",
+            ),
+        )
+
+        assertEquals(
+            listOf(
+                "apps",
+                "ls        List installed apps",
+                "",
+                "launcher",
+                "restart   Restart the launcher",
+            ),
+            profile.formatHelp(commands),
+        )
     }
 
     @Test

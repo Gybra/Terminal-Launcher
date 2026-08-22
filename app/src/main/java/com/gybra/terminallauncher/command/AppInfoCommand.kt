@@ -7,6 +7,8 @@ import com.gybra.terminallauncher.launcher.SystemScreen
 public object AppInfoCommand : ApplicationCommand() {
     override val id: Command = Command.APP_INFO
 
+    override val group: CommandGroup = CommandGroup.APPS
+
     override val description: String = "Show app details"
 
     override suspend fun apply(app: InstalledApp, context: CommandContext): CommandResult =

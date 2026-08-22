@@ -8,6 +8,8 @@ public class SystemScreenCommand(
     override val description: String,
     private val screen: SystemScreen,
 ) : LauncherCommand {
+    override val group: CommandGroup = CommandGroup.DEVICE
+
     override suspend fun execute(context: CommandContext): CommandResult =
         CommandResult.OpenSystemScreen(screen)
 }

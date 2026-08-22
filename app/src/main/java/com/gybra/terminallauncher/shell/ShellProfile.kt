@@ -1,6 +1,7 @@
 package com.gybra.terminallauncher.shell
 
 import com.gybra.terminallauncher.command.Command
+import com.gybra.terminallauncher.command.CommandGroup
 import com.gybra.terminallauncher.command.CommandSummary
 import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.InstalledApp
@@ -53,16 +54,27 @@ public interface ShellProfile {
 
     /**
      * Describes [commands] with the primary alias of this shell, so optional aliases accepted only
-     * for compatibility stay out of the help output. A command taking arguments is followed by the
-     * ways it is invoked, indented under its description.
+     * for compatibility stay out of the help output. Commands are written under the name of the
+     * group they belong to, in the order the groups are declared, separated by a blank line, and a
+     * command taking arguments is followed by the ways it is invoked, indented under it.
      */
     public fun formatHelp(commands: List<CommandSummary>): List<String> =
-        commands.flatMap { command ->
-            listOf(aliasFor(command.id).padEnd(HELP_ALIAS_COLUMN_WIDTH) + command.description) +
-                command.usage.map { form ->
-                    " ".repeat(HELP_ALIAS_COLUMN_WIDTH) + formatInvocation(command.id, form)
-                }
+        CommandGroup.entries
+            .mapNotNull { group -> describeGroup(group, commands.filter { it.group == group }) }
+            .reduceOrNull { written, group -> written + "" + group }
+            .orEmpty()
+
+    /** Writes [group] and what it holds, or nothing at all when it holds nothing. */
+    private fun describeGroup(group: CommandGroup, commands: List<CommandSummary>): List<String>? =
+        if (commands.isEmpty()) {
+            null
+        } else {
+            listOf(formatMessage(group.label)) + commands.flatMap(::describeCommand)
         }
+
+    private fun describeCommand(command: CommandSummary): List<String> =
+        listOf(aliasFor(command.id).padEnd(HELP_ALIAS_COLUMN_WIDTH) + command.description) +
+            command.usage.map { form -> USAGE_INDENT + formatInvocation(command.id, form) }
 
     /**
      * Writes how [command] is invoked, one line per accepted form, the first one prefixed the way
@@ -106,5 +118,8 @@ public interface ShellProfile {
 internal const val PINNED_DIRECTORY: String = "pinned"
 
 private const val HELP_ALIAS_COLUMN_WIDTH = 10
+
+/** What an invocation form is indented by under the command it belongs to. */
+private const val USAGE_INDENT = "  "
 
 private const val USAGE_PREFIX = "usage: "
