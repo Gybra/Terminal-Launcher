@@ -8,6 +8,9 @@ public interface LauncherCommand {
     /** Stable identifier each shell profile maps to its own aliases. */
     public val id: Command
 
+    /** What this command acts on, which is the group help writes it under. */
+    public val group: CommandGroup
+
     /** Shell-independent metadata the help command turns into a description line. */
     public val description: String
 

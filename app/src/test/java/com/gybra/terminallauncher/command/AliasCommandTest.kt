@@ -142,7 +142,7 @@ class AliasCommandTest {
             mailAssistant,
         ),
         registeredCommands = Command.entries.map { command ->
-            CommandSummary(id = command, description = "Registered command")
+            CommandSummary(id = command, group = CommandGroup.LAUNCHER, description = "Registered command")
         },
     )
 }

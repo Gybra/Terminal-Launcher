@@ -27,7 +27,7 @@ class CommandExecutorTest {
 
     @Test
     fun `gives the running command its arguments, shell, applications, and command set`() = runTest {
-        val pin = RecordingCommand(id = Command.PIN)
+        val pin = RecordingCommand(id = Command.PIN, group = CommandGroup.HOME)
         val executor = CommandExecutor(CommandRegistry(commands = listOf(pin)))
 
         executor.execute(
@@ -42,7 +42,7 @@ class CommandExecutorTest {
                 shellProfile = DosShellProfile,
                 installedApps = apps,
                 registeredCommands = listOf(
-                    CommandSummary(id = Command.PIN, description = "Recorded command"),
+                    CommandSummary(id = Command.PIN, group = CommandGroup.HOME, description = "Recorded command"),
                 ),
             ),
             pin.lastContext,

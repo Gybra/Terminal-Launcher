@@ -10,6 +10,8 @@ import com.gybra.terminallauncher.launcher.SystemScreen
 public object UninstallCommand : ApplicationCommand() {
     override val id: Command = Command.UNINSTALL
 
+    override val group: CommandGroup = CommandGroup.APPS
+
     override val description: String = "Uninstall an app"
 
     override suspend fun apply(app: InstalledApp, context: CommandContext): CommandResult =

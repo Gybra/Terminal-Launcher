@@ -16,7 +16,10 @@ class HelpCommandTest {
         assertEquals(
             CommandResult.Output(
                 listOf(
+                    "apps",
                     "ls        List installed apps",
+                    "",
+                    "launcher",
                     "help      Show available commands",
                 ),
             ),
@@ -38,7 +41,10 @@ class HelpCommandTest {
         assertEquals(
             CommandResult.Output(
                 listOf(
+                    "APPS",
                     "DIR       List installed apps",
+                    "",
+                    "LAUNCHER",
                     "HELP      Show available commands",
                     "",
                     "2 Command(s)",
@@ -59,8 +65,8 @@ class HelpCommandTest {
         shellProfile = shellProfile,
         installedApps = emptyList(),
         registeredCommands = listOf(
-            CommandSummary(id = Command.LIST_APPS, description = "List installed apps"),
-            CommandSummary(id = Command.HELP, description = "Show available commands"),
+            CommandSummary(id = Command.LIST_APPS, group = CommandGroup.APPS, description = "List installed apps"),
+            CommandSummary(id = Command.HELP, group = CommandGroup.LAUNCHER, description = "Show available commands"),
         ),
     )
 

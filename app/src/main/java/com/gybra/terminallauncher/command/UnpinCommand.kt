@@ -9,6 +9,8 @@ public class UnpinCommand(
 ) : PinningCommand() {
     override val id: Command = Command.UNPIN
 
+    override val group: CommandGroup = CommandGroup.HOME
+
     override val description: String = "Remove an app from Home"
 
     override val outcome: String = "unpinned"

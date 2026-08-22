@@ -19,6 +19,8 @@ public class ShortcutsCommand(
 ) : LauncherCommand {
     override val id: Command = Command.SHORTCUTS
 
+    override val group: CommandGroup = CommandGroup.HOME
+
     override val description: String = "Manage app shortcuts"
 
     override val usage: List<String> = listOf(

@@ -9,6 +9,8 @@ public class PinCommand(
 ) : PinningCommand() {
     override val id: Command = Command.PIN
 
+    override val group: CommandGroup = CommandGroup.HOME
+
     override val description: String = "Pin an app to Home"
 
     override val outcome: String = "pinned"

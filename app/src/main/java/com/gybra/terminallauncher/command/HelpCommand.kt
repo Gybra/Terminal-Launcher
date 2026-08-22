@@ -4,6 +4,8 @@ package com.gybra.terminallauncher.command
 public object HelpCommand : LauncherCommand {
     override val id: Command = Command.HELP
 
+    override val group: CommandGroup = CommandGroup.LAUNCHER
+
     override val description: String = "Show available commands"
 
     override suspend fun execute(context: CommandContext): CommandResult =

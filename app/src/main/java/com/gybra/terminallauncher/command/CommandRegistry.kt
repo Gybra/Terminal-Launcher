@@ -20,6 +20,7 @@ public class CommandRegistry(
     public val summaries: List<CommandSummary> = commands.map { command ->
         CommandSummary(
             id = command.id,
+            group = command.group,
             description = command.description,
             usage = command.usage,
         )
