@@ -91,11 +91,9 @@ internal fun Prompt(
 internal fun rememberPromptRelease(): () -> Unit {
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    return remember(focusManager, keyboardController) {
-        {
-            keyboardController?.hide()
-            focusManager.clearFocus()
-        }
+    return {
+        keyboardController?.hide()
+        focusManager.clearFocus()
     }
 }
 
