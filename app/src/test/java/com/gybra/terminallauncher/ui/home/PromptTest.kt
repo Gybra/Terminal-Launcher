@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -32,6 +31,7 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
 import com.gybra.terminallauncher.shell.PromptCursor
+import com.gybra.terminallauncher.ui.RecordingKeyboardController
 import com.gybra.terminallauncher.ui.TestTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -257,18 +257,6 @@ class PromptTest {
                     focusRequester = focusRequester,
                 )
             }
-        }
-    }
-
-    private class RecordingKeyboardController : SoftwareKeyboardController {
-        var visible = false
-
-        override fun show() {
-            visible = true
-        }
-
-        override fun hide() {
-            visible = false
         }
     }
 }

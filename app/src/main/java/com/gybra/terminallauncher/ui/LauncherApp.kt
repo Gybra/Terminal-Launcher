@@ -15,6 +15,7 @@ import com.gybra.terminallauncher.ui.home.HomeScreen
 import com.gybra.terminallauncher.ui.home.HomeUiState
 import com.gybra.terminallauncher.ui.home.PromptActions
 import com.gybra.terminallauncher.ui.home.SubmittedAction
+import com.gybra.terminallauncher.ui.home.rememberPromptRelease
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsScreen
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
@@ -24,7 +25,8 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Shows Home or the settings, and turns what a row or a submitted line asks into the launcher
  * work the composition root wired. Starting anything from a row calls [onRowStart] first, since
- * the tap answers what was typed the way a submitted line does.
+ * the tap answers what was typed the way a submitted line does. Every start also releases the
+ * prompt, because Home hands the screen over and must not carry a live keyboard through it.
  */
 @Composable
 public fun LauncherApp(
@@ -41,12 +43,14 @@ public fun LauncherApp(
     onRestartLauncher: () -> Unit,
 ) {
     var destination by rememberSaveable { mutableStateOf(LauncherDestination.HOME) }
+    val releasePrompt = rememberPromptRelease()
     val launchApp by rememberUpdatedState(onLaunchApp)
     val openSystemScreen by rememberUpdatedState(onOpenSystemScreen)
     val restartLauncher by rememberUpdatedState(onRestartLauncher)
 
     LaunchedEffect(submittedActions) {
         submittedActions.collect { action ->
+            releasePrompt()
             when (action) {
                 is SubmittedAction.LaunchApp -> launchApp(action.app)
                 SubmittedAction.OpenSettings -> destination = LauncherDestination.SETTINGS
@@ -70,10 +74,12 @@ public fun LauncherApp(
             HomeScreen(
                 state = homeState,
                 onAppClick = { app ->
+                    releasePrompt()
                     onRowStart()
                     onLaunchApp(app)
                 },
                 onShortcutClick = { shortcut ->
+                    releasePrompt()
                     onRowStart()
                     onLaunchShortcut(shortcut)
                 },

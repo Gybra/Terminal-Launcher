@@ -2,11 +2,14 @@ package com.gybra.terminallauncher.ui
 
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.doubleClick
@@ -33,6 +36,7 @@ import com.gybra.terminallauncher.theme.colors
 import com.gybra.terminallauncher.ui.home.HomeUiState
 import com.gybra.terminallauncher.ui.home.PromptActions
 import com.gybra.terminallauncher.ui.home.PromptState
+import com.gybra.terminallauncher.ui.home.TerminalEntry
 import com.gybra.terminallauncher.ui.home.SubmittedAction
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsEntry
@@ -359,6 +363,102 @@ class LauncherAppTest {
     }
 
     @Test
+    fun `starting a tapped application releases the prompt`() {
+        val app = InstalledApp(packageName = "com.example.camera", label = "Camera")
+        var state by mutableStateOf(homeState(apps = listOf(app)))
+        val keyboard = RecordingKeyboardController()
+        setLauncherContent(keyboard) {
+            LauncherApp(
+                homeState = state,
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions().copy(
+                    updateFocus = { focused -> state = state.copy(prompt = PromptState(focused = focused)) },
+                ),
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
+                onLaunchShortcut = {},
+                onRowStart = {},
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+        focusThePrompt { state.prompt.focused }
+        assertTrue("Focusing the prompt did not show the keyboard", keyboard.visible)
+
+        composeRule.onNodeWithText("camera").performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(false, keyboard.visible)
+        assertEquals(false, state.prompt.focused)
+    }
+
+    @Test
+    fun `starting what a submitted line asked for releases the prompt`() {
+        val app = InstalledApp(packageName = "org.example.mail", label = "Mail")
+        val submittedActions = MutableSharedFlow<SubmittedAction>(extraBufferCapacity = 1)
+        var state by mutableStateOf(homeState())
+        val keyboard = RecordingKeyboardController()
+        setLauncherContent(keyboard) {
+            LauncherApp(
+                homeState = state,
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions().copy(
+                    updateFocus = { focused -> state = state.copy(prompt = PromptState(focused = focused)) },
+                ),
+                submittedActions = submittedActions,
+                onLaunchApp = {},
+                onLaunchShortcut = {},
+                onRowStart = {},
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+        focusThePrompt { state.prompt.focused }
+
+        composeRule.runOnIdle { submittedActions.tryEmit(SubmittedAction.LaunchApp(app)) }
+        composeRule.waitForIdle()
+
+        assertEquals(false, keyboard.visible)
+        assertEquals(false, state.prompt.focused)
+    }
+
+    @Test
+    fun `a command that only printed leaves the prompt where it is`() {
+        var state by mutableStateOf(homeState())
+        val keyboard = RecordingKeyboardController()
+        setLauncherContent(keyboard) {
+            LauncherApp(
+                homeState = state,
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions().copy(
+                    updateFocus = { focused -> state = state.copy(prompt = PromptState(focused = focused)) },
+                ),
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
+                onLaunchShortcut = {},
+                onRowStart = {},
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+        focusThePrompt { state.prompt.focused }
+
+        composeRule.runOnIdle {
+            state = state.copy(history = listOf(TerminalEntry(id = 0L, input = "help", output = listOf("help"))))
+        }
+        composeRule.waitForIdle()
+
+        assertTrue("Printing an answer hid the keyboard", keyboard.visible)
+        assertTrue("Printing an answer released the prompt", state.prompt.focused)
+    }
+
+    @Test
     fun `theme changes immediately recolor Home content`() {
         var settingsState by mutableStateOf(settingsState(TerminalTheme.GREEN))
         composeRule.setContent {
@@ -445,6 +545,24 @@ class LauncherAppTest {
                 assertRenderedColor(colors.foreground)
             }
         }
+    }
+
+    private fun setLauncherContent(
+        keyboard: RecordingKeyboardController,
+        content: @Composable () -> Unit,
+    ) {
+        composeRule.setContent {
+            CompositionLocalProvider(LocalSoftwareKeyboardController provides keyboard) {
+                content()
+            }
+        }
+    }
+
+    /** Focuses the prompt the way a user does, which is what a release then has to undo. */
+    private fun focusThePrompt(focused: () -> Boolean) {
+        composeRule.onNodeWithContentDescription("Prompt").performClick()
+        composeRule.waitForIdle()
+        assertTrue("Clicking the prompt did not focus it", focused())
     }
 
     private fun assertBackgroundColor(color: Color) {
