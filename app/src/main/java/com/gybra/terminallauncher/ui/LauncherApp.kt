@@ -29,8 +29,8 @@ import kotlinx.coroutines.flow.Flow
  * work the composition root wired. Starting anything from a row calls [onRowStart] first, since
  * the tap answers what was typed the way a submitted line does. Every start also releases the
  * prompt, because Home hands the screen over and must not carry a live keyboard through it, and
- * so does Home leaving the screen by any other route, since Android restores the keyboard for a
- * field that is still focused when the launcher comes back.
+ * so does anything else taking the screen, since Android restores the keyboard for a field that
+ * is still focused when the launcher comes back.
  */
 @Composable
 public fun LauncherApp(
@@ -52,8 +52,9 @@ public fun LauncherApp(
     val openSystemScreen by rememberUpdatedState(onOpenSystemScreen)
     val restartLauncher by rememberUpdatedState(onRestartLauncher)
 
-    // Recents, the Home gesture, and the lock leave through none of the paths above, so the
-    // release is repeated where every one of them ends: Home is no longer on screen.
+    // The recents switcher, the lock, and an application started from anywhere else leave
+    // through none of the paths above, so the release is repeated where all of them end: Home is
+    // no longer on screen. The Home gesture is not one of them, since the launcher is Home.
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { releasePrompt() }
 
     LaunchedEffect(submittedActions) {

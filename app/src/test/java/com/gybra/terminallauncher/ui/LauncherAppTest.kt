@@ -464,6 +464,10 @@ class LauncherAppTest {
         }
         focusThePrompt(keyboard) { state.prompt.focused }
 
+        composeRule.runOnIdle { lifecycleOwner.registry.currentState = Lifecycle.State.STARTED }
+        composeRule.waitForIdle()
+        assertTrue("Home only lost the focus, not the screen", state.prompt.focused)
+
         composeRule.runOnIdle { lifecycleOwner.registry.currentState = Lifecycle.State.CREATED }
         composeRule.waitForIdle()
 
