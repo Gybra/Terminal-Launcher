@@ -57,12 +57,9 @@ internal fun Prompt(
     focusRequester: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
-    val focusManager = LocalFocusManager.current
+    val releasePrompt = rememberPromptRelease()
     val keyboardController = LocalSoftwareKeyboardController.current
-    BackHandler(enabled = state.focused) {
-        keyboardController?.hide()
-        focusManager.clearFocus()
-    }
+    BackHandler(enabled = state.focused, onBack = releasePrompt)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -83,6 +80,20 @@ internal fun Prompt(
                 .weight(1f)
                 .focusRequester(focusRequester),
         )
+    }
+}
+
+/**
+ * Hides the keyboard and releases the focus the prompt holds, which is what leaving the typed line
+ * alone means: Back does it where it stands, and Home does it when it hands the screen over.
+ */
+@Composable
+internal fun rememberPromptRelease(): () -> Unit {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    return {
+        keyboardController?.hide()
+        focusManager.clearFocus()
     }
 }
 
