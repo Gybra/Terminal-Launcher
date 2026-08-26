@@ -8,6 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.launcher.SystemScreen
@@ -26,7 +28,9 @@ import kotlinx.coroutines.flow.Flow
  * Shows Home or the settings, and turns what a row or a submitted line asks into the launcher
  * work the composition root wired. Starting anything from a row calls [onRowStart] first, since
  * the tap answers what was typed the way a submitted line does. Every start also releases the
- * prompt, because Home hands the screen over and must not carry a live keyboard through it.
+ * prompt, because Home hands the screen over and must not carry a live keyboard through it, and
+ * so does Home leaving the screen by any other route, since Android restores the keyboard for a
+ * field that is still focused when the launcher comes back.
  */
 @Composable
 public fun LauncherApp(
@@ -47,6 +51,10 @@ public fun LauncherApp(
     val launchApp by rememberUpdatedState(onLaunchApp)
     val openSystemScreen by rememberUpdatedState(onOpenSystemScreen)
     val restartLauncher by rememberUpdatedState(onRestartLauncher)
+
+    // Recents, the Home gesture, and the lock leave through none of the paths above, so the
+    // release is repeated where every one of them ends: Home is no longer on screen.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { releasePrompt() }
 
     LaunchedEffect(submittedActions) {
         submittedActions.collect { action ->

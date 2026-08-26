@@ -20,6 +20,10 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.SystemScreen
@@ -437,6 +441,37 @@ class LauncherAppTest {
     }
 
     @Test
+    fun `leaving the screen releases the prompt whatever took it`() {
+        var state by mutableStateOf(homeState())
+        val keyboard = RecordingKeyboardController()
+        val lifecycleOwner = TestLifecycleOwner()
+        setLauncherContent(keyboard, lifecycleOwner) {
+            LauncherApp(
+                homeState = state,
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions().copy(
+                    updateFocus = { focused -> state = state.copy(prompt = PromptState(focused = focused)) },
+                ),
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
+                onLaunchShortcut = {},
+                onRowStart = {},
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+        focusThePrompt(keyboard) { state.prompt.focused }
+
+        composeRule.runOnIdle { lifecycleOwner.registry.currentState = Lifecycle.State.CREATED }
+        composeRule.waitForIdle()
+
+        assertEquals(false, keyboard.visible)
+        assertEquals(false, state.prompt.focused)
+    }
+
+    @Test
     fun `a command that only printed leaves the prompt where it is`() {
         var state by mutableStateOf(homeState())
         val keyboard = RecordingKeyboardController()
@@ -559,10 +594,14 @@ class LauncherAppTest {
 
     private fun setLauncherContent(
         keyboard: RecordingKeyboardController,
+        lifecycleOwner: LifecycleOwner? = null,
         content: @Composable () -> Unit,
     ) {
         composeRule.setContent {
-            CompositionLocalProvider(LocalSoftwareKeyboardController provides keyboard) {
+            CompositionLocalProvider(
+                LocalSoftwareKeyboardController provides keyboard,
+                LocalLifecycleOwner provides (lifecycleOwner ?: LocalLifecycleOwner.current),
+            ) {
                 content()
             }
         }
@@ -646,6 +685,15 @@ class LauncherAppTest {
         writeAppCommand = {},
         writeShortcutCommand = {},
     )
+
+    /** A lifecycle a test drives itself, so Home can be taken off the screen without a device. */
+    private class TestLifecycleOwner : LifecycleOwner {
+        val registry: LifecycleRegistry = LifecycleRegistry(this).apply {
+            currentState = Lifecycle.State.RESUMED
+        }
+
+        override val lifecycle: Lifecycle get() = registry
+    }
 
     private data class ShellCase(
         val type: ShellType,
