@@ -36,8 +36,8 @@ import com.gybra.terminallauncher.theme.colors
 import com.gybra.terminallauncher.ui.home.HomeUiState
 import com.gybra.terminallauncher.ui.home.PromptActions
 import com.gybra.terminallauncher.ui.home.PromptState
-import com.gybra.terminallauncher.ui.home.TerminalEntry
 import com.gybra.terminallauncher.ui.home.SubmittedAction
+import com.gybra.terminallauncher.ui.home.TerminalEntry
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsEntry
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
@@ -174,7 +174,8 @@ class LauncherAppTest {
     fun `back releases the focused prompt before home answers it`() {
         var state by mutableStateOf(homeState())
         var backDispatcher: OnBackPressedDispatcher? = null
-        composeRule.setContent {
+        val keyboard = RecordingKeyboardController()
+        setLauncherContent(keyboard) {
             backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
             LauncherApp(
                 homeState = state,
@@ -192,9 +193,7 @@ class LauncherAppTest {
                 onRestartLauncher = {},
             )
         }
-        composeRule.onNodeWithContentDescription("Prompt").performClick()
-        composeRule.waitForIdle()
-        assertTrue("Clicking the prompt did not focus it", state.prompt.focused)
+        focusThePrompt(keyboard) { state.prompt.focused }
 
         composeRule.runOnIdle { checkNotNull(backDispatcher).onBackPressed() }
         composeRule.waitForIdle()
@@ -363,9 +362,14 @@ class LauncherAppTest {
     }
 
     @Test
-    fun `starting a tapped application releases the prompt`() {
+    fun `starting a tapped row releases the prompt`() {
         val app = InstalledApp(packageName = "com.example.camera", label = "Camera")
-        var state by mutableStateOf(homeState(apps = listOf(app)))
+        val shortcut = AppShortcut(
+            packageName = "com.example.browser",
+            id = "new-tab",
+            label = "New Tab",
+        )
+        var state by mutableStateOf(homeState(apps = listOf(app), shortcuts = listOf(shortcut)))
         val keyboard = RecordingKeyboardController()
         setLauncherContent(keyboard) {
             LauncherApp(
@@ -384,10 +388,16 @@ class LauncherAppTest {
                 onRestartLauncher = {},
             )
         }
-        focusThePrompt { state.prompt.focused }
-        assertTrue("Focusing the prompt did not show the keyboard", keyboard.visible)
+        focusThePrompt(keyboard) { state.prompt.focused }
 
         composeRule.onNodeWithText("camera").performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(false, keyboard.visible)
+        assertEquals(false, state.prompt.focused)
+
+        focusThePrompt(keyboard) { state.prompt.focused }
+        composeRule.onNodeWithText("new tab").performClick()
         composeRule.waitForIdle()
 
         assertEquals(false, keyboard.visible)
@@ -417,7 +427,7 @@ class LauncherAppTest {
                 onRestartLauncher = {},
             )
         }
-        focusThePrompt { state.prompt.focused }
+        focusThePrompt(keyboard) { state.prompt.focused }
 
         composeRule.runOnIdle { submittedActions.tryEmit(SubmittedAction.LaunchApp(app)) }
         composeRule.waitForIdle()
@@ -447,7 +457,7 @@ class LauncherAppTest {
                 onRestartLauncher = {},
             )
         }
-        focusThePrompt { state.prompt.focused }
+        focusThePrompt(keyboard) { state.prompt.focused }
 
         composeRule.runOnIdle {
             state = state.copy(history = listOf(TerminalEntry(id = 0L, input = "help", output = listOf("help"))))
@@ -558,11 +568,15 @@ class LauncherAppTest {
         }
     }
 
-    /** Focuses the prompt the way a user does, which is what a release then has to undo. */
-    private fun focusThePrompt(focused: () -> Boolean) {
+    /**
+     * Focuses the prompt the way a user does, which is what a release then has to undo: the
+     * keyboard is read here as well, so a test finding it hidden is reading a change.
+     */
+    private fun focusThePrompt(keyboard: RecordingKeyboardController, focused: () -> Boolean) {
         composeRule.onNodeWithContentDescription("Prompt").performClick()
         composeRule.waitForIdle()
         assertTrue("Clicking the prompt did not focus it", focused())
+        assertTrue("Focusing the prompt did not show the keyboard", keyboard.visible)
     }
 
     private fun assertBackgroundColor(color: Color) {
