@@ -1,5 +1,7 @@
 package com.gybra.terminallauncher.ui.home
 
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -450,7 +452,6 @@ class HomeScreenTest {
         updateValue = {},
         updateFocus = {},
         submit = {},
-        writeAppCommand = {},
         writeShortcutCommand = {},
     )
 
@@ -486,9 +487,9 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `writes the command a held application offers and moves to the prompt`() {
+    fun `offers the commands a held application can write without starting it`() {
         val app = InstalledApp(packageName = "com.example.camera", label = "Camera")
-        var written: InstalledApp? = null
+        var offered: InstalledApp? = null
         var launched: InstalledApp? = null
         composeRule.setContent {
             HomeScreen(
@@ -500,15 +501,65 @@ class HomeScreenTest {
                 onAppClick = { launched = it },
                 onShortcutClick = {},
                 onLockScreen = {},
-                promptActions = emptyPromptActions().copy(writeAppCommand = { written = it }),
+                promptActions = emptyPromptActions().copy(offerAppCommands = { offered = it }),
             )
         }
 
         composeRule.onNodeWithText("camera").performTouchInput { longClick() }
 
-        assertEquals(app, written)
+        assertEquals(app, offered)
         assertNull(launched)
+    }
+
+    @Test
+    fun `writes the chosen command and moves to the prompt`() {
+        val pin = HoldChoice(label = "pin", line = "pin Camera")
+        var written: HoldChoice? = null
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    holdChoices = listOf(
+                        pin,
+                        HoldChoice(label = "uninstall", line = "uninstall Camera"),
+                    ),
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions().copy(writeChoice = { written = it }),
+            )
+        }
+
+        composeRule.onNodeWithText("pin").assertHeightIsAtLeast(48.dp).performClick()
+
+        assertEquals(pin, written)
         composeRule.onNodeWithTag(TestTag.PROMPT_INPUT.tag).assertIsFocused()
+    }
+
+    @Test
+    fun `dismisses unanswered hold choices on system back`() {
+        var dismissed = false
+        var backDispatcher: OnBackPressedDispatcher? = null
+        composeRule.setContent {
+            backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    holdChoices = listOf(HoldChoice(label = "pin", line = "pin Camera")),
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions().copy(dismissChoices = { dismissed = true }),
+            )
+        }
+
+        composeRule.runOnIdle { checkNotNull(backDispatcher).onBackPressed() }
+
+        assertEquals(true, dismissed)
     }
 
     @Test

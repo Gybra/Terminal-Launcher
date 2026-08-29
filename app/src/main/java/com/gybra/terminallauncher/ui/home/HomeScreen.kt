@@ -1,5 +1,6 @@
 package com.gybra.terminallauncher.ui.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -52,6 +53,9 @@ public fun HomeScreen(
 ) {
     val colors = LocalTerminalColors.current
     val promptFocus = remember { FocusRequester() }
+    BackHandler(enabled = state.holdChoices.isNotEmpty()) {
+        promptActions.dismissChoices()
+    }
     val rowActions = RowActions(
         onAppClick = onAppClick,
         onShortcutClick = onShortcutClick,
@@ -95,6 +99,7 @@ public fun HomeScreen(
                 rowActions = rowActions,
             )
             searchResults(state = state, rowActions = rowActions)
+            holdChoices(choices = state.holdChoices, rowActions = rowActions)
         }
         Prompt(
             prompt = state.shellProfile.prompt(state.shellContext),
@@ -111,7 +116,7 @@ public fun HomeScreen(
  * happened next to the prompt.
  */
 private val HomeUiState.rowCount: Int
-    get() = apps.size + shortcuts.size + history.size + searchResults.size +
+    get() = apps.size + shortcuts.size + history.size + searchResults.size + holdChoices.size +
         (if (helpInvitation == null) 0 else 1) + pinnedSection.rowCount + searchSection.rowCount
 
 /** The lines the shell frames the pinned rows with, and none at all when Home holds none. */
@@ -145,8 +150,9 @@ private fun LazyListScope.helpInvitation(line: String?) {
 
 /**
  * What a row does when it is tapped and when it is held, carried together so every list writes
- * rows that answer the same two gestures. A tap starts what the row names, while a long press
- * only writes the command it offers and moves to the prompt, where the user reads it and submits.
+ * rows that answer the same two gestures. A tap starts what the row names. A long press on an
+ * application offers the commands it can write; choosing one, or holding a shortcut, writes the
+ * line and moves to the prompt.
  */
 private class RowActions(
     val onAppClick: (InstalledApp) -> Unit,
@@ -155,7 +161,11 @@ private class RowActions(
     private val promptFocus: FocusRequester,
 ) {
     fun onAppLongClick(app: InstalledApp) {
-        promptActions.writeAppCommand(app)
+        promptActions.offerAppCommands(app)
+    }
+
+    fun onChoiceClick(choice: HoldChoice) {
+        promptActions.writeChoice(choice)
         promptFocus.requestFocus()
     }
 
@@ -183,6 +193,22 @@ private fun LazyListScope.searchResults(
         )
     }
     sectionRow(item = HomeItem.SEARCH_FOOTER, lines = section.below)
+}
+
+/** The commands a held application offered, written as startable rows right above the prompt. */
+private fun LazyListScope.holdChoices(
+    choices: List<HoldChoice>,
+    rowActions: RowActions,
+) {
+    items(
+        items = choices,
+        key = { choice -> HomeItem.HOLD_CHOICE.rowKey(choice.label) },
+    ) { choice ->
+        AppRow(
+            displayName = choice.label,
+            onClick = { rowActions.onChoiceClick(choice) },
+        )
+    }
 }
 
 /** Lists what Home keeps above the prompt: the pinned applications, then the pinned shortcuts. */
@@ -277,13 +303,14 @@ private fun StatusLine(clock: String?, battery: String?) {
 /**
  * One startable line, written in full colour and tall enough to be operated reliably. Pressing it
  * swaps the two terminal colours, the way a TTY marks a selection, so the answer to a touch needs
- * no colour of its own. Holding it writes the command it offers instead of starting it.
+ * no colour of its own. Holding an application offers the commands it can write instead of
+ * starting it.
  */
 @Composable
 private fun AppRow(
     displayName: String,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
+    onLongClick: () -> Unit = {},
 ) {
     val colors = LocalTerminalColors.current
     val presses = remember { MutableInteractionSource() }
