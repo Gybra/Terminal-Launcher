@@ -47,7 +47,7 @@ public class HomeViewModel(
     private val initialPreferences = LauncherPreferences()
     private val promptState = MutableStateFlow(PromptState())
     private val history = MutableStateFlow<List<TerminalEntry>>(emptyList())
-    private val heldApp = MutableStateFlow<InstalledApp?>(null)
+    private val heldApplication = MutableStateFlow<HeldApplication?>(null)
     private val submittedActionRequests = Channel<SubmittedAction>(capacity = Channel.BUFFERED)
 
     /** Actions the composition root performs after a submitted line, each delivered once. */
@@ -88,9 +88,12 @@ public class HomeViewModel(
             history,
             ::createUiState,
         ),
-        heldApp,
+        heldApplication,
     ) { state, held ->
-        state.copy(holdChoices = choicesFor(held, state))
+        state.copy(
+            holdChoices = choicesFor(held?.app, state),
+            holdRowKey = held?.rowKey,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_TIMEOUT_MILLIS),
@@ -131,10 +134,11 @@ public class HomeViewModel(
 
     /**
      * Offers the commands a long press on [app] can write: pin or unpin, depending on whether Home
-     * already keeps it, and uninstall. Nothing is written until one is chosen.
+     * already keeps it, and uninstall. [rowKey] names the row that was held, so the choices sit
+     * under it. Nothing is written until one is chosen.
      */
-    public fun offerAppCommands(app: InstalledApp) {
-        heldApp.value = app
+    public fun offerAppCommands(app: InstalledApp, rowKey: String) {
+        heldApplication.value = HeldApplication(app, rowKey)
     }
 
     /** Writes [choice] at the prompt and dismisses the hold, so Enter is enough. */
@@ -145,7 +149,7 @@ public class HomeViewModel(
 
     /** Dismisses an unanswered hold and leaves the prompt alone. */
     public fun dismissChoices() {
-        heldApp.value = null
+        heldApplication.value = null
     }
 
     /**
@@ -370,4 +374,10 @@ public class HomeViewModel(
 private data class DeviceStatus(
     val clockText: String,
     val battery: BatteryStatus?,
+)
+
+/** The application a long press is asking about, and the row it was held on. */
+private data class HeldApplication(
+    val app: InstalledApp,
+    val rowKey: String,
 )

@@ -36,8 +36,6 @@ import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.SectionLines
-import com.gybra.terminallauncher.shell.ShellContext
-import com.gybra.terminallauncher.shell.ShellProfile
 import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
@@ -92,14 +90,8 @@ public fun HomeScreen(
         ) {
             helpInvitation(line = state.helpInvitation)
             pinnedItems(state = state, rowActions = rowActions)
-            terminalHistory(
-                entries = state.history,
-                shellProfile = state.shellProfile,
-                shellContext = state.shellContext,
-                rowActions = rowActions,
-            )
+            terminalHistory(state = state, rowActions = rowActions)
             searchResults(state = state, rowActions = rowActions)
-            holdChoices(choices = state.holdChoices, rowActions = rowActions)
         }
         Prompt(
             prompt = state.shellProfile.prompt(state.shellContext),
@@ -116,7 +108,7 @@ public fun HomeScreen(
  * happened next to the prompt.
  */
 private val HomeUiState.rowCount: Int
-    get() = apps.size + shortcuts.size + history.size + searchResults.size + holdChoices.size +
+    get() = apps.size + shortcuts.size + history.size + searchResults.size +
         (if (helpInvitation == null) 0 else 1) + pinnedSection.rowCount + searchSection.rowCount
 
 /** The lines the shell frames the pinned rows with, and none at all when Home holds none. */
@@ -160,8 +152,8 @@ private class RowActions(
     private val promptActions: PromptActions,
     private val promptFocus: FocusRequester,
 ) {
-    fun onAppLongClick(app: InstalledApp) {
-        promptActions.offerAppCommands(app)
+    fun onAppLongClick(app: InstalledApp, rowKey: String) {
+        promptActions.offerAppCommands(app, rowKey)
     }
 
     fun onChoiceClick(choice: HoldChoice) {
@@ -186,29 +178,16 @@ private fun LazyListScope.searchResults(
         items = state.searchResults,
         key = { result -> HomeItem.SEARCH.rowKey(result.app.packageName) },
     ) { result ->
+        val rowKey = HomeItem.SEARCH.rowKey(result.app.packageName)
         AppRow(
             displayName = state.shellProfile.formatAppName(result.app),
             onClick = { rowActions.onAppClick(result.app) },
-            onLongClick = { rowActions.onAppLongClick(result.app) },
+            onLongClick = { rowActions.onAppLongClick(result.app, rowKey) },
+            choices = state.choicesUnder(rowKey),
+            onChoiceClick = rowActions::onChoiceClick,
         )
     }
     sectionRow(item = HomeItem.SEARCH_FOOTER, lines = section.below)
-}
-
-/** The commands a held application offered, written as startable rows right above the prompt. */
-private fun LazyListScope.holdChoices(
-    choices: List<HoldChoice>,
-    rowActions: RowActions,
-) {
-    items(
-        items = choices,
-        key = { choice -> HomeItem.HOLD_CHOICE.rowKey(choice.label) },
-    ) { choice ->
-        AppRow(
-            displayName = choice.label,
-            onClick = { rowActions.onChoiceClick(choice) },
-        )
-    }
 }
 
 /** Lists what Home keeps above the prompt: the pinned applications, then the pinned shortcuts. */
@@ -225,7 +204,9 @@ private fun LazyListScope.pinnedItems(
         AppRow(
             displayName = state.shellProfile.formatAppName(app),
             onClick = { rowActions.onAppClick(app) },
-            onLongClick = { rowActions.onAppLongClick(app) },
+            onLongClick = { rowActions.onAppLongClick(app, app.packageName) },
+            choices = state.choicesUnder(app.packageName),
+            onChoiceClick = rowActions::onChoiceClick,
         )
     }
     items(
@@ -258,28 +239,29 @@ private fun LazyListScope.sectionRow(item: HomeItem, lines: List<String>) {
  * startable.
  */
 private fun LazyListScope.terminalHistory(
-    entries: List<TerminalEntry>,
-    shellProfile: ShellProfile,
-    shellContext: ShellContext,
+    state: HomeUiState,
     rowActions: RowActions,
 ) {
     items(
-        items = entries,
+        items = state.history,
         key = { entry -> HomeItem.HISTORY.rowKey(entry.id.toString()) },
     ) { entry ->
         Column {
-            TerminalLine(text = "${shellProfile.prompt(shellContext)} ${entry.input}")
+            TerminalLine(text = "${state.shellProfile.prompt(state.shellContext)} ${entry.input}")
             entry.output.forEach { line -> TerminalLine(text = line) }
             entry.apps.forEach { app ->
+                val rowKey = HomeItem.HISTORY.rowKey("${entry.id}-${app.packageName}")
                 AppRow(
-                    displayName = shellProfile.formatAppName(app),
+                    displayName = state.shellProfile.formatAppName(app),
                     onClick = { rowActions.onAppClick(app) },
-                    onLongClick = { rowActions.onAppLongClick(app) },
+                    onLongClick = { rowActions.onAppLongClick(app, rowKey) },
+                    choices = state.choicesUnder(rowKey),
+                    onChoiceClick = rowActions::onChoiceClick,
                 )
             }
             entry.shortcuts.forEach { shortcut ->
                 AppRow(
-                    displayName = shellProfile.formatShortcutName(shortcut),
+                    displayName = state.shellProfile.formatShortcutName(shortcut),
                     onClick = { rowActions.onShortcutClick(shortcut) },
                     onLongClick = { rowActions.onShortcutLongClick(shortcut) },
                 )
@@ -304,36 +286,53 @@ private fun StatusLine(clock: String?, battery: String?) {
  * One startable line, written in full colour and tall enough to be operated reliably. Pressing it
  * swaps the two terminal colours, the way a TTY marks a selection, so the answer to a touch needs
  * no colour of its own. Holding an application offers the commands it can write instead of
- * starting it.
+ * starting it, arrested to the output colour so they read as options rather than applications.
  */
 @Composable
 private fun AppRow(
     displayName: String,
     onClick: () -> Unit,
     onLongClick: () -> Unit = {},
+    choices: List<HoldChoice> = emptyList(),
+    onChoiceClick: (HoldChoice) -> Unit = {},
+    arrested: Boolean = false,
 ) {
     val colors = LocalTerminalColors.current
+    val ink = if (arrested) colors.secondary else colors.foreground
     val presses = remember { MutableInteractionSource() }
     val pressed by presses.collectIsPressedAsState()
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .background(if (pressed) colors.foreground else Color.Transparent)
-            .combinedClickable(
-                interactionSource = presses,
-                indication = null,
-                onLongClick = onLongClick,
-                onClick = onClick,
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        BasicText(
-            text = displayName,
-            style = terminalTextStyle(if (pressed) colors.background else colors.foreground),
-        )
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .background(if (pressed) ink else Color.Transparent)
+                .combinedClickable(
+                    interactionSource = presses,
+                    indication = null,
+                    onLongClick = onLongClick,
+                    onClick = onClick,
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicText(
+                text = displayName,
+                style = terminalTextStyle(if (pressed) colors.background else ink),
+            )
+        }
+        choices.forEach { choice ->
+            AppRow(
+                displayName = choice.label,
+                onClick = { onChoiceClick(choice) },
+                arrested = true,
+            )
+        }
     }
 }
+
+/** The commands offered under [rowKey], or none when another row was held. */
+private fun HomeUiState.choicesUnder(rowKey: String): List<HoldChoice> =
+    if (holdRowKey == rowKey) holdChoices else emptyList()
 
 /** One line Home only writes: the status, what a command printed, and the lines already submitted. */
 @Composable

@@ -474,7 +474,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.offerAppCommands(mail)
+            viewModel.offerAppCommands(mail, rowKey = mail.packageName)
             advanceUntilIdle()
 
             assertEquals(
@@ -484,6 +484,7 @@ class HomeViewModelTest {
                 ),
                 viewModel.uiState.value.holdChoices,
             )
+            assertEquals(mail.packageName, viewModel.uiState.value.holdRowKey)
             assertEquals(PromptState(), viewModel.uiState.value.prompt)
         }
 
@@ -503,7 +504,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.offerAppCommands(mail)
+            viewModel.offerAppCommands(mail, rowKey = mail.packageName)
             advanceUntilIdle()
 
             assertEquals(
@@ -532,7 +533,7 @@ class HomeViewModelTest {
 
             preferencesRepository.emit(LauncherPreferences(shellType = ShellType.DOS))
             advanceUntilIdle()
-            viewModel.offerAppCommands(mail)
+            viewModel.offerAppCommands(mail, rowKey = mail.packageName)
             advanceUntilIdle()
 
             assertEquals(
@@ -557,7 +558,7 @@ class HomeViewModelTest {
             )
             startCollecting(viewModel)
             advanceUntilIdle()
-            viewModel.offerAppCommands(mail)
+            viewModel.offerAppCommands(mail, rowKey = mail.packageName)
             advanceUntilIdle()
 
             val uninstall = viewModel.uiState.value.holdChoices.last()
@@ -588,7 +589,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
             viewModel.updatePromptValue(PromptState(input = "mail"))
-            viewModel.offerAppCommands(mail)
+            viewModel.offerAppCommands(mail, rowKey = mail.packageName)
             advanceUntilIdle()
 
             viewModel.dismissChoices()
@@ -596,6 +597,7 @@ class HomeViewModelTest {
 
             assertEquals("mail", viewModel.uiState.value.prompt.input)
             assertEquals(emptyList<HoldChoice>(), viewModel.uiState.value.holdChoices)
+            assertEquals(null, viewModel.uiState.value.holdRowKey)
         }
 
     @Test

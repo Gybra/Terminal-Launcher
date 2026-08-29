@@ -12,7 +12,7 @@ public data class PromptActions(
     public val updateFocus: (Boolean) -> Unit,
     public val submit: () -> Unit,
     public val writeShortcutCommand: (AppShortcut) -> Unit,
-    public val offerAppCommands: (InstalledApp) -> Unit = {},
+    public val offerAppCommands: (InstalledApp, String) -> Unit = { _, _ -> },
     public val writeChoice: (HoldChoice) -> Unit = {},
     public val dismissChoices: () -> Unit = {},
 )

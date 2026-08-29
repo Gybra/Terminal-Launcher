@@ -13,7 +13,6 @@ public enum class HomeItem(public val key: String) {
     SEARCH_HEADER("search-header"),
     SEARCH_FOOTER("search-footer"),
     HISTORY("history"),
-    HOLD_CHOICE("hold-choice"),
     ;
 
     /** Names the row listing what [id] identifies, such as one shortcut or one search result. */

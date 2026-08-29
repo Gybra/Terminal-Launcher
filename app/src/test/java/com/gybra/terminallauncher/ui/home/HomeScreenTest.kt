@@ -489,7 +489,7 @@ class HomeScreenTest {
     @Test
     fun `offers the commands a held application can write without starting it`() {
         val app = InstalledApp(packageName = "com.example.camera", label = "Camera")
-        var offered: InstalledApp? = null
+        var offered: Pair<InstalledApp, String>? = null
         var launched: InstalledApp? = null
         composeRule.setContent {
             HomeScreen(
@@ -501,18 +501,21 @@ class HomeScreenTest {
                 onAppClick = { launched = it },
                 onShortcutClick = {},
                 onLockScreen = {},
-                promptActions = emptyPromptActions().copy(offerAppCommands = { offered = it }),
+                promptActions = emptyPromptActions().copy(
+                    offerAppCommands = { held, rowKey -> offered = held to rowKey },
+                ),
             )
         }
 
         composeRule.onNodeWithText("camera").performTouchInput { longClick() }
 
-        assertEquals(app, offered)
+        assertEquals(app to app.packageName, offered)
         assertNull(launched)
     }
 
     @Test
     fun `writes the chosen command and moves to the prompt`() {
+        val app = InstalledApp(packageName = "com.example.camera", label = "Camera")
         val pin = HoldChoice(label = "pin", line = "pin Camera")
         var written: HoldChoice? = null
         composeRule.setContent {
@@ -520,10 +523,12 @@ class HomeScreenTest {
                 state = HomeUiState(
                     shellProfile = UnixShellProfile,
                     shellContext = defaultShellContext(),
+                    apps = listOf(app),
                     holdChoices = listOf(
                         pin,
                         HoldChoice(label = "uninstall", line = "uninstall Camera"),
                     ),
+                    holdRowKey = app.packageName,
                 ),
                 onAppClick = {},
                 onShortcutClick = {},
@@ -536,6 +541,43 @@ class HomeScreenTest {
 
         assertEquals(pin, written)
         composeRule.onNodeWithTag(TestTag.PROMPT_INPUT.tag).assertIsFocused()
+    }
+
+    @Test
+    fun `sits hold choices under the held application in the arrested colour`() {
+        val camera = InstalledApp(packageName = "com.example.camera", label = "Camera")
+        val mail = InstalledApp(packageName = "com.example.mail", label = "Mail")
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    apps = listOf(camera, mail),
+                    holdChoices = listOf(
+                        HoldChoice(label = "pin", line = "pin Camera"),
+                        HoldChoice(label = "uninstall", line = "uninstall Camera"),
+                    ),
+                    holdRowKey = camera.packageName,
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        val cameraRow = composeRule.onNodeWithText("camera").getUnclippedBoundsInRoot()
+        val pin = composeRule.onNodeWithText("pin").getUnclippedBoundsInRoot()
+        val uninstall = composeRule.onNodeWithText("uninstall").getUnclippedBoundsInRoot()
+        val mailRow = composeRule.onNodeWithText("mail").getUnclippedBoundsInRoot()
+
+        assertEquals(cameraRow.bottom.value, pin.top.value, 0.5f)
+        assertEquals(pin.bottom.value, uninstall.top.value, 0.5f)
+        assertEquals(uninstall.bottom.value, mailRow.top.value, 0.5f)
+
+        val choice = pixelsOf("pin")
+        assertTrue("Expected the arrested colour", choice.contains(terminalColors().secondary))
+        assertTrue("Expected no full colour", !choice.contains(terminalColors().foreground))
     }
 
     @Test
