@@ -184,7 +184,6 @@ class ReadmeScreenshots {
         updateValue = {},
         updateFocus = {},
         submit = {},
-        writeAppCommand = {},
         writeShortcutCommand = {},
     )
 

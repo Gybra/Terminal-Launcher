@@ -251,7 +251,6 @@ class PromptTest {
                                 composition = null,
                             )
                         },
-                        writeAppCommand = {},
                         writeShortcutCommand = {},
                     ),
                     focusRequester = focusRequester,

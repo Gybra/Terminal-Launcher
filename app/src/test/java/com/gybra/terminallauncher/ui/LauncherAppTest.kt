@@ -686,7 +686,6 @@ class LauncherAppTest {
         updateValue = {},
         updateFocus = {},
         submit = {},
-        writeAppCommand = {},
         writeShortcutCommand = {},
     )
 

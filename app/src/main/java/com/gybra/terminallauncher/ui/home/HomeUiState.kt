@@ -17,4 +17,6 @@ public data class HomeUiState(
     public val statusClock: String? = null,
     public val statusBattery: String? = null,
     public val prompt: PromptState = PromptState(),
+    public val holdChoices: List<HoldChoice> = emptyList(),
+    public val holdRowKey: String? = null,
 )

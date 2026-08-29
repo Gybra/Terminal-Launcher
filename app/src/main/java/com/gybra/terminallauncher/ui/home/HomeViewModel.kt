@@ -47,6 +47,7 @@ public class HomeViewModel(
     private val initialPreferences = LauncherPreferences()
     private val promptState = MutableStateFlow(PromptState())
     private val history = MutableStateFlow<List<TerminalEntry>>(emptyList())
+    private val heldApplication = MutableStateFlow<HeldApplication?>(null)
     private val submittedActionRequests = Channel<SubmittedAction>(capacity = Channel.BUFFERED)
 
     /** Actions the composition root performs after a submitted line, each delivered once. */
@@ -79,13 +80,21 @@ public class HomeViewModel(
     )
 
     public val uiState: StateFlow<HomeUiState> = combine(
-        installedApps,
-        preferences,
-        deviceStatus,
-        promptState,
-        history,
-        ::createUiState,
-    ).stateIn(
+        combine(
+            installedApps,
+            preferences,
+            deviceStatus,
+            promptState,
+            history,
+            ::createUiState,
+        ),
+        heldApplication,
+    ) { state, held ->
+        state.copy(
+            holdChoices = choicesFor(held?.app, state),
+            holdRowKey = held?.rowKey,
+        )
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_TIMEOUT_MILLIS),
         initialValue = createUiState(
@@ -117,24 +126,30 @@ public class HomeViewModel(
      * was typed the way a submitted line does.
      */
     public fun clearPrompt() {
+        dismissChoices()
         promptState.update { state ->
             state.copy(input = "", selection = TextRange.Zero, composition = null)
         }
     }
 
     /**
-     * Writes at the prompt the command a long press on [app] offers, which is the opposite of what
-     * Home has already done with it: an application Home keeps is unpinned, and one it only found
-     * is pinned. Nothing runs until the line is submitted.
+     * Offers the commands a long press on [app] can write: pin or unpin, depending on whether Home
+     * already keeps it, and uninstall. [rowKey] names the row that was held, so the choices sit
+     * under it. Nothing is written until one is chosen.
      */
-    public fun writeAppCommand(app: InstalledApp) {
-        val pinned = app.packageName in preferences.value.pinnedPackages
-        writeAtPrompt(
-            uiState.value.shellProfile.formatCommandLine(
-                command = if (pinned) Command.UNPIN else Command.PIN,
-                name = app.label,
-            ),
-        )
+    public fun offerAppCommands(app: InstalledApp, rowKey: String) {
+        heldApplication.value = HeldApplication(app, rowKey)
+    }
+
+    /** Writes [choice] at the prompt and dismisses the hold, so Enter is enough. */
+    public fun writeChoice(choice: HoldChoice) {
+        dismissChoices()
+        writeAtPrompt(choice.line)
+    }
+
+    /** Dismisses an unanswered hold and leaves the prompt alone. */
+    public fun dismissChoices() {
+        heldApplication.value = null
     }
 
     /**
@@ -277,6 +292,23 @@ public class HomeViewModel(
         clearPrompt()
     }
 
+    private fun choicesFor(held: InstalledApp?, state: HomeUiState): List<HoldChoice> {
+        if (held == null) {
+            return emptyList()
+        }
+        val pin = if (state.apps.any { app -> app.packageName == held.packageName }) {
+            Command.UNPIN
+        } else {
+            Command.PIN
+        }
+        return listOf(pin, Command.UNINSTALL).map { command ->
+            HoldChoice(
+                label = state.shellProfile.aliasFor(command),
+                line = state.shellProfile.formatCommandLine(command, name = held.label),
+            )
+        }
+    }
+
     private fun writeAtPrompt(line: String) {
         promptState.update { state ->
             state.copy(input = line, selection = TextRange(line.length), composition = null)
@@ -342,4 +374,10 @@ public class HomeViewModel(
 private data class DeviceStatus(
     val clockText: String,
     val battery: BatteryStatus?,
+)
+
+/** The application a long press is asking about, and the row it was held on. */
+private data class HeldApplication(
+    val app: InstalledApp,
+    val rowKey: String,
 )

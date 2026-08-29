@@ -461,14 +461,11 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `writes the unpinning command when a pinned application is held`() =
+    fun `offers pin and uninstall when an application is held, leaving the prompt alone`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val preferencesRepository = RecordingPreferencesRepository(
-                initialPreferences = LauncherPreferences(pinnedPackages = setOf(mail.packageName)),
-            )
             val viewModel = HomeViewModel(
                 appRepository = FakeAppRepository(apps = listOf(mail)),
-                preferencesRepository = preferencesRepository,
+                preferencesRepository = RecordingPreferencesRepository(),
                 batteryRepository = FakeBatteryRepository(status = null),
                 launcherClock = FakeLauncherClock(),
                 commandExecutor = commandExecutor(),
@@ -477,17 +474,50 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.writeAppCommand(mail)
+            viewModel.offerAppCommands(mail, rowKey = mail.packageName)
             advanceUntilIdle()
 
             assertEquals(
-                PromptState(input = "unpin Mail", selection = TextRange("unpin Mail".length)),
-                viewModel.uiState.value.prompt,
+                listOf(
+                    HoldChoice(label = "pin", line = "pin Mail"),
+                    HoldChoice(label = "uninstall", line = "uninstall Mail"),
+                ),
+                viewModel.uiState.value.holdChoices,
+            )
+            assertEquals(mail.packageName, viewModel.uiState.value.holdRowKey)
+            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+        }
+
+    @Test
+    fun `offers unpin and uninstall when a pinned application is held`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = RecordingPreferencesRepository(
+                    initialPreferences = LauncherPreferences(pinnedPackages = setOf(mail.packageName)),
+                ),
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.offerAppCommands(mail, rowKey = mail.packageName)
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(
+                    HoldChoice(label = "unpin", line = "unpin Mail"),
+                    HoldChoice(label = "uninstall", line = "uninstall Mail"),
+                ),
+                viewModel.uiState.value.holdChoices,
             )
         }
 
     @Test
-    fun `writes the pinning command a held application offers, in the shell case`() =
+    fun `offers the hold commands in the shell case`() =
         runTest(mainDispatcherRule.dispatcher) {
             val preferencesRepository = RecordingPreferencesRepository()
             val viewModel = HomeViewModel(
@@ -501,16 +531,73 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.writeAppCommand(mail)
-            advanceUntilIdle()
-            assertEquals("pin Mail", viewModel.uiState.value.prompt.input)
-
             preferencesRepository.emit(LauncherPreferences(shellType = ShellType.DOS))
             advanceUntilIdle()
-            viewModel.writeAppCommand(mail)
+            viewModel.offerAppCommands(mail, rowKey = mail.packageName)
             advanceUntilIdle()
 
-            assertEquals("PIN Mail", viewModel.uiState.value.prompt.input)
+            assertEquals(
+                listOf(
+                    HoldChoice(label = "PIN", line = "PIN Mail"),
+                    HoldChoice(label = "UNINSTALL", line = "UNINSTALL Mail"),
+                ),
+                viewModel.uiState.value.holdChoices,
+            )
+        }
+
+    @Test
+    fun `writes the chosen command at the prompt and dismisses the choices`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+            viewModel.offerAppCommands(mail, rowKey = mail.packageName)
+            advanceUntilIdle()
+
+            val uninstall = viewModel.uiState.value.holdChoices.last()
+            viewModel.writeChoice(uninstall)
+            advanceUntilIdle()
+
+            assertEquals(
+                PromptState(
+                    input = "uninstall Mail",
+                    selection = TextRange("uninstall Mail".length),
+                ),
+                viewModel.uiState.value.prompt,
+            )
+            assertEquals(emptyList<HoldChoice>(), viewModel.uiState.value.holdChoices)
+        }
+
+    @Test
+    fun `leaves the prompt alone when the hold is dismissed`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+            viewModel.updatePromptValue(PromptState(input = "mail"))
+            viewModel.offerAppCommands(mail, rowKey = mail.packageName)
+            advanceUntilIdle()
+
+            viewModel.dismissChoices()
+            advanceUntilIdle()
+
+            assertEquals("mail", viewModel.uiState.value.prompt.input)
+            assertEquals(emptyList<HoldChoice>(), viewModel.uiState.value.holdChoices)
+            assertEquals(null, viewModel.uiState.value.holdRowKey)
         }
 
     @Test
