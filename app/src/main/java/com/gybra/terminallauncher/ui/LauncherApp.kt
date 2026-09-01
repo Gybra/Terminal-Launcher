@@ -45,6 +45,8 @@ public fun LauncherApp(
     onLockScreen: () -> Unit,
     onOpenSystemScreen: (SystemScreen) -> Unit,
     onRestartLauncher: () -> Unit,
+    onExpandNotifications: () -> Unit = {},
+    onExpandQuickSettings: () -> Unit = {},
 ) {
     var destination by rememberSaveable { mutableStateOf(LauncherDestination.HOME) }
     val releasePrompt = rememberPromptRelease()
@@ -93,6 +95,8 @@ public fun LauncherApp(
                     onLaunchShortcut(shortcut)
                 },
                 onLockScreen = onLockScreen,
+                onExpandNotifications = onExpandNotifications,
+                onExpandQuickSettings = onExpandQuickSettings,
                 promptActions = promptActions,
             )
         } else {

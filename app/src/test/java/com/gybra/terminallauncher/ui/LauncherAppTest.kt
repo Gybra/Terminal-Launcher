@@ -14,6 +14,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -113,6 +114,49 @@ class LauncherAppTest {
         composeRule.waitForIdle()
 
         assertEquals(1, locks)
+    }
+
+    @Test
+    fun `forwards a swipe down on Home to the matching shade`() {
+        var notifications = 0
+        var quickSettings = 0
+        composeRule.setContent {
+            LauncherApp(
+                homeState = homeState(),
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
+                onLaunchShortcut = {},
+                onRowStart = {},
+                onLockScreen = {},
+                onExpandNotifications = { notifications += 1 },
+                onExpandQuickSettings = { quickSettings += 1 },
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
+            swipe(
+                start = percentOffset(x = 0.25f, y = 0.1f),
+                end = percentOffset(x = 0.25f, y = 0.9f),
+            )
+        }
+        composeRule.waitForIdle()
+        assertEquals(1, notifications)
+        assertEquals(0, quickSettings)
+
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
+            swipe(
+                start = percentOffset(x = 0.75f, y = 0.1f),
+                end = percentOffset(x = 0.75f, y = 0.9f),
+            )
+        }
+        composeRule.waitForIdle()
+        assertEquals(1, notifications)
+        assertEquals(1, quickSettings)
     }
 
     @Test

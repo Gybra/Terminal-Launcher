@@ -29,6 +29,7 @@ Type a name, press Enter, the application starts. Type a command, it answers und
 - **Pins that survive.** Applications and shortcuts kept on Home, including the ones an application asks to pin, such as a browser adding a website.
 - **Everything persists.** DataStore keeps every preference, every pin, and how often and how recently each application is launched.
 - **Double tap to lock**, the way the power button does, once the user turns on the accessibility service Android requires for it.
+- **Swipe down for the shade.** Left half opens notifications, right half opens quick settings, through that same accessibility service.
 - **No shell.** `Runtime.exec`, `ProcessBuilder`, `/bin/sh`, `su`, shell passthrough, and arbitrary Intent URIs are outside the architecture. Read the [safety model](docs/safety.md).
 - **Built from the command line**, without Android Studio, with 100% line coverage enforced on every pull request.
 

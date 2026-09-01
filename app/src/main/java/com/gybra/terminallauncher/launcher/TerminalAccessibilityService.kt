@@ -5,8 +5,9 @@ import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
 
 /**
- * The accessibility service the launcher needs to lock the screen the way the power button does.
- * It reads no accessibility event and performs no gesture: locking is all it is for.
+ * The accessibility service the launcher needs to lock the screen and to open the notification
+ * shade and quick settings. It reads no accessibility event and performs no gesture: those three
+ * global actions are all it is for.
  */
 public class TerminalAccessibilityService : AccessibilityService() {
     /** Android connects the service once the user turns it on, and never before. */
@@ -28,7 +29,8 @@ public class TerminalAccessibilityService : AccessibilityService() {
     internal companion object {
         /**
          * The connected service, which Android alone creates and destroys, so this is the only
-         * handle the launcher can lock the screen through. `null` means the user keeps it off.
+         * handle the launcher can lock the screen or open a shade through. `null` means the user
+         * keeps it off.
          */
         @Volatile
         internal var connected: TerminalAccessibilityService? = null
