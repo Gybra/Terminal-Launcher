@@ -19,9 +19,10 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
        shortcuts command -> ShortcutRepository -> LauncherApps published shortcuts
      pin request -> ShortcutPinRequests -------> LauncherApps pin item request
            double tap -> DeviceLock ------------> accessibility lock screen action
+         swipe down -> SystemShade -----------> accessibility notification and quick settings actions
 ```
 
-- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery reading and observation, torch boundary, the screen lock with its accessibility service, the named system destinations, and the shortcut model with its reading, pin request, and start boundaries;
+- `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery reading and observation, torch boundary, the screen lock with its accessibility service, the notification shade and quick settings, the named system destinations, and the shortcut model with its reading, pin request, and start boundaries;
 - `preferences`: immutable launcher settings, repository boundary, and DataStore adapter;
 - `command`: stable command identifiers, prompt tokenizing, explicit registration, execution, and the registered help, application-list, history-clearing, pinning, aliasing, settings, and Android utility commands;
 - `search`: Compose-independent label matching and deterministic result ranking;

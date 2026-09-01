@@ -24,6 +24,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.down
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.up
 import androidx.compose.ui.unit.dp
@@ -372,12 +373,14 @@ class HomeScreenTest {
     @Test
     fun `keeps scrolling instead of locking on a swipe`() {
         var locks = 0
+        var notifications = 0
         composeRule.setContent {
             HomeScreen(
                 state = homeState().copy(apps = manyApps()),
                 onAppClick = {},
                 onShortcutClick = {},
                 onLockScreen = { locks += 1 },
+                onExpandNotifications = { notifications += 1 },
                 promptActions = emptyPromptActions(),
             )
         }
@@ -386,7 +389,92 @@ class HomeScreenTest {
         composeRule.waitForIdle()
 
         assertEquals(0, locks)
+        assertEquals(0, notifications)
         composeRule.onNodeWithText("app 0").assertDoesNotExist()
+    }
+
+    @Test
+    fun `opens notifications on a swipe down from the left of Home`() {
+        var notifications = 0
+        var quickSettings = 0
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState(),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                onExpandNotifications = { notifications += 1 },
+                onExpandQuickSettings = { quickSettings += 1 },
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
+            swipe(
+                start = percentOffset(x = 0.25f, y = 0.1f),
+                end = percentOffset(x = 0.25f, y = 0.9f),
+            )
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(1, notifications)
+        assertEquals(0, quickSettings)
+    }
+
+    @Test
+    fun `opens quick settings on a swipe down from the right of Home`() {
+        var notifications = 0
+        var quickSettings = 0
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState(),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                onExpandNotifications = { notifications += 1 },
+                onExpandQuickSettings = { quickSettings += 1 },
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
+            swipe(
+                start = percentOffset(x = 0.75f, y = 0.1f),
+                end = percentOffset(x = 0.75f, y = 0.9f),
+            )
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(0, notifications)
+        assertEquals(1, quickSettings)
+    }
+
+    @Test
+    fun `keeps scrolling instead of opening a shade on a swipe from the lower half`() {
+        var notifications = 0
+        var quickSettings = 0
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(apps = manyApps()),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                onExpandNotifications = { notifications += 1 },
+                onExpandQuickSettings = { quickSettings += 1 },
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
+            swipe(
+                start = percentOffset(x = 0.25f, y = 0.8f),
+                end = percentOffset(x = 0.25f, y = 0.95f),
+            )
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(0, notifications)
+        assertEquals(0, quickSettings)
     }
 
     @Test

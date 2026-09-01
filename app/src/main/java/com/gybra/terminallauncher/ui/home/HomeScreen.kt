@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -29,7 +31,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -39,6 +47,7 @@ import com.gybra.terminallauncher.shell.SectionLines
 import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
+import kotlin.math.abs
 
 @Composable
 public fun HomeScreen(
@@ -48,6 +57,8 @@ public fun HomeScreen(
     onLockScreen: () -> Unit,
     promptActions: PromptActions,
     modifier: Modifier = Modifier,
+    onExpandNotifications: () -> Unit = {},
+    onExpandQuickSettings: () -> Unit = {},
 ) {
     val colors = LocalTerminalColors.current
     val promptFocus = remember { FocusRequester() }
@@ -74,6 +85,12 @@ public fun HomeScreen(
             .pointerInput(onLockScreen) {
                 detectTapGestures(onDoubleTap = { onLockScreen() })
             }
+            .pointerInput(onExpandNotifications, onExpandQuickSettings) {
+                detectShadeSwipe(
+                    onNotifications = onExpandNotifications,
+                    onQuickSettings = onExpandQuickSettings,
+                )
+            }
             .windowInsetsPadding(WindowInsets.systemBars)
             .imePadding()
             .padding(horizontal = 24.dp, vertical = 32.dp),
@@ -85,6 +102,7 @@ public fun HomeScreen(
             state = rows,
             modifier = Modifier
                 .weight(1f)
+                .fillMaxWidth()
                 .testTag(TestTag.HOME_LIST.tag),
             verticalArrangement = Arrangement.Bottom,
         ) {
@@ -101,6 +119,55 @@ public fun HomeScreen(
             focusRequester = promptFocus,
         )
     }
+}
+
+/**
+ * A downward swipe that starts in the upper half of Home opens the shade. The left half asks for
+ * notifications, the right half for quick settings. Anything that starts lower is left to scroll.
+ */
+private suspend fun PointerInputScope.detectShadeSwipe(
+    onNotifications: () -> Unit,
+    onQuickSettings: () -> Unit,
+) {
+    awaitEachGesture {
+        val down = awaitFirstDown(
+            requireUnconsumed = false,
+            pass = PointerEventPass.Initial,
+        )
+        val start = down.position
+        val end = awaitSwipeEnd(pointerId = down.id, start = start)
+        if (!isShadeSwipe(start = start, end = end)) {
+            return@awaitEachGesture
+        }
+        if (start.x < size.width / 2f) onNotifications() else onQuickSettings()
+    }
+}
+
+private suspend fun AwaitPointerEventScope.awaitSwipeEnd(
+    pointerId: PointerId,
+    start: Offset,
+): Offset {
+    var current = start
+    val slop = viewConfiguration.touchSlop
+    while (true) {
+        val event = awaitPointerEvent(PointerEventPass.Initial)
+        val change = event.changes.firstOrNull { pointer -> pointer.id == pointerId } ?: return current
+        current = change.position
+        val dy = current.y - start.y
+        if (dy > slop && dy > abs(current.x - start.x)) {
+            change.consume()
+        }
+        if (change.changedToUpIgnoreConsumed()) {
+            return current
+        }
+    }
+}
+
+private fun PointerInputScope.isShadeSwipe(start: Offset, end: Offset): Boolean {
+    val dy = end.y - start.y
+    return start.y < size.height / 2f &&
+        dy > viewConfiguration.touchSlop &&
+        dy > abs(end.x - start.x)
 }
 
 /**

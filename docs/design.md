@@ -34,6 +34,10 @@ The application list refreshes when packages are added, changed, or removed. An 
 
 A double tap on the empty area of Home locks the screen, the way the power button does, so fingerprint and face unlock keep working afterwards. It works only while the launcher accessibility service is on, which Android grants nowhere but in its own settings: the `Double tap to lock` setting sends the user there, and the setting reads whether the service is connected rather than a stored answer. Turning it off turns the service off, so the privilege never outlives the feature, and turning the service off in the Android settings stops the gesture too. The rows, the prompt, and scrolling keep working as they did, because a tap Home already handles never reaches the gesture.
 
+## Opening the shade
+
+A swipe down that starts in the upper half of Home opens the notification shade when it starts on the left, and quick settings when it starts on the right, the two panels the status bar would open. It uses the same accessibility service the double tap does, and does nothing while that service is off. A swipe that starts in the lower half still scrolls, and so does a swipe up, because a drag Home already handles never reaches the gesture.
+
 ## The prompt
 
 The prompt can be customized from the settings screen, and the customization is cosmetic only. The Unix prompt is written as `username@hostname:path$`, where the username and the hostname are kept usable as prompt tokens by dropping whitespace and control characters and keeping at most sixteen characters, and where the end symbol is `$`, `%`, or `>`. The DOS prompt is written as `C:\HOME>` on the chosen drive letter, `A`, `C`, or `D`. Hiding the path shortens the Unix prompt to `username@hostname$` and the DOS prompt to `C:\>`. A username or hostname cleared in the settings is left out of the prompt with its separator, so clearing both leaves `~$`. The cursor is not a setting: the shell decides its shape, and DOS fills the character cell with a block while Unix marks the position with the line under it, so choosing a shell changes the cursor with everything else.

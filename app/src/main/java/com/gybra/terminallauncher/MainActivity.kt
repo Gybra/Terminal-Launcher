@@ -25,6 +25,7 @@ import com.gybra.terminallauncher.command.launcherCommands
 import com.gybra.terminallauncher.launcher.AppLauncher
 import com.gybra.terminallauncher.launcher.BroadcastPackageMonitor
 import com.gybra.terminallauncher.launcher.SystemDeviceLock
+import com.gybra.terminallauncher.launcher.SystemShade
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
 import com.gybra.terminallauncher.launcher.SystemBatteryRepository
 import com.gybra.terminallauncher.launcher.LauncherAppsShortcutRepository
@@ -103,6 +104,7 @@ public class MainActivity : ComponentActivity() {
         systemScreenLauncher: SystemScreenLauncher,
         deviceLock: SystemDeviceLock,
     ) {
+        val systemShade = SystemShade()
         setContent {
             val homeViewModel: HomeViewModel = viewModel(factory = viewModelFactory)
             val settingsViewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
@@ -148,6 +150,8 @@ public class MainActivity : ComponentActivity() {
                 onLaunchShortcut = shortcutLauncher::launch,
                 onRowStart = homeViewModel::clearPrompt,
                 onLockScreen = { deviceLock.lock() },
+                onExpandNotifications = systemShade::expandNotifications,
+                onExpandQuickSettings = systemShade::expandQuickSettings,
                 onOpenSystemScreen = systemScreenLauncher::open,
                 onRestartLauncher = ::recreate,
             )
