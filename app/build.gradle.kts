@@ -17,8 +17,8 @@ android {
         applicationId = "com.gybra.terminallauncher"
         minSdk = 28
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.1.0-alpha04"
+        versionCode = 5
+        versionName = "0.1.0-alpha05"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
