@@ -36,7 +36,7 @@ A double tap on the empty area of Home locks the screen, the way the power butto
 
 ## Opening the shade
 
-A vertical swipe that starts in the lower half of Home, including on a pinned, search, or history row, is a system gesture. Swipe down on the left opens the notification shade, swipe down on the right opens quick settings, and swipe up opens Overview, the recents switcher Android already owns. The same accessibility service the double tap uses does the work, and does nothing while that service is off. A swipe that starts in the upper half still scrolls, because a drag Home already handles never reaches the gesture.
+A vertical swipe is a system gesture only when the list cannot move that way, including when it starts on a pinned, search, or history row. Swipe down on the left opens the notification shade, swipe down on the right opens quick settings, and swipe up opens Overview, the recents switcher Android already owns. The same accessibility service the double tap uses does the work, and does nothing while that service is off. A swipe the list can still consume scrolls, because a drag Home already handles never reaches the gesture.
 
 ## The prompt
 

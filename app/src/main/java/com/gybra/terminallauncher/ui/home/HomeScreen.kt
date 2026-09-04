@@ -90,6 +90,9 @@ public fun HomeScreen(
             }
             .pointerInput(onExpandNotifications, onExpandQuickSettings, onOpenOverview) {
                 detectHomeSwipe(
+                    canScroll = { dy ->
+                        if (dy < 0f) rows.canScrollForward else rows.canScrollBackward
+                    },
                     onNotifications = onExpandNotifications,
                     onQuickSettings = onExpandQuickSettings,
                     onOverview = onOpenOverview,
@@ -126,11 +129,12 @@ public fun HomeScreen(
 }
 
 /**
- * A vertical swipe that starts in the lower half of Home, including on a row, is a system
- * gesture. Down on the left opens notifications, down on the right opens quick settings, and up
- * opens Overview. The upper half is left to scroll.
+ * A vertical swipe is a system gesture only when the list cannot move that way. Down on the left
+ * opens notifications, down on the right opens quick settings, and up opens Overview. A swipe the
+ * list can still consume is left to scroll.
  */
 private suspend fun PointerInputScope.detectHomeSwipe(
+    canScroll: (Float) -> Boolean,
     onNotifications: () -> Unit,
     onQuickSettings: () -> Unit,
     onOverview: () -> Unit,
@@ -141,11 +145,11 @@ private suspend fun PointerInputScope.detectHomeSwipe(
             pass = PointerEventPass.Initial,
         )
         val start = down.position
-        val end = awaitSwipeEnd(pointerId = down.id, start = start, height = size.height.toFloat())
-        if (!isHomeSwipe(start = start, end = end)) {
+        val end = awaitSwipeEnd(pointerId = down.id, start = start, canScroll = canScroll)
+        if (!end.isSystem || !isHomeSwipe(start = start, end = end.position)) {
             return@awaitEachGesture
         }
-        val dy = end.y - start.y
+        val dy = end.position.y - start.y
         when {
             dy < 0f -> onOverview()
             start.x < size.width / 2f -> onNotifications()
@@ -157,31 +161,34 @@ private suspend fun PointerInputScope.detectHomeSwipe(
 private suspend fun AwaitPointerEventScope.awaitSwipeEnd(
     pointerId: PointerId,
     start: Offset,
-    height: Float,
-): Offset {
+    canScroll: (Float) -> Boolean,
+): SwipeEnd {
     var current = start
     val slop = viewConfiguration.touchSlop
-    val inLowerHalf = start.y >= height / 2f
+    var steal: Boolean? = null
     while (true) {
         val event = awaitPointerEvent(PointerEventPass.Initial)
-        val change = event.changes.firstOrNull { pointer -> pointer.id == pointerId } ?: return current
+        val change = event.changes.firstOrNull { pointer -> pointer.id == pointerId } ?: continue
         current = change.position
         val dy = current.y - start.y
-        if (inLowerHalf && abs(dy) > slop && abs(dy) > abs(current.x - start.x)) {
+        if (steal == null && abs(dy) > slop) {
+            steal = abs(dy) > abs(current.x - start.x) && !canScroll(dy)
+        }
+        if (steal == true) {
             change.consume()
         }
         if (change.changedToUpIgnoreConsumed()) {
-            return current
+            return SwipeEnd(position = current, isSystem = steal == true)
         }
     }
 }
 
 private fun PointerInputScope.isHomeSwipe(start: Offset, end: Offset): Boolean {
     val dy = end.y - start.y
-    return start.y >= size.height / 2f &&
-        abs(dy) > viewConfiguration.touchSlop &&
-        abs(dy) > abs(end.x - start.x)
+    return abs(dy) > viewConfiguration.touchSlop && abs(dy) > abs(end.x - start.x)
 }
+
+private data class SwipeEnd(val position: Offset, val isSystem: Boolean)
 
 /**
  * How many rows the scrolling region holds, so Home can reach its last one and keep what just
