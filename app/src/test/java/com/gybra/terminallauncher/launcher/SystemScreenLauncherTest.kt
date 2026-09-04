@@ -1,10 +1,13 @@
 package com.gybra.terminallauncher.launcher
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.provider.Settings
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -14,6 +17,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
@@ -44,6 +48,21 @@ class SystemScreenLauncherTest {
         )
 
         assertEquals("package:org.example.mail", intent.data.toString())
+    }
+
+    @Test
+    fun `asks Android for permission to request a package delete`() {
+        val context = RuntimeEnvironment.getApplication()
+        val info = context.packageManager.getPackageInfo(
+            context.packageName,
+            PackageManager.GET_PERMISSIONS,
+        )
+
+        assertTrue(
+            info.requestedPermissions.orEmpty().asList().contains(
+                Manifest.permission.REQUEST_DELETE_PACKAGES,
+            ),
+        )
     }
 
     @Test
