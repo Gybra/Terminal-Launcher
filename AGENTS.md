@@ -98,5 +98,6 @@ For every pull request:
 1. Inspect the complete diff against `main` and remove unrelated changes.
 2. Run the functions-shrinking pass.
 3. Run the branch-standards audit for naming, reuse, duplication, boundaries, tests, and documentation.
-4. Run the required local Gradle gate.
-5. Confirm the PR links and closes exactly one issue, CI `build-and-test` is green, and only the repository owner performs the merge.
+4. Before the Gradle gate, review the bounded branch diff against this file with Pi Coding Agent, model `xai/grok-4.6`, thinking effort `high`. Open that review in a dedicated Herdr pane split to the right of the current pane (`herdr pane split --current --direction right --cwd "$PWD" --no-focus`), preserve this working directory, and leave user focus unchanged. Keep the pane open until Pi returns a substantive final review (findings and verdict). An exit status without that output is not a completed review: continue or rerun until it is. Read the output, verify every finding against the code, and fix every valid finding before delivery.
+5. Run the required local Gradle gate.
+6. Confirm the PR links and closes exactly one issue, CI `build-and-test` is green, and only the repository owner performs the merge.
