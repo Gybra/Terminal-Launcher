@@ -59,6 +59,7 @@ public fun HomeScreen(
     modifier: Modifier = Modifier,
     onExpandNotifications: () -> Unit = {},
     onExpandQuickSettings: () -> Unit = {},
+    onOpenOverview: () -> Unit = {},
 ) {
     val colors = LocalTerminalColors.current
     val promptFocus = remember { FocusRequester() }
@@ -85,10 +86,11 @@ public fun HomeScreen(
             .pointerInput(onLockScreen) {
                 detectTapGestures(onDoubleTap = { onLockScreen() })
             }
-            .pointerInput(onExpandNotifications, onExpandQuickSettings) {
-                detectShadeSwipe(
+            .pointerInput(onExpandNotifications, onExpandQuickSettings, onOpenOverview) {
+                detectHomeSwipe(
                     onNotifications = onExpandNotifications,
                     onQuickSettings = onExpandQuickSettings,
+                    onOverview = onOpenOverview,
                 )
             }
             .windowInsetsPadding(WindowInsets.systemBars)
@@ -122,12 +124,14 @@ public fun HomeScreen(
 }
 
 /**
- * A downward swipe that starts in the upper half of Home opens the shade. The left half asks for
- * notifications, the right half for quick settings. Anything that starts lower is left to scroll.
+ * A vertical swipe that starts in the lower half of Home, including on a row, is a system
+ * gesture. Down on the left opens notifications, down on the right opens quick settings, and up
+ * opens Overview. The upper half is left to scroll.
  */
-private suspend fun PointerInputScope.detectShadeSwipe(
+private suspend fun PointerInputScope.detectHomeSwipe(
     onNotifications: () -> Unit,
     onQuickSettings: () -> Unit,
+    onOverview: () -> Unit,
 ) {
     awaitEachGesture {
         val down = awaitFirstDown(
@@ -135,26 +139,33 @@ private suspend fun PointerInputScope.detectShadeSwipe(
             pass = PointerEventPass.Initial,
         )
         val start = down.position
-        val end = awaitSwipeEnd(pointerId = down.id, start = start)
-        if (!isShadeSwipe(start = start, end = end)) {
+        val end = awaitSwipeEnd(pointerId = down.id, start = start, height = size.height.toFloat())
+        if (!isHomeSwipe(start = start, end = end)) {
             return@awaitEachGesture
         }
-        if (start.x < size.width / 2f) onNotifications() else onQuickSettings()
+        val dy = end.y - start.y
+        when {
+            dy < 0f -> onOverview()
+            start.x < size.width / 2f -> onNotifications()
+            else -> onQuickSettings()
+        }
     }
 }
 
 private suspend fun AwaitPointerEventScope.awaitSwipeEnd(
     pointerId: PointerId,
     start: Offset,
+    height: Float,
 ): Offset {
     var current = start
     val slop = viewConfiguration.touchSlop
+    val inLowerHalf = start.y >= height / 2f
     while (true) {
         val event = awaitPointerEvent(PointerEventPass.Initial)
         val change = event.changes.firstOrNull { pointer -> pointer.id == pointerId } ?: return current
         current = change.position
         val dy = current.y - start.y
-        if (dy > slop && dy > abs(current.x - start.x)) {
+        if (inLowerHalf && abs(dy) > slop && abs(dy) > abs(current.x - start.x)) {
             change.consume()
         }
         if (change.changedToUpIgnoreConsumed()) {
@@ -163,11 +174,11 @@ private suspend fun AwaitPointerEventScope.awaitSwipeEnd(
     }
 }
 
-private fun PointerInputScope.isShadeSwipe(start: Offset, end: Offset): Boolean {
+private fun PointerInputScope.isHomeSwipe(start: Offset, end: Offset): Boolean {
     val dy = end.y - start.y
-    return start.y < size.height / 2f &&
-        dy > viewConfiguration.touchSlop &&
-        dy > abs(end.x - start.x)
+    return start.y >= size.height / 2f &&
+        abs(dy) > viewConfiguration.touchSlop &&
+        abs(dy) > abs(end.x - start.x)
 }
 
 /**

@@ -3,7 +3,9 @@ package com.gybra.terminallauncher.ui.home
 import androidx.compose.ui.text.TextRange
 import com.gybra.terminallauncher.MainDispatcherRule
 import com.gybra.terminallauncher.command.Command
+import com.gybra.terminallauncher.command.CommandContext
 import com.gybra.terminallauncher.command.CommandExecutor
+import com.gybra.terminallauncher.command.CommandGroup
 import com.gybra.terminallauncher.command.CommandResult
 import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.LauncherCommand
@@ -398,7 +400,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "mail"))
+            viewModel.type("mail")
             advanceUntilIdle()
 
             assertEquals(
@@ -418,7 +420,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "mailbox"))
+            viewModel.type("mailbox")
             viewModel.updatePromptFocus(focused = true)
             advanceUntilIdle()
 
@@ -427,7 +429,8 @@ class HomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(listOf(SubmittedAction.LaunchApp(mailbox)), actions)
-            assertEquals(PromptState(focused = true), viewModel.uiState.value.prompt)
+            assertEquals("", viewModel.uiState.value.prompt.input)
+            assertEquals(true, viewModel.uiState.value.prompt.focused)
             assertEquals(emptyList<SearchResult>(), viewModel.uiState.value.searchResults)
         }
 
@@ -438,7 +441,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "mailb"))
+            viewModel.type("mailb")
             advanceUntilIdle()
 
             val actions = collectSubmittedActions(viewModel)
@@ -446,7 +449,7 @@ class HomeViewModelTest {
             advanceUntilIdle()
 
             assertEquals(emptyList<SubmittedAction>(), actions)
-            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+            assertEquals("", viewModel.uiState.value.prompt.input)
             assertEquals(
                 listOf(
                     TerminalEntry(
@@ -485,7 +488,7 @@ class HomeViewModelTest {
                 viewModel.uiState.value.holdChoices,
             )
             assertEquals(mail.packageName, viewModel.uiState.value.holdRowKey)
-            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+            assertEquals("", viewModel.uiState.value.prompt.input)
         }
 
     @Test
@@ -588,7 +591,7 @@ class HomeViewModelTest {
             )
             startCollecting(viewModel)
             advanceUntilIdle()
-            viewModel.updatePromptValue(PromptState(input = "mail"))
+            viewModel.type("mail")
             viewModel.offerAppCommands(mail, rowKey = mail.packageName)
             advanceUntilIdle()
 
@@ -648,7 +651,7 @@ class HomeViewModelTest {
             viewModel.writeShortcutCommand(inbox)
             advanceUntilIdle()
 
-            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+            assertEquals("", viewModel.uiState.value.prompt.input)
         }
 
     @Test
@@ -701,7 +704,7 @@ class HomeViewModelTest {
 
             preferencesRepository.emit(LauncherPreferences())
             advanceUntilIdle()
-            viewModel.updatePromptValue(PromptState(input = "telegram"))
+            viewModel.type("telegram")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -724,13 +727,13 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "telegram"))
+            viewModel.type("telegram")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
             assertNull(viewModel.uiState.value.helpInvitation)
 
-            viewModel.updatePromptValue(PromptState(input = "clear"))
+            viewModel.type("clear")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -745,18 +748,19 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "telegram"))
+            viewModel.type("telegram")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
-            viewModel.updatePromptValue(PromptState(input = "mailb"))
+            viewModel.type("mailb")
             viewModel.updatePromptFocus(focused = true)
             advanceUntilIdle()
 
             viewModel.clearPrompt()
             advanceUntilIdle()
 
-            assertEquals(PromptState(focused = true), viewModel.uiState.value.prompt)
+            assertEquals("", viewModel.uiState.value.prompt.input)
+            assertEquals(true, viewModel.uiState.value.prompt.focused)
             assertEquals(1, viewModel.uiState.value.history.size)
         }
 
@@ -784,14 +788,68 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "ls"))
+            viewModel.type("ls")
             advanceUntilIdle()
 
             viewModel.submitPrompt()
             advanceUntilIdle()
 
             assertEquals(1, listApps.executions)
-            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+            assertEquals("", viewModel.uiState.value.prompt.input)
+        }
+
+    @Test
+    fun `clears the prompt as soon as the line is submitted`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val hang = object : LauncherCommand {
+                override val id: Command = Command.LIST_APPS
+                override val group: CommandGroup = CommandGroup.APPS
+                override val description: String = "Hang"
+                override suspend fun execute(context: CommandContext): CommandResult {
+                    awaitCancellation()
+                }
+            }
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(hang),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.type("ls")
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            runCurrent()
+
+            assertEquals("", viewModel.uiState.value.prompt.input)
+        }
+
+    @Test
+    fun `drops a stale IME edit after the prompt was cleared`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val listApps = RecordingCommand(id = Command.LIST_APPS)
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(listApps),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.type("ls")
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            runCurrent()
+            viewModel.updatePromptValue(PromptState(input = "ls", generation = 0))
+
+            assertEquals("", viewModel.uiState.value.prompt.input)
         }
 
     @Test
@@ -809,7 +867,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "mail"))
+            viewModel.type("mail")
             advanceUntilIdle()
 
             val actions = collectSubmittedActions(viewModel)
@@ -838,7 +896,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "ls"))
+            viewModel.type("ls")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -856,7 +914,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "mailbox"))
+            viewModel.type("mailbox")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -874,12 +932,12 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "telegram"))
+            viewModel.type("telegram")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
 
-            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+            assertEquals("", viewModel.uiState.value.prompt.input)
             assertEquals(
                 listOf(
                     TerminalEntry(
@@ -899,7 +957,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "   "))
+            viewModel.type("   ")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -916,7 +974,7 @@ class HomeViewModelTest {
             advanceUntilIdle()
 
             repeat(22) { submission ->
-                viewModel.updatePromptValue(PromptState(input = "mailbox"))
+                viewModel.type("mailbox")
                 advanceUntilIdle()
                 viewModel.submitPrompt()
                 advanceUntilIdle()
@@ -951,19 +1009,19 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "ls"))
+            viewModel.type("ls")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
             assertEquals(1, viewModel.uiState.value.history.size)
 
-            viewModel.updatePromptValue(PromptState(input = "clear"))
+            viewModel.type("clear")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
 
             assertEquals(emptyList<TerminalEntry>(), viewModel.uiState.value.history)
-            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+            assertEquals("", viewModel.uiState.value.prompt.input)
             assertEquals(listOf(mail), viewModel.uiState.value.apps)
             assertEquals(emptyList<String>(), preferencesRepository.writes)
         }
@@ -983,7 +1041,7 @@ class HomeViewModelTest {
             )
             startCollecting(first)
             advanceUntilIdle()
-            first.updatePromptValue(PromptState(input = "mailbox"))
+            first.type("mailbox")
             advanceUntilIdle()
             first.submitPrompt()
             advanceUntilIdle()
@@ -1022,7 +1080,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "ls"))
+            viewModel.type("ls")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -1051,7 +1109,7 @@ class HomeViewModelTest {
             advanceUntilIdle()
             val actions = collectSubmittedActions(viewModel)
 
-            viewModel.updatePromptValue(PromptState(input = " M "))
+            viewModel.type(" M ")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -1078,7 +1136,7 @@ class HomeViewModelTest {
             advanceUntilIdle()
             val actions = collectSubmittedActions(viewModel)
 
-            viewModel.updatePromptValue(PromptState(input = "mail"))
+            viewModel.type("mail")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -1102,7 +1160,7 @@ class HomeViewModelTest {
             advanceUntilIdle()
             val actions = collectSubmittedActions(viewModel)
 
-            viewModel.updatePromptValue(PromptState(input = "mailbox"))
+            viewModel.type("mailbox")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -1132,7 +1190,7 @@ class HomeViewModelTest {
             advanceUntilIdle()
             val actions = collectSubmittedActions(viewModel)
 
-            viewModel.updatePromptValue(PromptState(input = "mailbox"))
+            viewModel.type("mailbox")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -1163,11 +1221,11 @@ class HomeViewModelTest {
             advanceUntilIdle()
             val actions = collectSubmittedActions(viewModel)
 
-            viewModel.updatePromptValue(PromptState(input = "wifi"))
+            viewModel.type("wifi")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
-            viewModel.updatePromptValue(PromptState(input = "restart"))
+            viewModel.type("restart")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -1258,7 +1316,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "shortcuts mail"))
+            viewModel.type("shortcuts mail")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -1297,7 +1355,7 @@ class HomeViewModelTest {
             startCollecting(viewModel)
             advanceUntilIdle()
 
-            viewModel.updatePromptValue(PromptState(input = "pin mail"))
+            viewModel.type("pin mail")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -1368,7 +1426,7 @@ class HomeViewModelTest {
             )
 
             packageMonitor.report(PackageChange(packageName = mailbox.packageName, removed = true))
-            viewModel.updatePromptValue(PromptState(input = "mail"))
+            viewModel.type("mail")
             advanceUntilIdle()
 
             assertEquals("mail", viewModel.uiState.value.prompt.input)
@@ -1394,7 +1452,7 @@ class HomeViewModelTest {
             advanceUntilIdle()
             val actions = collectSubmittedActions(viewModel)
 
-            viewModel.updatePromptValue(PromptState(input = "settings"))
+            viewModel.type("settings")
             advanceUntilIdle()
             viewModel.submitPrompt()
             advanceUntilIdle()
@@ -1404,7 +1462,7 @@ class HomeViewModelTest {
                 listOf(TerminalEntry(id = 0L, input = "settings", output = emptyList())),
                 viewModel.uiState.value.history,
             )
-            assertEquals(PromptState(), viewModel.uiState.value.prompt)
+            assertEquals("", viewModel.uiState.value.prompt.input)
         }
 
     private fun TestScope.collectSubmittedActions(viewModel: HomeViewModel): List<SubmittedAction> {
@@ -1443,6 +1501,13 @@ class HomeViewModelTest {
         hostname = "android",
         location = LauncherLocation.HOME,
     )
+
+    private fun HomeViewModel.type(input: String) {
+        val prompt = uiState.value.prompt
+        updatePromptValue(
+            prompt.copy(input = input, selection = TextRange(input.length), composition = null),
+        )
+    }
 
     private fun TestScope.startCollecting(viewModel: HomeViewModel) {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {

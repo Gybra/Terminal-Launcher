@@ -411,8 +411,8 @@ class HomeScreenTest {
 
         composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
             swipe(
-                start = percentOffset(x = 0.25f, y = 0.1f),
-                end = percentOffset(x = 0.25f, y = 0.9f),
+                start = percentOffset(x = 0.25f, y = 0.8f),
+                end = percentOffset(x = 0.25f, y = 0.95f),
             )
         }
         composeRule.waitForIdle()
@@ -439,8 +439,8 @@ class HomeScreenTest {
 
         composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
             swipe(
-                start = percentOffset(x = 0.75f, y = 0.1f),
-                end = percentOffset(x = 0.75f, y = 0.9f),
+                start = percentOffset(x = 0.75f, y = 0.8f),
+                end = percentOffset(x = 0.75f, y = 0.95f),
             )
         }
         composeRule.waitForIdle()
@@ -450,9 +450,10 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `keeps scrolling instead of opening a shade on a swipe from the lower half`() {
+    fun `keeps scrolling instead of opening a shade on a swipe from the upper half`() {
         var notifications = 0
         var quickSettings = 0
+        var overview = 0
         composeRule.setContent {
             HomeScreen(
                 state = homeState().copy(apps = manyApps()),
@@ -461,20 +462,77 @@ class HomeScreenTest {
                 onLockScreen = {},
                 onExpandNotifications = { notifications += 1 },
                 onExpandQuickSettings = { quickSettings += 1 },
+                onOpenOverview = { overview += 1 },
                 promptActions = emptyPromptActions(),
             )
         }
 
         composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
             swipe(
-                start = percentOffset(x = 0.25f, y = 0.8f),
-                end = percentOffset(x = 0.25f, y = 0.95f),
+                start = percentOffset(x = 0.25f, y = 0.1f),
+                end = percentOffset(x = 0.25f, y = 0.4f),
             )
         }
         composeRule.waitForIdle()
 
         assertEquals(0, notifications)
         assertEquals(0, quickSettings)
+        assertEquals(0, overview)
+    }
+
+    @Test
+    fun `opens Overview on a swipe up from the lower half of Home`() {
+        var overview = 0
+        var notifications = 0
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(
+                    apps = listOf(InstalledApp(packageName = "com.example.camera", label = "Camera")),
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                onExpandNotifications = { notifications += 1 },
+                onOpenOverview = { overview += 1 },
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
+            swipe(
+                start = percentOffset(x = 0.5f, y = 0.85f),
+                end = percentOffset(x = 0.5f, y = 0.15f),
+            )
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(1, overview)
+        assertEquals(0, notifications)
+    }
+
+    @Test
+    fun `leaves a swipe up from the upper half to scroll`() {
+        var overview = 0
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(apps = manyApps()),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                onOpenOverview = { overview += 1 },
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
+            swipe(
+                start = percentOffset(x = 0.5f, y = 0.15f),
+                end = percentOffset(x = 0.5f, y = 0.05f),
+            )
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(0, overview)
     }
 
     @Test

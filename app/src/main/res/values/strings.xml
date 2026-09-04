@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">Terminal Launcher</string>
     <string name="accessibility_service_label">Terminal Launcher</string>
-    <string name="accessibility_service_description">Lets Terminal Launcher lock the screen on a double tap, open the notification shade on a swipe down from the left, and open quick settings on a swipe down from the right. It reads nothing on screen.</string>
+    <string name="accessibility_service_description">Lets Terminal Launcher lock the screen on a double tap, open the notification shade on a swipe down from the left of the lower half, open quick settings on a swipe down from the right of the lower half, and open Overview on a swipe up from the lower half. It reads nothing on screen.</string>
 </resources>

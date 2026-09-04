@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -27,6 +28,11 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -39,6 +45,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -109,16 +116,32 @@ private fun PromptInput(
     val scrollState = rememberScrollState()
     var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val cursorAlpha = if (state.focused) focusedCursorAlpha() else 1f
+    key(state.generation) {
     BasicTextField(
         value = state.toTextFieldValue(),
-        onValueChange = { value -> actions.updateValue(state.withTextFieldValue(value)) },
-        singleLine = true,
+        onValueChange = { value -> submitOrEdit(state = state, value = value, actions = actions) },
+        singleLine = false,
+        maxLines = 1,
         textStyle = terminalTextStyle(colors.foreground),
         cursorBrush = SolidColor(Color.Transparent),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { actions.submit() }),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+        keyboardActions = KeyboardActions(
+            onDone = { actions.submit() },
+            onGo = { actions.submit() },
+            onSend = { actions.submit() },
+            onSearch = { actions.submit() },
+        ),
         onTextLayout = { result -> textLayout = result },
         modifier = modifier
+            .onPreviewKeyEvent { event ->
+                if (event.key != Key.Enter && event.key != Key.NumPadEnter) {
+                    return@onPreviewKeyEvent false
+                }
+                if (event.type == KeyEventType.KeyDown) {
+                    actions.submit()
+                }
+                true
+            }
             .horizontalScroll(scrollState)
             .drawWithContent {
                 drawContent()
@@ -144,6 +167,7 @@ private fun PromptInput(
             .semantics { contentDescription = "Prompt" }
             .testTag(TestTag.PROMPT_INPUT.tag),
     )
+    }
 }
 
 internal fun PromptState.toTextFieldValue(): TextFieldValue = TextFieldValue(
@@ -157,6 +181,23 @@ internal fun PromptState.withTextFieldValue(value: TextFieldValue): PromptState 
     selection = value.selection,
     composition = value.composition,
 )
+
+/** SwiftKey and similar IMEs insert a newline instead of an IME action. */
+private fun submitOrEdit(
+    state: PromptState,
+    value: TextFieldValue,
+    actions: PromptActions,
+) {
+    if ('\n' !in value.text && '\r' !in value.text) {
+        actions.updateValue(state.withTextFieldValue(value))
+        return
+    }
+    val line = value.text.filter { character -> character != '\n' && character != '\r' }
+    actions.updateValue(
+        state.copy(input = line, selection = TextRange(line.length), composition = null),
+    )
+    actions.submit()
+}
 
 /** Draws the cursor the way the shell writes it: filling the character cell, or under it. */
 private fun DrawScope.drawCursor(

@@ -112,7 +112,11 @@ public class HomeViewModel(
 
     public fun updatePromptValue(value: PromptState) {
         promptState.update { state ->
-            value.copy(focused = state.focused)
+            if (value.generation != state.generation) {
+                state
+            } else {
+                value.copy(focused = state.focused)
+            }
         }
     }
 
@@ -128,7 +132,13 @@ public class HomeViewModel(
     public fun clearPrompt() {
         dismissChoices()
         promptState.update { state ->
-            state.copy(input = "", selection = TextRange.Zero, composition = null)
+            val generation = if (state.input.isEmpty()) state.generation else state.generation + 1
+            state.copy(
+                input = "",
+                selection = TextRange.Zero,
+                composition = null,
+                generation = generation,
+            )
         }
     }
 
@@ -179,12 +189,13 @@ public class HomeViewModel(
      * printed output out of the capped history.
      */
     public fun submitPrompt() {
+        val submittedInput = promptState.value.input
+        if (submittedInput.isBlank()) {
+            return
+        }
+        clearPrompt()
         viewModelScope.launch {
             val state = uiState.value
-            val submittedInput = state.prompt.input
-            if (submittedInput.isBlank()) {
-                return@launch
-            }
             val result = commandExecutor.execute(
                 input = submittedInput,
                 shellProfile = state.shellProfile,

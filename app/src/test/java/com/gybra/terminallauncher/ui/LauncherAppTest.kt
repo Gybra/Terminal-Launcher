@@ -140,8 +140,8 @@ class LauncherAppTest {
 
         composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
             swipe(
-                start = percentOffset(x = 0.25f, y = 0.1f),
-                end = percentOffset(x = 0.25f, y = 0.9f),
+                start = percentOffset(x = 0.25f, y = 0.8f),
+                end = percentOffset(x = 0.25f, y = 0.95f),
             )
         }
         composeRule.waitForIdle()
@@ -150,13 +150,43 @@ class LauncherAppTest {
 
         composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
             swipe(
-                start = percentOffset(x = 0.75f, y = 0.1f),
-                end = percentOffset(x = 0.75f, y = 0.9f),
+                start = percentOffset(x = 0.75f, y = 0.8f),
+                end = percentOffset(x = 0.75f, y = 0.95f),
             )
         }
         composeRule.waitForIdle()
         assertEquals(1, notifications)
         assertEquals(1, quickSettings)
+    }
+
+    @Test
+    fun `forwards a swipe up on Home to Overview`() {
+        var overview = 0
+        composeRule.setContent {
+            LauncherApp(
+                homeState = homeState(),
+                settingsState = settingsState(),
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
+                onLaunchShortcut = {},
+                onRowStart = {},
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+                onOpenOverview = { overview += 1 },
+            )
+        }
+
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
+            swipe(
+                start = percentOffset(x = 0.5f, y = 0.85f),
+                end = percentOffset(x = 0.5f, y = 0.15f),
+            )
+        }
+        composeRule.waitForIdle()
+        assertEquals(1, overview)
     }
 
     @Test
