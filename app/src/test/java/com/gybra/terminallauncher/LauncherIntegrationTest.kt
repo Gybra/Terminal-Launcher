@@ -18,6 +18,7 @@ import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.RecordingPreferencesRepository
 import com.gybra.terminallauncher.search.SearchResult
 import com.gybra.terminallauncher.shell.ShellType
+import androidx.compose.ui.text.TextRange
 import com.gybra.terminallauncher.ui.home.HomeViewModel
 import com.gybra.terminallauncher.ui.home.PromptState
 import com.gybra.terminallauncher.ui.home.SubmittedAction
@@ -350,7 +351,10 @@ class LauncherIntegrationTest {
         }
 
         fun type(input: String) {
-            viewModel.updatePromptValue(PromptState(input = input))
+            val prompt = viewModel.uiState.value.prompt
+            viewModel.updatePromptValue(
+                prompt.copy(input = input, selection = TextRange(input.length), composition = null),
+            )
             scope.advanceUntilIdle()
         }
     }

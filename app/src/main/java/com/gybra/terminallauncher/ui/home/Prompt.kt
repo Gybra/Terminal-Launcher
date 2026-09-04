@@ -17,7 +17,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -68,11 +67,6 @@ internal fun Prompt(
     val releasePrompt = rememberPromptRelease()
     val keyboardController = LocalSoftwareKeyboardController.current
     BackHandler(enabled = state.focused, onBack = releasePrompt)
-    LaunchedEffect(state.generation) {
-        if (state.focused) {
-            focusRequester.requestFocus()
-        }
-    }
     Row(
         modifier = modifier
             .fillMaxWidth()

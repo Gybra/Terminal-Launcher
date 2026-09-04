@@ -277,6 +277,7 @@ class PromptTest {
                                 input = "",
                                 selection = TextRange.Zero,
                                 composition = null,
+                                generation = state.generation + 1,
                             )
                         },
                         writeShortcutCommand = {},
