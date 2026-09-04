@@ -99,6 +99,28 @@ class PromptTest {
     }
 
     @Test
+    fun `keeps the prompt empty when the IME writes the submitted line back`() {
+        val harness = PromptHarness()
+        setPromptContent(harness, RecordingKeyboardController())
+        val prompt = composeRule.onNodeWithContentDescription("Prompt")
+        prompt.performClick()
+        prompt.performTextInput("telegram")
+        prompt.performImeAction()
+
+        assertEquals(listOf("telegram"), harness.submissions)
+        assertEquals("", harness.state.input)
+
+        prompt.performTextInput("telegram")
+
+        assertEquals("", harness.state.input)
+        assertEquals(listOf("telegram"), harness.submissions)
+
+        prompt.performTextInput("help")
+
+        assertEquals("help", harness.state.input)
+    }
+
+    @Test
     fun `range selection and visible input stay synchronized while editing`() {
         val harness = PromptHarness()
         setPromptContent(harness, RecordingKeyboardController())
