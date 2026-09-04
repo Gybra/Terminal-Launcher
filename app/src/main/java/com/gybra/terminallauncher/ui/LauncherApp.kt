@@ -47,6 +47,7 @@ public fun LauncherApp(
     onRestartLauncher: () -> Unit,
     onExpandNotifications: () -> Unit = {},
     onExpandQuickSettings: () -> Unit = {},
+    onOpenOverview: () -> Unit = {},
 ) {
     var destination by rememberSaveable { mutableStateOf(LauncherDestination.HOME) }
     val releasePrompt = rememberPromptRelease()
@@ -97,6 +98,7 @@ public fun LauncherApp(
                 onLockScreen = onLockScreen,
                 onExpandNotifications = onExpandNotifications,
                 onExpandQuickSettings = onExpandQuickSettings,
+                onOpenOverview = onOpenOverview,
                 promptActions = promptActions,
             )
         } else {

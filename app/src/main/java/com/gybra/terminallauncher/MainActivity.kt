@@ -25,6 +25,7 @@ import com.gybra.terminallauncher.command.launcherCommands
 import com.gybra.terminallauncher.launcher.AppLauncher
 import com.gybra.terminallauncher.launcher.BroadcastPackageMonitor
 import com.gybra.terminallauncher.launcher.SystemDeviceLock
+import com.gybra.terminallauncher.launcher.SystemOverview
 import com.gybra.terminallauncher.launcher.SystemShade
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
 import com.gybra.terminallauncher.launcher.SystemBatteryRepository
@@ -105,6 +106,7 @@ public class MainActivity : ComponentActivity() {
         deviceLock: SystemDeviceLock,
     ) {
         val systemShade = SystemShade()
+        val systemOverview = SystemOverview()
         setContent {
             val homeViewModel: HomeViewModel = viewModel(factory = viewModelFactory)
             val settingsViewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
@@ -152,6 +154,7 @@ public class MainActivity : ComponentActivity() {
                 onLockScreen = { deviceLock.lock() },
                 onExpandNotifications = systemShade::expandNotifications,
                 onExpandQuickSettings = systemShade::expandQuickSettings,
+                onOpenOverview = systemOverview::open,
                 onOpenSystemScreen = systemScreenLauncher::open,
                 onRestartLauncher = ::recreate,
             )

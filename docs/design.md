@@ -36,7 +36,7 @@ A double tap on the empty area of Home locks the screen, the way the power butto
 
 ## Opening the shade
 
-A swipe down that starts in the upper half of Home opens the notification shade when it starts on the left, and quick settings when it starts on the right, the two panels the status bar would open. It uses the same accessibility service the double tap does, and does nothing while that service is off. A swipe that starts in the lower half still scrolls, and so does a swipe up, because a drag Home already handles never reaches the gesture.
+A vertical swipe that starts in the lower half of Home, including on a pinned, search, or history row, is a system gesture. Swipe down on the left opens the notification shade, swipe down on the right opens quick settings, and swipe up opens Overview, the recents switcher Android already owns. The same accessibility service the double tap uses does the work, and does nothing while that service is off. A swipe that starts in the upper half still scrolls, because a drag Home already handles never reaches the gesture.
 
 ## The prompt
 

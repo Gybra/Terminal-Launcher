@@ -20,6 +20,7 @@ Compose UI -> HomeViewModel -> AppRepository --------> PackageManager
      pin request -> ShortcutPinRequests -------> LauncherApps pin item request
            double tap -> DeviceLock ------------> accessibility lock screen action
          swipe down -> SystemShade -----------> accessibility notification and quick settings actions
+         swipe up -> SystemOverview -------> accessibility recents action
 ```
 
 - `launcher`: installed-application model, repository boundary, PackageManager adapter, package-change monitoring, app launcher, battery reading and observation, torch boundary, the screen lock with its accessibility service, the notification shade and quick settings, the named system destinations, and the shortcut model with its reading, pin request, and start boundaries;
