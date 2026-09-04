@@ -116,32 +116,35 @@ private fun PromptInput(
     val scrollState = rememberScrollState()
     var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val cursorAlpha = if (state.focused) focusedCursorAlpha() else 1f
+    var submittedEcho by remember { mutableStateOf<String?>(null) }
+    fun submitLine(line: String = state.input.withoutLineBreaks()) {
+        if (line.isNotBlank()) {
+            submittedEcho = line
+        }
+        actions.submit()
+    }
     key(state.generation) {
     BasicTextField(
         value = state.toTextFieldValue(),
-        onValueChange = { value -> submitOrEdit(state = state, value = value, actions = actions) },
+        onValueChange = { value ->
+            val line = value.text.withoutLineBreaks()
+            if (submittedEcho != null && line == submittedEcho) {
+                return@BasicTextField
+            }
+            submittedEcho = null
+            submitOrEdit(state = state, value = value, actions = actions) {
+                submitLine(line)
+            }
+        },
         singleLine = false,
         maxLines = 1,
         textStyle = terminalTextStyle(colors.foreground),
         cursorBrush = SolidColor(Color.Transparent),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-        keyboardActions = KeyboardActions(
-            onDone = { actions.submit() },
-            onGo = { actions.submit() },
-            onSend = { actions.submit() },
-            onSearch = { actions.submit() },
-        ),
+        keyboardActions = promptSubmitActions { submitLine() },
         onTextLayout = { result -> textLayout = result },
         modifier = modifier
-            .onPreviewKeyEvent { event ->
-                if (event.key != Key.Enter && event.key != Key.NumPadEnter) {
-                    return@onPreviewKeyEvent false
-                }
-                if (event.type == KeyEventType.KeyDown) {
-                    actions.submit()
-                }
-                true
-            }
+            .promptEnterSubmit { submitLine() }
             .horizontalScroll(scrollState)
             .drawWithContent {
                 drawContent()
@@ -187,17 +190,38 @@ private fun submitOrEdit(
     state: PromptState,
     value: TextFieldValue,
     actions: PromptActions,
+    onSubmit: () -> Unit,
 ) {
     if ('\n' !in value.text && '\r' !in value.text) {
         actions.updateValue(state.withTextFieldValue(value))
         return
     }
-    val line = value.text.filter { character -> character != '\n' && character != '\r' }
+    val line = value.text.withoutLineBreaks()
     actions.updateValue(
         state.copy(input = line, selection = TextRange(line.length), composition = null),
     )
-    actions.submit()
+    onSubmit()
 }
+
+private fun promptSubmitActions(submit: () -> Unit): KeyboardActions = KeyboardActions(
+    onDone = { submit() },
+    onGo = { submit() },
+    onSend = { submit() },
+    onSearch = { submit() },
+)
+
+private fun Modifier.promptEnterSubmit(onSubmit: () -> Unit): Modifier = onPreviewKeyEvent { event ->
+    if (event.key != Key.Enter && event.key != Key.NumPadEnter) {
+        return@onPreviewKeyEvent false
+    }
+    if (event.type == KeyEventType.KeyDown) {
+        onSubmit()
+    }
+    true
+}
+
+private fun String.withoutLineBreaks(): String =
+    filter { character -> character != '\n' && character != '\r' }
 
 /** Draws the cursor the way the shell writes it: filling the character cell, or under it. */
 private fun DrawScope.drawCursor(
