@@ -7,4 +7,5 @@ public data class PromptState(
     public val selection: TextRange = TextRange(input.length),
     public val composition: TextRange? = null,
     public val focused: Boolean = false,
+    public val generation: Int = 0,
 )

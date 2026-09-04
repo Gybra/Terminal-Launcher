@@ -17,7 +17,9 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -66,6 +68,11 @@ internal fun Prompt(
     val releasePrompt = rememberPromptRelease()
     val keyboardController = LocalSoftwareKeyboardController.current
     BackHandler(enabled = state.focused, onBack = releasePrompt)
+    LaunchedEffect(state.generation) {
+        if (state.focused) {
+            focusRequester.requestFocus()
+        }
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -115,6 +122,7 @@ private fun PromptInput(
     val scrollState = rememberScrollState()
     var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val cursorAlpha = if (state.focused) focusedCursorAlpha() else 1f
+    key(state.generation) {
     BasicTextField(
         value = state.toTextFieldValue(),
         onValueChange = { value -> submitOrEdit(state = state, value = value, actions = actions) },
@@ -165,6 +173,7 @@ private fun PromptInput(
             .semantics { contentDescription = "Prompt" }
             .testTag(TestTag.PROMPT_INPUT.tag),
     )
+    }
 }
 
 internal fun PromptState.toTextFieldValue(): TextFieldValue = TextFieldValue(
