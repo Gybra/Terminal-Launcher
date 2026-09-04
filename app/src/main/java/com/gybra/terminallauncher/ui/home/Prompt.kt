@@ -127,13 +127,14 @@ private fun PromptInput(
     BasicTextField(
         value = state.toTextFieldValue(),
         onValueChange = { value ->
-            submittedEcho = applyPromptEdit(
-                state = state,
-                value = value,
-                actions = actions,
-                submittedEcho = submittedEcho,
-                onSubmit = ::submitLine,
-            )
+            val line = value.text.withoutLineBreaks()
+            if (submittedEcho != null && line == submittedEcho) {
+                return@BasicTextField
+            }
+            submittedEcho = null
+            submitOrEdit(state = state, value = value, actions = actions) {
+                submitLine(line)
+            }
         },
         singleLine = false,
         maxLines = 1,
@@ -183,25 +184,6 @@ internal fun PromptState.withTextFieldValue(value: TextFieldValue): PromptState 
     selection = value.selection,
     composition = value.composition,
 )
-
-/**
- * Applies an IME edit, or ignores it when it is the submitted line written back into the
- * remounted field. Returns the echo still being ignored, or none once a different edit arrives.
- */
-private fun applyPromptEdit(
-    state: PromptState,
-    value: TextFieldValue,
-    actions: PromptActions,
-    submittedEcho: String?,
-    onSubmit: (String) -> Unit,
-): String? {
-    val line = value.text.withoutLineBreaks()
-    if (submittedEcho != null && line == submittedEcho) {
-        return submittedEcho
-    }
-    submitOrEdit(state = state, value = value, actions = actions) { onSubmit(line) }
-    return null
-}
 
 /** SwiftKey and similar IMEs insert a newline instead of an IME action. */
 private fun submitOrEdit(
