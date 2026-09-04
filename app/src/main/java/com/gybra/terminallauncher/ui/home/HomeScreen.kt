@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -379,7 +381,13 @@ private fun AppRow(
     val ink = if (arrested) colors.secondary else colors.foreground
     val presses = remember { MutableInteractionSource() }
     val pressed by presses.collectIsPressedAsState()
-    Column {
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    LaunchedEffect(choices) {
+        if (choices.isNotEmpty()) {
+            bringIntoViewRequester.bringIntoView()
+        }
+    }
+    Column(modifier = Modifier.bringIntoViewRequester(bringIntoViewRequester)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

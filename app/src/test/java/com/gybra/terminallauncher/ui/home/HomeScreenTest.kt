@@ -992,6 +992,39 @@ class HomeScreenTest {
     }
 
     @Test
+    fun `scrolls hold choices into view when they sit under the last application`() {
+        val apps = manyApps()
+        val held = apps.last()
+        var state by mutableStateOf(homeState().copy(apps = apps))
+        composeRule.setContent {
+            HomeScreen(
+                state = state,
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+        composeRule.waitForIdle()
+
+        state = state.copy(
+            holdChoices = listOf(
+                HoldChoice(label = "pin", line = "pin ${held.label}"),
+                HoldChoice(label = "uninstall", line = "uninstall ${held.label}"),
+            ),
+            holdRowKey = held.packageName,
+        )
+        composeRule.waitForIdle()
+
+        val list = composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).getUnclippedBoundsInRoot()
+        val uninstall = composeRule.onNodeWithText("uninstall").getUnclippedBoundsInRoot()
+        assertTrue(
+            "Expected uninstall inside the list, got bottom ${uninstall.bottom} vs ${list.bottom}",
+            uninstall.bottom.value <= list.bottom.value + 0.5f,
+        )
+    }
+
+    @Test
     fun `keeps no settings row on Home`() {
         composeRule.setContent {
             HomeScreen(
