@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -116,12 +117,18 @@ private fun PromptInput(
     val cursorAlpha = if (state.focused) focusedCursorAlpha() else 1f
     BasicTextField(
         value = state.toTextFieldValue(),
-        onValueChange = { value -> actions.updateValue(state.withTextFieldValue(value)) },
-        singleLine = true,
+        onValueChange = { value -> submitOrEdit(state = state, value = value, actions = actions) },
+        singleLine = false,
+        maxLines = 1,
         textStyle = terminalTextStyle(colors.foreground),
         cursorBrush = SolidColor(Color.Transparent),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { actions.submit() }),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+        keyboardActions = KeyboardActions(
+            onDone = { actions.submit() },
+            onGo = { actions.submit() },
+            onSend = { actions.submit() },
+            onSearch = { actions.submit() },
+        ),
         onTextLayout = { result -> textLayout = result },
         modifier = modifier
             .onPreviewKeyEvent { event ->
@@ -171,6 +178,23 @@ internal fun PromptState.withTextFieldValue(value: TextFieldValue): PromptState 
     selection = value.selection,
     composition = value.composition,
 )
+
+/** SwiftKey and similar IMEs insert a newline instead of an IME action. */
+private fun submitOrEdit(
+    state: PromptState,
+    value: TextFieldValue,
+    actions: PromptActions,
+) {
+    if ('\n' !in value.text && '\r' !in value.text) {
+        actions.updateValue(state.withTextFieldValue(value))
+        return
+    }
+    val line = value.text.filter { character -> character != '\n' && character != '\r' }
+    actions.updateValue(
+        state.copy(input = line, selection = TextRange(line.length), composition = null),
+    )
+    actions.submit()
+}
 
 /** Draws the cursor the way the shell writes it: filling the character cell, or under it. */
 private fun DrawScope.drawCursor(
