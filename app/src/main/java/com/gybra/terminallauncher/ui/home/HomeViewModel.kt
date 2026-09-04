@@ -179,12 +179,13 @@ public class HomeViewModel(
      * printed output out of the capped history.
      */
     public fun submitPrompt() {
+        val submittedInput = promptState.value.input
+        if (submittedInput.isBlank()) {
+            return
+        }
+        clearPrompt()
         viewModelScope.launch {
             val state = uiState.value
-            val submittedInput = state.prompt.input
-            if (submittedInput.isBlank()) {
-                return@launch
-            }
             val result = commandExecutor.execute(
                 input = submittedInput,
                 shellProfile = state.shellProfile,

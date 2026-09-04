@@ -3,7 +3,9 @@ package com.gybra.terminallauncher.ui.home
 import androidx.compose.ui.text.TextRange
 import com.gybra.terminallauncher.MainDispatcherRule
 import com.gybra.terminallauncher.command.Command
+import com.gybra.terminallauncher.command.CommandContext
 import com.gybra.terminallauncher.command.CommandExecutor
+import com.gybra.terminallauncher.command.CommandGroup
 import com.gybra.terminallauncher.command.CommandResult
 import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.LauncherCommand
@@ -792,6 +794,36 @@ class HomeViewModelTest {
 
             assertEquals(1, listApps.executions)
             assertEquals(PromptState(), viewModel.uiState.value.prompt)
+        }
+
+    @Test
+    fun `clears the prompt as soon as the line is submitted`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val hang = object : LauncherCommand {
+                override val id: Command = Command.LIST_APPS
+                override val group: CommandGroup = CommandGroup.APPS
+                override val description: String = "Hang"
+                override suspend fun execute(context: CommandContext): CommandResult {
+                    awaitCancellation()
+                }
+            }
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(mail)),
+                preferencesRepository = RecordingPreferencesRepository(),
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(hang),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            advanceUntilIdle()
+
+            viewModel.updatePromptValue(PromptState(input = "ls"))
+            advanceUntilIdle()
+            viewModel.submitPrompt()
+            runCurrent()
+
+            assertEquals("", viewModel.uiState.value.prompt.input)
         }
 
     @Test

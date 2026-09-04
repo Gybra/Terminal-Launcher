@@ -27,6 +27,11 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -119,6 +124,15 @@ private fun PromptInput(
         keyboardActions = KeyboardActions(onDone = { actions.submit() }),
         onTextLayout = { result -> textLayout = result },
         modifier = modifier
+            .onPreviewKeyEvent { event ->
+                if (event.key != Key.Enter && event.key != Key.NumPadEnter) {
+                    return@onPreviewKeyEvent false
+                }
+                if (event.type == KeyEventType.KeyDown) {
+                    actions.submit()
+                }
+                true
+            }
             .horizontalScroll(scrollState)
             .drawWithContent {
                 drawContent()

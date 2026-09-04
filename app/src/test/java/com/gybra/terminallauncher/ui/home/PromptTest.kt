@@ -71,6 +71,21 @@ class PromptTest {
     }
 
     @Test
+    fun `keyboard Enter submits the current value`() {
+        val harness = PromptHarness()
+        setPromptContent(harness, RecordingKeyboardController())
+
+        composeRule.onNodeWithContentDescription("Prompt").performClick()
+        composeRule.onNodeWithContentDescription("Prompt").performTextInput("telegram")
+        composeRule.onNodeWithContentDescription("Prompt").performKeyInput {
+            pressKey(Key.Enter)
+        }
+
+        assertEquals(listOf("telegram"), harness.submissions)
+        assertEquals("", harness.state.input)
+    }
+
+    @Test
     fun `range selection and visible input stay synchronized while editing`() {
         val harness = PromptHarness()
         setPromptContent(harness, RecordingKeyboardController())
