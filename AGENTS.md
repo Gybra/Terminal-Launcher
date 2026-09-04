@@ -15,6 +15,7 @@ These rules apply to humans and coding agents. Optimize for a small codebase tha
 - Refresh `main`, then create `<type>/<issue>-<short-slug>` where type is `feat`, `fix`, `refactor`, `test`, `docs`, or `chore`.
 - Use Conventional Commits and keep commits logical and independently green.
 - A pull request must contain `Closes #<issue>` and stay focused on that issue.
+- Do not open a pull request until Required final review steps 1–5 are complete. User urgency, a request to ship, and a green CI check do not skip them.
 - Do not start a dependent issue until the previous pull request is reviewed, CI is green, and the repository owner merges it.
 - Never merge with a failing, missing, skipped, or stale required check. Resolve every review conversation first.
 
@@ -98,6 +99,10 @@ For every pull request:
 1. Inspect the complete diff against `main` and remove unrelated changes.
 2. Run the functions-shrinking pass.
 3. Run the branch-standards audit for naming, reuse, duplication, boundaries, tests, and documentation.
-4. Before the Gradle gate, review the bounded branch diff against this file with Pi Coding Agent, model `xai/grok-4.6`, thinking effort `high`. Open that review in a dedicated Herdr pane split to the right of the current pane (`herdr pane split --current --direction right --cwd "$PWD" --no-focus`), preserve this working directory, and leave user focus unchanged. Keep the pane open until Pi returns a substantive final review (findings and verdict). An exit status without that output is not a completed review: continue or rerun until it is. Read the output, verify every finding against the code, and fix every valid finding before delivery.
+4. Before the Gradle gate, review the bounded branch diff against this file. That review is not optional and has no substitute: not another model, not `pi --print`, not an in-thread self-review, and not a green CI check. Launch it only as an interactive Pi Coding Agent in a dedicated Herdr pane, model `xai/grok-4.6`, thinking effort `high`:
+   - `herdr pane split --current --direction right --cwd "$PWD" --no-focus`
+   - `herdr agent start <name> --kind pi --pane <id> -- --model xai/grok-4.6 --thinking high`
+   - `herdr agent prompt <name> <review text>`
+   Preserve this working directory and leave user focus unchanged. Keep the pane open until that agent writes a findings list and a verdict (`approve` or `request changes`). A hung process, an empty pane, or an exit status without that writeup is not a completed review: stop and report the blocker; do not open the PR. Read the output, verify every finding against the code, and fix every valid finding before delivery. The PR body must state that this review ran and what it verdicted.
 5. Run the required local Gradle gate.
 6. Confirm the PR links and closes exactly one issue, CI `build-and-test` is green, and only the repository owner performs the merge.
