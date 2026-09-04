@@ -25,6 +25,7 @@ import androidx.compose.ui.test.down
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.up
 import androidx.compose.ui.unit.dp
@@ -450,7 +451,7 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `keeps scrolling instead of opening a shade on a swipe from the upper half`() {
+    fun `keeps scrolling instead of opening a shade when the list can still move`() {
         var notifications = 0
         var quickSettings = 0
         var overview = 0
@@ -466,11 +467,12 @@ class HomeScreenTest {
                 promptActions = emptyPromptActions(),
             )
         }
+        composeRule.waitForIdle()
 
         composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
             swipe(
-                start = percentOffset(x = 0.25f, y = 0.1f),
-                end = percentOffset(x = 0.25f, y = 0.4f),
+                start = percentOffset(x = 0.25f, y = 0.8f),
+                end = percentOffset(x = 0.25f, y = 0.95f),
             )
         }
         composeRule.waitForIdle()
@@ -481,7 +483,7 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `opens Overview on a swipe up from the lower half of Home`() {
+    fun `opens Overview on a swipe up when the list cannot scroll further`() {
         var overview = 0
         var notifications = 0
         composeRule.setContent {
@@ -511,7 +513,7 @@ class HomeScreenTest {
     }
 
     @Test
-    fun `leaves a swipe up from the upper half to scroll`() {
+    fun `opens Overview on a swipe up from a long list that is already at the end`() {
         var overview = 0
         composeRule.setContent {
             HomeScreen(
@@ -523,16 +525,46 @@ class HomeScreenTest {
                 promptActions = emptyPromptActions(),
             )
         }
+        composeRule.waitForIdle()
 
         composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
             swipe(
-                start = percentOffset(x = 0.5f, y = 0.15f),
-                end = percentOffset(x = 0.5f, y = 0.05f),
+                start = percentOffset(x = 0.5f, y = 0.85f),
+                end = percentOffset(x = 0.5f, y = 0.15f),
             )
         }
         composeRule.waitForIdle()
 
-        assertEquals(0, overview)
+        assertEquals(1, overview)
+    }
+
+    @Test
+    fun `opens notifications on a swipe down once a long list cannot scroll further`() {
+        var notifications = 0
+        var quickSettings = 0
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(apps = manyApps()),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                onExpandNotifications = { notifications += 1 },
+                onExpandQuickSettings = { quickSettings += 1 },
+                promptActions = emptyPromptActions(),
+            )
+        }
+        scrollHomeListToTop()
+
+        composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput {
+            swipe(
+                start = percentOffset(x = 0.25f, y = 0.2f),
+                end = percentOffset(x = 0.25f, y = 0.8f),
+            )
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(1, notifications)
+        assertEquals(0, quickSettings)
     }
 
     @Test
@@ -576,6 +608,17 @@ class HomeScreenTest {
 
     private fun manyApps(): List<InstalledApp> = List(30) { index ->
         InstalledApp(packageName = "com.example.app$index", label = "App $index")
+    }
+
+    private fun scrollHomeListToTop() {
+        repeat(20) {
+            composeRule.waitForIdle()
+            if (composeRule.onAllNodesWithText("app 0").fetchSemanticsNodes().isNotEmpty()) {
+                return
+            }
+            composeRule.onNodeWithTag(TestTag.HOME_LIST.tag).performTouchInput { swipeDown() }
+        }
+        composeRule.onNodeWithText("app 0").assertIsDisplayed()
     }
 
     private fun homeState(
