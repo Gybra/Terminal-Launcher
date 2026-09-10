@@ -36,15 +36,13 @@ public class SystemBatteryRepository(
     }
 
     /**
-     * Reads the battery once when collection starts and again on every battery broadcast. The
-     * broadcast carries a reading of its own, but it is used as a signal only, so the level always
-     * comes from the single reading in [readStatus]. The device publishes it far more often than
-     * the level changes, so equal readings are reported once.
+     * Reads the battery once when collection starts, then from each battery broadcast's extras.
+     * A broadcast without extras falls back to [readStatus]. Equal readings are reported once.
      */
-    override fun observeStatus(): Flow<BatteryStatus?> = callbackFlow {
+    override fun observeStatus(): Flow<BatteryStatus?> = callbackFlow<Intent?> {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                trySend(Unit)
+                trySend(intent)
             }
         }
 
@@ -54,11 +52,25 @@ public class SystemBatteryRepository(
             IntentFilter(Intent.ACTION_BATTERY_CHANGED),
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
-        trySend(Unit)
+        trySend(null)
         awaitClose { context.unregisterReceiver(receiver) }
     }
-        .map { readStatus() }
+        .map { intent -> intent?.toStatus() ?: readStatus() }
         .distinctUntilChanged()
+
+    private fun Intent.toStatus(): BatteryStatus? {
+        val level = getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+        val scale = getIntExtra(BatteryManager.EXTRA_SCALE, 0)
+        if (level < 0 || scale <= 0) {
+            return null
+        }
+        val percentage = (level * 100) / scale
+        if (percentage !in FULL_RANGE) {
+            return null
+        }
+        val charging = getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
+        return BatteryStatus(percentage = percentage, charging = charging)
+    }
 
     private companion object {
         val FULL_RANGE = 0..100
