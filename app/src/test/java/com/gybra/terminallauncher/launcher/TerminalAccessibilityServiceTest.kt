@@ -1,6 +1,9 @@
 package com.gybra.terminallauncher.launcher
 
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.view.accessibility.AccessibilityEvent
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Test
@@ -40,5 +43,27 @@ class TerminalAccessibilityServiceTest {
         service.onInterrupt()
 
         assertNull(TerminalAccessibilityService.connected)
+    }
+
+    @Test
+    fun `asks Android for no accessibility events`() {
+        val info = AccessibilityServiceInfo().apply {
+            eventTypes = AccessibilityEvent.TYPES_ALL_MASK
+            flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
+        }
+
+        val idle = idleAccessibilityInfo(info)
+
+        assertEquals(0, idle.eventTypes)
+        assertEquals(0, idle.flags)
+        assertSame(info, idle)
+    }
+
+    @Test
+    fun `builds idle info when Android has none yet`() {
+        val idle = idleAccessibilityInfo(null)
+
+        assertEquals(0, idle.eventTypes)
+        assertEquals(0, idle.flags)
     }
 }

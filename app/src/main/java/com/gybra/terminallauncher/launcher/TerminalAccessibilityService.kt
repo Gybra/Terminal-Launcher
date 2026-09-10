@@ -1,6 +1,7 @@
 package com.gybra.terminallauncher.launcher
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
 
@@ -13,6 +14,7 @@ public class TerminalAccessibilityService : AccessibilityService() {
     /** Android connects the service once the user turns it on, and never before. */
     public override fun onServiceConnected() {
         super.onServiceConnected()
+        setServiceInfo(idleAccessibilityInfo(serviceInfo))
         connected = this
     }
 
@@ -35,4 +37,12 @@ public class TerminalAccessibilityService : AccessibilityService() {
         @Volatile
         internal var connected: TerminalAccessibilityService? = null
     }
+}
+
+/** Drops event subscriptions so the service can perform global actions without reading the UI. */
+internal fun idleAccessibilityInfo(
+    base: AccessibilityServiceInfo?,
+): AccessibilityServiceInfo = (base ?: AccessibilityServiceInfo()).apply {
+    eventTypes = 0
+    flags = 0
 }

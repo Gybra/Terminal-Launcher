@@ -23,19 +23,23 @@ import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfiles
 import java.io.IOException
 import java.util.Locale
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 public class HomeViewModel(
     private val appRepository: AppRepository,
     private val preferencesRepository: PreferencesRepository,
@@ -74,8 +78,12 @@ public class HomeViewModel(
         )
 
     private val deviceStatus: Flow<DeviceStatus> = combine(
-        launcherClock.observeTime(),
-        batteryRepository.observeStatus(),
+        preferences.flatMapLatest { prefs ->
+            if (prefs.showClock) launcherClock.observeTime() else flowOf("")
+        },
+        preferences.flatMapLatest { prefs ->
+            if (prefs.showBattery) batteryRepository.observeStatus() else flowOf(null)
+        },
         ::DeviceStatus,
     )
 

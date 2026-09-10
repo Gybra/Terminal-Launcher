@@ -10,6 +10,7 @@ import com.gybra.terminallauncher.command.CommandResult
 import com.gybra.terminallauncher.command.CommandRegistry
 import com.gybra.terminallauncher.command.LauncherCommand
 import com.gybra.terminallauncher.command.RecordingCommand
+import com.gybra.terminallauncher.launcher.BatteryRepository
 import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.FakeAppRepository
 import com.gybra.terminallauncher.launcher.FakeBatteryRepository
@@ -357,6 +358,58 @@ class HomeViewModelTest {
         runCurrent()
         assertEquals(0, clock.activeCollectors)
     }
+
+    @Test
+    fun `watches the clock only while the status line shows it`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val clock = TrackingLauncherClock()
+            val preferencesRepository = RecordingPreferencesRepository()
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(),
+                preferencesRepository = preferencesRepository,
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = clock,
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            runCurrent()
+            assertEquals(1, clock.activeCollectors)
+
+            preferencesRepository.emit(LauncherPreferences(showClock = false))
+            runCurrent()
+            assertEquals(0, clock.activeCollectors)
+
+            preferencesRepository.emit(LauncherPreferences(showClock = true))
+            runCurrent()
+            assertEquals(1, clock.activeCollectors)
+        }
+
+    @Test
+    fun `watches the battery only while the status line shows it`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val battery = TrackingBatteryRepository()
+            val preferencesRepository = RecordingPreferencesRepository()
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(),
+                preferencesRepository = preferencesRepository,
+                batteryRepository = battery,
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+            )
+            startCollecting(viewModel)
+            runCurrent()
+            assertEquals(1, battery.activeCollectors)
+
+            preferencesRepository.emit(LauncherPreferences(showBattery = false))
+            runCurrent()
+            assertEquals(0, battery.activeCollectors)
+
+            preferencesRepository.emit(LauncherPreferences(showBattery = true))
+            runCurrent()
+            assertEquals(1, battery.activeCollectors)
+        }
 
     @Test
     fun `updates prompt input and focus`() =
@@ -1529,6 +1582,22 @@ class HomeViewModelTest {
         }
 
         override fun now(): Long = 1_700_000_000_000L
+    }
+
+    private class TrackingBatteryRepository : BatteryRepository {
+        var activeCollectors = 0
+
+        override suspend fun readStatus(): BatteryStatus? = null
+
+        override fun observeStatus(): Flow<BatteryStatus?> = flow {
+            activeCollectors += 1
+            try {
+                emit(null)
+                awaitCancellation()
+            } finally {
+                activeCollectors -= 1
+            }
+        }
     }
 
 }

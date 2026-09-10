@@ -4,5 +4,4 @@
     android:canPerformGestures="false"
     android:canRequestFilterKeyEvents="false"
     android:canRetrieveWindowContent="false"
-    android:description="@string/accessibility_service_description"
-    android:notificationTimeout="0" />
+    android:description="@string/accessibility_service_description" />

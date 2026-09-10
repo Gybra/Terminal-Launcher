@@ -128,6 +128,56 @@ class SystemBatteryRepositoryTest {
     }
 
     @Test
+    fun `reads the level the battery broadcast carries`() = runTest {
+        val context = RuntimeEnvironment.getApplication()
+        batteryShadow(context).apply {
+            setIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY, 99)
+            setIsCharging(false)
+        }
+        val statuses = mutableListOf<BatteryStatus?>()
+        val collection = launch(UnconfinedTestDispatcher(testScheduler)) {
+            repository(context).observeStatus().toList(statuses)
+        }
+
+        context.sendBroadcast(
+            Intent(Intent.ACTION_BATTERY_CHANGED)
+                .putExtra(BatteryManager.EXTRA_LEVEL, 41)
+                .putExtra(BatteryManager.EXTRA_SCALE, 100)
+                .putExtra(BatteryManager.EXTRA_PLUGGED, BatteryManager.BATTERY_PLUGGED_USB),
+        )
+        shadowOf(Looper.getMainLooper()).idle()
+        collection.cancel()
+
+        assertEquals(
+            listOf(
+                BatteryStatus(percentage = 99, charging = false),
+                BatteryStatus(percentage = 41, charging = true),
+            ),
+            statuses,
+        )
+    }
+
+    @Test
+    fun `falls back to the manager when the broadcast level is outside the scale`() = runTest {
+        val context = RuntimeEnvironment.getApplication()
+        batteryShadow(context).setIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY, 42)
+        val statuses = mutableListOf<BatteryStatus?>()
+        val collection = launch(UnconfinedTestDispatcher(testScheduler)) {
+            repository(context).observeStatus().toList(statuses)
+        }
+
+        context.sendBroadcast(
+            Intent(Intent.ACTION_BATTERY_CHANGED)
+                .putExtra(BatteryManager.EXTRA_LEVEL, 200)
+                .putExtra(BatteryManager.EXTRA_SCALE, 100),
+        )
+        shadowOf(Looper.getMainLooper()).idle()
+        collection.cancel()
+
+        assertEquals(listOf(BatteryStatus(percentage = 42, charging = false)), statuses)
+    }
+
+    @Test
     fun `stops listening to the device when collection ends`() = runTest {
         val context = RuntimeEnvironment.getApplication()
         val collection = launch(UnconfinedTestDispatcher(testScheduler)) {
