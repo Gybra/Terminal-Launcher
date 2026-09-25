@@ -19,4 +19,7 @@ public data class HomeUiState(
     public val prompt: PromptState = PromptState(),
     public val holdChoices: List<HoldChoice> = emptyList(),
     public val holdRowKey: String? = null,
+    public val notificationCounts: Map<String, Int> = emptyMap(),
+    public val badgeBackground: String? = null,
+    public val badgeText: String? = null,
 )

@@ -39,6 +39,16 @@ class RecordingPreferencesRepository(
         }
     }
 
+    override suspend fun setBadgeBackground(color: String?) {
+        write("setBadgeBackground($color)") { preferences ->
+            preferences.copy(badgeBackground = color)
+        }
+    }
+
+    override suspend fun setBadgeText(color: String?) {
+        write("setBadgeText($color)") { preferences -> preferences.copy(badgeText = color) }
+    }
+
     override suspend fun setShowClock(showClock: Boolean) {
         write("setShowClock($showClock)") { preferences -> preferences.copy(showClock = showClock) }
     }

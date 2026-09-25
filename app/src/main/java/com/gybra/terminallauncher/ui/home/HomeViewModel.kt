@@ -47,6 +47,7 @@ public class HomeViewModel(
     private val launcherClock: LauncherClock,
     private val commandExecutor: CommandExecutor,
     private val packageMonitor: PackageMonitor,
+    notificationCounts: Flow<Map<String, Int>> = flowOf(emptyMap()),
 ) : ViewModel() {
     private val initialPreferences = LauncherPreferences()
     private val promptState = MutableStateFlow(PromptState())
@@ -97,10 +98,12 @@ public class HomeViewModel(
             ::createUiState,
         ),
         heldApplication,
-    ) { state, held ->
+        notificationCounts,
+    ) { state, held, counts ->
         state.copy(
             holdChoices = choicesFor(held?.app, state),
             holdRowKey = held?.rowKey,
+            notificationCounts = counts,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -355,6 +358,8 @@ public class HomeViewModel(
             shellContext = preferences.toShellContext(),
             apps = pinnedApps,
             shortcuts = preferences.pinnedShortcuts,
+            badgeBackground = preferences.badgeBackground,
+            badgeText = preferences.badgeText,
             searchResults = AppSearchEngine.search(
                 query = prompt.input,
                 apps = installedApps,

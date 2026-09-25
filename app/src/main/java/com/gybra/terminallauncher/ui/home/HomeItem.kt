@@ -17,4 +17,9 @@ public enum class HomeItem(public val key: String) {
 
     /** Names the row listing what [id] identifies, such as one shortcut or one search result. */
     public fun rowKey(id: String): String = "$key-$id"
+
+    public companion object {
+        public const val BADGE_OVERFLOW: String = "99+"
+        public fun badgeDescription(count: Int): String = "$count notifications"
+    }
 }

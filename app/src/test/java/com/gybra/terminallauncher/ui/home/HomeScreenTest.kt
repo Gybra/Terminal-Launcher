@@ -18,6 +18,7 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -85,6 +86,56 @@ class HomeScreenTest {
             .performClick()
 
         assertEquals(app, clickedApp)
+    }
+
+    @Test
+    fun `shows live count in pinned and search rows without showing badges on shortcuts`() {
+        val app = InstalledApp(packageName = "com.example.browser", label = "Browser")
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    apps = listOf(app),
+                    searchResults = listOf(SearchResult(app, Match.EXACT)),
+                    shortcuts = listOf(AppShortcut(app.packageName, "shortcut", "Shortcut")),
+                    notificationCounts = mapOf(app.packageName to 105),
+                    badgeBackground = "#123456",
+                    badgeText = "#ABCDEF",
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+        composeRule.onAllNodesWithText(HomeItem.BADGE_OVERFLOW).assertCountEquals(2)
+    }
+
+    @Test
+    fun `badge announces uncapped count while row still launches and zero hides it`() {
+        val app = InstalledApp(packageName = "com.example.browser", label = "Browser")
+        var launched: InstalledApp? = null
+        var counts by mutableStateOf(mapOf(app.packageName to 105))
+        composeRule.setContent {
+            HomeScreen(
+                state = HomeUiState(
+                    shellProfile = UnixShellProfile,
+                    shellContext = defaultShellContext(),
+                    apps = listOf(app),
+                    notificationCounts = counts,
+                ),
+                onAppClick = { launched = it },
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+        composeRule.onNodeWithContentDescription(HomeItem.badgeDescription(105)).assertIsDisplayed()
+        composeRule.onNodeWithText("browser").performClick()
+        assertEquals(app, launched)
+        composeRule.runOnIdle { counts = mapOf(app.packageName to 0) }
+        composeRule.onAllNodesWithText(HomeItem.BADGE_OVERFLOW).assertCountEquals(0)
     }
 
     @Test

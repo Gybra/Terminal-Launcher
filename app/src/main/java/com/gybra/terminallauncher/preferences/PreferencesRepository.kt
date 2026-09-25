@@ -14,6 +14,12 @@ public interface PreferencesRepository {
 
     public suspend fun setTerminalTheme(terminalTheme: TerminalTheme)
 
+    /** Null restores the theme color; non-null requires an opaque #RRGGBB color. */
+    public suspend fun setBadgeBackground(color: String?)
+
+    /** Null restores the theme color; non-null requires an opaque #RRGGBB color. */
+    public suspend fun setBadgeText(color: String?)
+
     public suspend fun setShowClock(showClock: Boolean)
 
     public suspend fun setShowBattery(showBattery: Boolean)

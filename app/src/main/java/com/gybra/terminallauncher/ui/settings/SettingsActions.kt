@@ -17,4 +17,7 @@ public data class SettingsActions(
     public val selectPromptSymbol: (PromptSymbol) -> Unit,
     public val setShowPromptPath: (Boolean) -> Unit,
     public val selectDosDrive: (DosDrive) -> Unit,
+    public val setBadgeBackground: (String?) -> Unit = {},
+    public val setBadgeText: (String?) -> Unit = {},
+    public val openNotificationAccess: () -> Unit = {},
 )

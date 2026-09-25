@@ -1,6 +1,7 @@
 package com.gybra.terminallauncher.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,10 +20,15 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -32,6 +38,7 @@ import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
+import com.gybra.terminallauncher.theme.BadgeColor
 import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
@@ -61,6 +68,7 @@ public fun SettingsScreen(
         }
         appearanceSettings(state = state, actions = actions)
         homeSettings(state = state, actions = actions)
+        notificationSettings(state = state, actions = actions)
         unixSettings(state = state, actions = actions)
         dosSettings(state = state, actions = actions)
     }
@@ -136,6 +144,87 @@ private fun LazyListScope.homeSettings(
         )
     }
 }
+
+private fun LazyListScope.notificationSettings(
+    state: SettingsUiState,
+    actions: SettingsActions,
+) {
+    item(key = SettingsEntry.NOTIFICATION_ACCESS.key) {
+        ActionLine(
+            text = state.write(
+                "${SettingsEntry.NOTIFICATION_ACCESS.label}: " +
+                    if (state.notificationAccess) SettingsEntry.NOTIFICATION_ENABLED.label
+                    else SettingsEntry.NOTIFICATION_DISABLED.label,
+            ),
+            onClick = actions.openNotificationAccess,
+        )
+    }
+    item(key = SettingsEntry.BADGE_BACKGROUND.key) {
+        BadgeColorSetting(
+            state = state,
+            entry = SettingsEntry.BADGE_BACKGROUND,
+            color = state.badgeBackground,
+            onChange = actions.setBadgeBackground,
+        )
+    }
+    item(key = SettingsEntry.BADGE_TEXT.key) {
+        BadgeColorSetting(
+            state = state,
+            entry = SettingsEntry.BADGE_TEXT,
+            color = state.badgeText,
+            onChange = actions.setBadgeText,
+        )
+        val colors = LocalTerminalColors.current
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TerminalText(state.write(SettingsEntry.BADGE_PREVIEW.label) + " ")
+            BasicText(
+                text = "1",
+                style = terminalTextStyle(stateColor(state.badgeText) ?: colors.background),
+                modifier = Modifier.background(
+                    stateColor(state.badgeBackground) ?: colors.foreground,
+                    CircleShape,
+                ).padding(horizontal = 8.dp, vertical = 2.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun BadgeColorSetting(
+    state: SettingsUiState,
+    entry: SettingsEntry,
+    color: String?,
+    onChange: (String?) -> Unit,
+) {
+    val colors = LocalTerminalColors.current
+    val label = state.write(entry.label)
+    var draft by rememberSaveable(color) { mutableStateOf(color.orEmpty()) }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        TerminalText(label)
+        BasicTextField(
+            value = draft,
+            onValueChange = { input ->
+                draft = input.take(7)
+                if (BadgeColor.isValid(draft)) onChange(draft)
+            },
+            textStyle = terminalTextStyle(colors.foreground),
+            cursorBrush = SolidColor(colors.foreground),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().background(colors.secondary.copy(alpha = 0.2f))
+                .padding(12.dp).semantics { contentDescription = label },
+        )
+        if (draft.isNotEmpty() && !BadgeColor.isValid(draft)) {
+            TerminalText(state.write(SettingsEntry.INVALID_BADGE_COLOR.label))
+        }
+        ActionLine(
+            text = state.write(SettingsEntry.BADGE_RESET.label),
+            onClick = { draft = ""; onChange(null) },
+        )
+    }
+}
+
+private fun stateColor(color: String?): Color? = color?.drop(1)?.toLongOrNull(16)
+    ?.let { rgb -> Color(0xff000000L or rgb) }
 
 private fun LazyListScope.unixSettings(
     state: SettingsUiState,

@@ -13,6 +13,7 @@ import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.TerminalTheme
+import com.gybra.terminallauncher.theme.BadgeColor
 import java.io.IOException
 import java.util.Locale
 import kotlinx.coroutines.flow.Flow
@@ -43,6 +44,22 @@ public class DataStorePreferencesRepository(
     override suspend fun setTerminalTheme(terminalTheme: TerminalTheme) {
         dataStore.edit { preferences ->
             preferences[Keys.terminalTheme] = terminalTheme.name
+        }
+    }
+
+    override suspend fun setBadgeBackground(color: String?) {
+        require(color == null || BadgeColor.isValid(color)) { "Expected #RRGGBB" }
+        dataStore.edit { preferences ->
+            if (color == null) preferences.remove(Keys.badgeBackground)
+            else preferences[Keys.badgeBackground] = color
+        }
+    }
+
+    override suspend fun setBadgeText(color: String?) {
+        require(color == null || BadgeColor.isValid(color)) { "Expected #RRGGBB" }
+        dataStore.edit { preferences ->
+            if (color == null) preferences.remove(Keys.badgeText)
+            else preferences[Keys.badgeText] = color
         }
     }
 
@@ -173,6 +190,8 @@ public class DataStorePreferencesRepository(
         showClock = preferences[Keys.showClock] ?: defaults.showClock,
         showBattery = preferences[Keys.showBattery] ?: defaults.showBattery,
         immersiveMode = preferences[Keys.immersiveMode] ?: defaults.immersiveMode,
+        badgeBackground = preferences[Keys.badgeBackground]?.takeIf(BadgeColor::isValid),
+        badgeText = preferences[Keys.badgeText]?.takeIf(BadgeColor::isValid),
         username = preferences[Keys.username] ?: defaults.username,
         hostname = preferences[Keys.hostname] ?: defaults.hostname,
         promptSymbol = preferences[Keys.promptSymbol]
@@ -256,6 +275,8 @@ public class DataStorePreferencesRepository(
         val showClock: Preferences.Key<Boolean> = booleanPreferencesKey("show_clock")
         val showBattery: Preferences.Key<Boolean> = booleanPreferencesKey("show_battery")
         val immersiveMode: Preferences.Key<Boolean> = booleanPreferencesKey("immersive_mode")
+        val badgeBackground: Preferences.Key<String> = stringPreferencesKey("badge_background")
+        val badgeText: Preferences.Key<String> = stringPreferencesKey("badge_text")
         val username: Preferences.Key<String> = stringPreferencesKey("username")
         val hostname: Preferences.Key<String> = stringPreferencesKey("hostname")
         val promptSymbol: Preferences.Key<String> = stringPreferencesKey("prompt_symbol")

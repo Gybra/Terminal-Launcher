@@ -13,6 +13,8 @@ public data class LauncherPreferences(
     public val showClock: Boolean = true,
     public val showBattery: Boolean = true,
     public val immersiveMode: Boolean = true,
+    public val badgeBackground: String? = null,
+    public val badgeText: String? = null,
     public val username: String = "user",
     public val hostname: String = "android",
     public val promptSymbol: PromptSymbol = PromptSymbol.DOLLAR,

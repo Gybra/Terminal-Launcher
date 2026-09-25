@@ -18,4 +18,7 @@ public data class SettingsUiState(
     public val showPromptPath: Boolean,
     public val dosDrive: DosDrive,
     public val storageError: String? = null,
+    public val notificationAccess: Boolean = false,
+    public val badgeBackground: String? = null,
+    public val badgeText: String? = null,
 )

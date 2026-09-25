@@ -6,6 +6,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -196,6 +197,33 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `notification access and badge colors are configurable and resettable`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+        val list = composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag)
+        val accessLabel = UnixShellProfile.formatMessage(
+            "${SettingsEntry.NOTIFICATION_ACCESS.label}: ${SettingsEntry.NOTIFICATION_DISABLED.label}",
+        )
+        list.performScrollToNode(hasText(accessLabel))
+        composeRule.onNodeWithText(accessLabel).performClick()
+        assertTrue(harness.openedNotificationAccess)
+        list.performScrollToNode(hasContentDescription(label(SettingsEntry.BADGE_BACKGROUND)))
+        composeRule.onNodeWithContentDescription(label(SettingsEntry.BADGE_BACKGROUND))
+            .performTextReplacement("bad")
+        composeRule.onNodeWithText(label(SettingsEntry.INVALID_BADGE_COLOR)).assertIsDisplayed()
+        assertEquals(null, harness.state.badgeBackground)
+        composeRule.onNodeWithContentDescription(label(SettingsEntry.BADGE_BACKGROUND))
+            .performTextReplacement("#123456")
+        assertEquals("#123456", harness.state.badgeBackground)
+        list.performScrollToNode(hasContentDescription(label(SettingsEntry.BADGE_TEXT)))
+        composeRule.onNodeWithContentDescription(label(SettingsEntry.BADGE_TEXT))
+            .performTextReplacement("#ABCDEF")
+        assertEquals("#ABCDEF", harness.state.badgeText)
+        composeRule.onAllNodesWithText(label(SettingsEntry.BADGE_RESET))[1].performClick()
+        assertEquals(null, harness.state.badgeText)
+    }
+
+    @Test
     fun `forwards the explicit back action`() {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
@@ -242,6 +270,7 @@ class SettingsScreenTest {
     ) {
         var state by mutableStateOf(initialState)
         var wentBack = false
+        var openedNotificationAccess = false
 
         @Composable
         fun Content() {
@@ -259,6 +288,9 @@ class SettingsScreenTest {
                     selectPromptSymbol = { state = state.copy(promptSymbol = it) },
                     setShowPromptPath = { state = state.copy(showPromptPath = it) },
                     selectDosDrive = { state = state.copy(dosDrive = it) },
+                    setBadgeBackground = { state = state.copy(badgeBackground = it) },
+                    setBadgeText = { state = state.copy(badgeText = it) },
+                    openNotificationAccess = { openedNotificationAccess = true },
                 ),
                 onBack = { wentBack = true },
             )
