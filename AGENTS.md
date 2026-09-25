@@ -51,7 +51,14 @@ Before each pull request, perform a diff-scoped functions-shrinking pass. Re-enu
 - Command Engine and Search Engine must not depend on Compose. New commands register through the command registry without changes to `HomeScreen`, `HomeViewModel`, or the parser.
 - Prefer constructor injection and small manual factories. Do not add Hilt, Koin, or another dependency-injection framework.
 - Search for an existing model, component, formatter, repository, or service before creating one. Centralize behavior only when there is proven duplication or a stable domain boundary.
-- Avoid speculative abstractions. Every interface must protect a boundary, enable substitution in tests, or have multiple concrete consumers planned in the active issue.
+- Prefer the simplest implementation that fully satisfies the active issue while remaining consistent with the existing architecture and repository conventions.
+- Avoid over-engineering and speculative complexity. Do not introduce abstractions, layers, indirection, extensibility, generic frameworks, or architectural patterns without a concrete need in the active issue.
+- Every interface must protect a real boundary, enable meaningful substitution in tests, or have multiple concrete consumers required by the active issue. Do not create interfaces solely to wrap a single implementation or to anticipate hypothetical future implementations.
+- Do not introduce repositories, services, use cases, factories, coordinators, wrappers, adapters, state holders, or additional ViewModels merely to make the design appear more layered. Each additional type must own a distinct responsibility or enforce an existing architectural boundary.
+- Prefer direct Kotlin and Android/Compose primitives when they express the requirement clearly. Do not build custom generic mechanisms when a small concrete implementation is sufficient.
+- Do not generalize from a single use case. Extract shared behavior only after proven duplication or when the repository already defines that behavior as a stable domain boundary.
+- Simplicity must not bypass established boundaries: do not move domain or Android-framework logic into composables, Activities, or unrelated types merely to reduce the number of classes.
+- When modifying existing code, keep simplification and refactoring proportional to the active issue. Do not perform unrelated architectural cleanup or rewrite working abstractions solely because a simpler design could be imagined.
 
 Before each pull request, perform a diff-scoped branch-standards audit: enumerate every changed declaration, compare it with repository rules and relevant siblings, prove duplication with search results, fix violations, and rerun all verifiers until clean.
 
