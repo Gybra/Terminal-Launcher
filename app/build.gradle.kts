@@ -91,7 +91,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui")
-    implementation("androidx.core:core-ktx:1.19.0")
+    implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
@@ -101,6 +101,6 @@ dependencies {
     testImplementation("androidx.compose.ui:ui-test-junit4")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:6.3.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.4.0")
     testImplementation("org.robolectric:robolectric:4.17")
 }
