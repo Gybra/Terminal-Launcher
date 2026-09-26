@@ -183,6 +183,7 @@ public class MainActivity : ComponentActivity() {
         selectDosDrive = viewModel::selectDosDrive,
         setBadgeBackground = viewModel::setBadgeBackground,
         setBadgeText = viewModel::setBadgeText,
+        setBadgeSize = viewModel::setBadgeSize,
         openNotificationAccess = {
             try {
                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))

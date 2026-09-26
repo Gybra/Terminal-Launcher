@@ -9,8 +9,9 @@ import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellProfiles
 import com.gybra.terminallauncher.shell.ShellType
-import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.theme.BadgeColor
+import com.gybra.terminallauncher.theme.BadgeSize
+import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,6 +62,13 @@ public class SettingsViewModel(
         updateSetting(
             update = { state -> state.copy(badgeText = color) },
             persist = { preferencesRepository.setBadgeText(color) },
+        )
+    }
+
+    public fun setBadgeSize(size: BadgeSize) {
+        updateSetting(
+            update = { state -> state.copy(badgeSize = size) },
+            persist = { preferencesRepository.setBadgeSize(size) },
         )
     }
 
@@ -202,6 +210,7 @@ public class SettingsViewModel(
         terminalTheme = terminalTheme,
         badgeBackground = badgeBackground,
         badgeText = badgeText,
+        badgeSize = badgeSize,
         showClock = showClock,
         showBattery = showBattery,
         immersiveMode = immersiveMode,

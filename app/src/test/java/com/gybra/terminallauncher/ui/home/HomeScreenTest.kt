@@ -20,6 +20,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.down
@@ -136,6 +137,32 @@ class HomeScreenTest {
         assertEquals(app, launched)
         composeRule.runOnIdle { counts = mapOf(app.packageName to 0) }
         composeRule.onAllNodesWithText(HomeItem.BADGE_OVERFLOW).assertCountEquals(0)
+    }
+
+    @Test
+    fun `keeps a chosen badge color when it contrasts poorly with the theme`() {
+        val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
+        val chosen = Color(0xFFAA0000)
+        composeRule.setContent {
+            HomeScreen(
+                state = homeState().copy(
+                    apps = listOf(app),
+                    notificationCounts = mapOf(app.packageName to 1),
+                    badgeBackground = "#AA0000",
+                ),
+                onAppClick = {},
+                onShortcutClick = {},
+                onLockScreen = {},
+                promptActions = emptyPromptActions(),
+            )
+        }
+
+        val row = composeRule.onNodeWithText("mail").onParent().captureToImage().toPixelMap()
+        val painted = (0 until row.width).flatMap { x ->
+            (0 until row.height).map { y -> row[x, y] }
+        }
+
+        assertTrue("Expected the chosen badge color", painted.contains(chosen))
     }
 
     @Test

@@ -39,7 +39,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerId
@@ -53,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.theme.BadgeColor
+import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.shell.SectionLines
 import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
@@ -279,6 +279,7 @@ private fun LazyListScope.searchResults(
             notificationCount = state.notificationCounts[result.app.packageName],
             badgeBackground = state.badgeBackground,
             badgeText = state.badgeText,
+            badgeSize = state.badgeSize,
             onClick = { rowActions.onAppClick(result.app) },
             onLongClick = { rowActions.onAppLongClick(result.app, rowKey) },
             choices = state.choicesUnder(rowKey),
@@ -304,6 +305,7 @@ private fun LazyListScope.pinnedItems(
             notificationCount = state.notificationCounts[app.packageName],
             badgeBackground = state.badgeBackground,
             badgeText = state.badgeText,
+            badgeSize = state.badgeSize,
             onClick = { rowActions.onAppClick(app) },
             onLongClick = { rowActions.onAppLongClick(app, app.packageName) },
             choices = state.choicesUnder(app.packageName),
@@ -396,6 +398,7 @@ private fun AppRow(
     notificationCount: Int? = null,
     badgeBackground: String? = null,
     badgeText: String? = null,
+    badgeSize: BadgeSize = BadgeSize.TWO,
     onLongClick: () -> Unit = {},
     choices: List<HoldChoice> = emptyList(),
     onChoiceClick: (HoldChoice) -> Unit = {},
@@ -437,7 +440,13 @@ private fun AppRow(
                 overflow = TextOverflow.Ellipsis,
             )
             if (notificationCount != null && notificationCount > 0) {
-                NotificationBadge(notificationCount, badgeBackground, badgeText, pressed)
+                NotificationBadge(
+                    notificationCount,
+                    badgeBackground,
+                    badgeText,
+                    pressed,
+                    badgeSize,
+                )
             }
         }
         choices.forEach { choice ->
@@ -456,25 +465,25 @@ private fun NotificationBadge(
     background: String?,
     text: String?,
     pressed: Boolean,
+    size: BadgeSize,
 ) {
     val colors = LocalTerminalColors.current
     val fill = background.badgeColor() ?: colors.foreground
     val ink = text.badgeColor() ?: colors.background
-    val contrast = (maxOf(fill.luminance(), ink.luminance()) + 0.05f) /
-        (minOf(fill.luminance(), ink.luminance()) + 0.05f)
-    val readable = contrast >= 4.5f
     Spacer(modifier = Modifier.width(8.dp))
     BasicText(
         text = if (count > 99) HomeItem.BADGE_OVERFLOW else count.toString(),
         style = terminalTextStyle(
-            if (pressed) colors.foreground else if (readable) ink else colors.background,
+            color = if (pressed) colors.foreground else ink,
+            fontSize = size.fontSize,
+            lineHeight = size.lineHeight,
         ),
         modifier = Modifier
             .background(
-                if (pressed) colors.background else if (readable) fill else colors.foreground,
+                if (pressed) colors.background else fill,
                 CircleShape,
             )
-            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .padding(horizontal = size.horizontalPadding, vertical = size.verticalPadding)
             .semantics { contentDescription = HomeItem.badgeDescription(count) },
     )
 }

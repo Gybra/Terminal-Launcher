@@ -4,6 +4,7 @@ import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.theme.TerminalTheme
 import kotlinx.coroutines.flow.Flow
 
@@ -19,6 +20,8 @@ public interface PreferencesRepository {
 
     /** Null restores the theme color; non-null requires an opaque #RRGGBB color. */
     public suspend fun setBadgeText(color: String?)
+
+    public suspend fun setBadgeSize(size: BadgeSize)
 
     public suspend fun setShowClock(showClock: Boolean)
 

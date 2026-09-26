@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.gybra.terminallauncher.launcher.AppUsage
@@ -12,8 +13,9 @@ import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
-import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.theme.BadgeColor
+import com.gybra.terminallauncher.theme.BadgeSize
+import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
 import java.util.Locale
 import kotlinx.coroutines.flow.Flow
@@ -60,6 +62,12 @@ public class DataStorePreferencesRepository(
         dataStore.edit { preferences ->
             if (color == null) preferences.remove(Keys.badgeText)
             else preferences[Keys.badgeText] = color
+        }
+    }
+
+    override suspend fun setBadgeSize(size: BadgeSize) {
+        dataStore.edit { preferences ->
+            preferences[Keys.badgeSize] = size.step
         }
     }
 
@@ -192,6 +200,7 @@ public class DataStorePreferencesRepository(
         immersiveMode = preferences[Keys.immersiveMode] ?: defaults.immersiveMode,
         badgeBackground = preferences[Keys.badgeBackground]?.takeIf(BadgeColor::isValid),
         badgeText = preferences[Keys.badgeText]?.takeIf(BadgeColor::isValid),
+        badgeSize = BadgeSize.fromStep(preferences[Keys.badgeSize]),
         username = preferences[Keys.username] ?: defaults.username,
         hostname = preferences[Keys.hostname] ?: defaults.hostname,
         promptSymbol = preferences[Keys.promptSymbol]
@@ -277,6 +286,7 @@ public class DataStorePreferencesRepository(
         val immersiveMode: Preferences.Key<Boolean> = booleanPreferencesKey("immersive_mode")
         val badgeBackground: Preferences.Key<String> = stringPreferencesKey("badge_background")
         val badgeText: Preferences.Key<String> = stringPreferencesKey("badge_text")
+        val badgeSize: Preferences.Key<Int> = intPreferencesKey("badge_size")
         val username: Preferences.Key<String> = stringPreferencesKey("username")
         val hostname: Preferences.Key<String> = stringPreferencesKey("hostname")
         val promptSymbol: Preferences.Key<String> = stringPreferencesKey("prompt_symbol")

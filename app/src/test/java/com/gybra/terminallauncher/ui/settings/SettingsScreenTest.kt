@@ -1,13 +1,16 @@
 package com.gybra.terminallauncher.ui.settings
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
@@ -22,6 +25,8 @@ import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.shell.ShellProfiles
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
+import com.gybra.terminallauncher.theme.BadgeSize
+import com.gybra.terminallauncher.theme.DosColor
 import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.ui.TestTag
 import org.junit.Assert.assertEquals
@@ -197,30 +202,56 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `notification access and badge colors are configurable and resettable`() {
+    fun `notification access is a status line and opens android settings only when off`() {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
         val list = composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag)
-        val accessLabel = UnixShellProfile.formatMessage(
-            "${SettingsEntry.NOTIFICATION_ACCESS.label}: ${SettingsEntry.NOTIFICATION_DISABLED.label}",
-        )
-        list.performScrollToNode(hasText(accessLabel))
-        composeRule.onNodeWithText(accessLabel).performClick()
+        val off = accessText(SettingsEntry.NOTIFICATION_DISABLED)
+        val grant = label(SettingsEntry.NOTIFICATION_SETTINGS)
+        list.performScrollToNode(hasText(off))
+        composeRule.onNodeWithText(off).assertIsDisplayed()
+        composeRule.onNodeWithText(grant).performClick()
         assertTrue(harness.openedNotificationAccess)
-        list.performScrollToNode(hasContentDescription(label(SettingsEntry.BADGE_BACKGROUND)))
-        composeRule.onNodeWithContentDescription(label(SettingsEntry.BADGE_BACKGROUND))
-            .performTextReplacement("bad")
-        composeRule.onNodeWithText(label(SettingsEntry.INVALID_BADGE_COLOR)).assertIsDisplayed()
-        assertEquals(null, harness.state.badgeBackground)
-        composeRule.onNodeWithContentDescription(label(SettingsEntry.BADGE_BACKGROUND))
-            .performTextReplacement("#123456")
-        assertEquals("#123456", harness.state.badgeBackground)
-        list.performScrollToNode(hasContentDescription(label(SettingsEntry.BADGE_TEXT)))
-        composeRule.onNodeWithContentDescription(label(SettingsEntry.BADGE_TEXT))
-            .performTextReplacement("#ABCDEF")
-        assertEquals("#ABCDEF", harness.state.badgeText)
+    }
+
+    @Test
+    fun `enabled notification access has no settings action`() {
+        val harness = SettingsHarness(defaultState().copy(notificationAccess = true))
+        composeRule.setContent { harness.Content() }
+        val list = composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag)
+        val on = accessText(SettingsEntry.NOTIFICATION_ENABLED)
+        list.performScrollToNode(hasText(on))
+        composeRule.onNodeWithText(on).assertIsDisplayed()
+        composeRule.onAllNodesWithText(label(SettingsEntry.NOTIFICATION_SETTINGS)).assertCountEquals(0)
+    }
+
+    @Test
+    fun `badge color is picked from the dos palette and can return to the theme`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+        val list = composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag)
+        val red = SettingsEntry.BADGE_BACKGROUND.optionKey(DosColor.RED)
+        list.performScrollToNode(hasTestTag(red))
+        composeRule.onNodeWithTag(red).performClick()
+        assertEquals(DosColor.RED.hex, harness.state.badgeBackground)
+        composeRule.onNodeWithTag(red).assertIsSelected()
+        val white = SettingsEntry.BADGE_TEXT.optionKey(DosColor.WHITE)
+        list.performScrollToNode(hasTestTag(white))
+        composeRule.onNodeWithTag(white).performClick()
+        assertEquals(DosColor.WHITE.hex, harness.state.badgeText)
         composeRule.onAllNodesWithText(label(SettingsEntry.BADGE_RESET))[1].performClick()
         assertEquals(null, harness.state.badgeText)
+    }
+
+    @Test
+    fun `badge size uses the current step until another is chosen`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+        val list = composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag)
+        list.performScrollToNode(hasText(optionText("2", selected = true)))
+        composeRule.onNodeWithText(optionText("2", selected = true)).assertIsDisplayed()
+        composeRule.onNodeWithText(optionText("3")).performClick()
+        assertEquals(BadgeSize.THREE, harness.state.badgeSize)
     }
 
     @Test
@@ -250,6 +281,10 @@ class SettingsScreenTest {
         entry: SettingsEntry,
         profile: ShellProfile = UnixShellProfile,
     ): String = profile.formatMessage(entry.label)
+
+    private fun accessText(status: SettingsEntry): String = UnixShellProfile.formatMessage(
+        "${SettingsEntry.NOTIFICATION_ACCESS.label} ${status.label}",
+    )
 
     private fun defaultState(): SettingsUiState = SettingsUiState(
         shellProfile = UnixShellProfile,
@@ -290,6 +325,7 @@ class SettingsScreenTest {
                     selectDosDrive = { state = state.copy(dosDrive = it) },
                     setBadgeBackground = { state = state.copy(badgeBackground = it) },
                     setBadgeText = { state = state.copy(badgeText = it) },
+                    setBadgeSize = { state = state.copy(badgeSize = it) },
                     openNotificationAccess = { openedNotificationAccess = true },
                 ),
                 onBack = { wentBack = true },

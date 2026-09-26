@@ -1,12 +1,16 @@
 package com.gybra.terminallauncher.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,10 +24,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,8 +37,9 @@ import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.theme.BadgeSize
+import com.gybra.terminallauncher.theme.DosColor
 import com.gybra.terminallauncher.theme.TerminalTheme
-import com.gybra.terminallauncher.theme.BadgeColor
 import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
@@ -149,15 +150,18 @@ private fun LazyListScope.notificationSettings(
     state: SettingsUiState,
     actions: SettingsActions,
 ) {
-    item(key = SettingsEntry.NOTIFICATION_ACCESS.key) {
-        ActionLine(
-            text = state.write(
-                "${SettingsEntry.NOTIFICATION_ACCESS.label}: " +
-                    if (state.notificationAccess) SettingsEntry.NOTIFICATION_ENABLED.label
-                    else SettingsEntry.NOTIFICATION_DISABLED.label,
-            ),
-            onClick = actions.openNotificationAccess,
-        )
+    notificationAccess(state, actions)
+    item(key = SettingsEntry.BADGE_SIZE.key) {
+        TerminalText(state.write(SettingsEntry.BADGE_SIZE.label))
+    }
+    BadgeSize.entries.forEach { size ->
+        item(key = SettingsEntry.BADGE_SIZE.optionKey(size)) {
+            SelectionOption(
+                label = state.write(size.step.toString()),
+                selected = state.badgeSize == size,
+                onClick = { actions.setBadgeSize(size) },
+            )
+        }
     }
     item(key = SettingsEntry.BADGE_BACKGROUND.key) {
         BadgeColorSetting(
@@ -168,24 +172,36 @@ private fun LazyListScope.notificationSettings(
         )
     }
     item(key = SettingsEntry.BADGE_TEXT.key) {
-        BadgeColorSetting(
-            state = state,
-            entry = SettingsEntry.BADGE_TEXT,
-            color = state.badgeText,
-            onChange = actions.setBadgeText,
-        )
-        val colors = LocalTerminalColors.current
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TerminalText(state.write(SettingsEntry.BADGE_PREVIEW.label) + " ")
-            BasicText(
-                text = "1",
-                style = terminalTextStyle(stateColor(state.badgeText) ?: colors.background),
-                modifier = Modifier.background(
-                    stateColor(state.badgeBackground) ?: colors.foreground,
-                    CircleShape,
-                ).padding(horizontal = 8.dp, vertical = 2.dp),
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            BadgeColorSetting(
+                state = state,
+                entry = SettingsEntry.BADGE_TEXT,
+                color = state.badgeText,
+                onChange = actions.setBadgeText,
             )
+            BadgePreview(state)
         }
+    }
+}
+
+private fun LazyListScope.notificationAccess(
+    state: SettingsUiState,
+    actions: SettingsActions,
+) {
+    val status = if (state.notificationAccess) {
+        SettingsEntry.NOTIFICATION_ENABLED.label
+    } else {
+        SettingsEntry.NOTIFICATION_DISABLED.label
+    }
+    item(key = SettingsEntry.NOTIFICATION_ACCESS.key) {
+        TerminalText(state.write("${SettingsEntry.NOTIFICATION_ACCESS.label} $status"))
+    }
+    if (state.notificationAccess) return
+    item(key = SettingsEntry.NOTIFICATION_SETTINGS.key) {
+        ActionLine(
+            text = state.write(SettingsEntry.NOTIFICATION_SETTINGS.label),
+            onClick = actions.openNotificationAccess,
+        )
     }
 }
 
@@ -196,29 +212,83 @@ private fun BadgeColorSetting(
     color: String?,
     onChange: (String?) -> Unit,
 ) {
-    val colors = LocalTerminalColors.current
-    val label = state.write(entry.label)
-    var draft by rememberSaveable(color) { mutableStateOf(color.orEmpty()) }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        TerminalText(label)
-        BasicTextField(
-            value = draft,
-            onValueChange = { input ->
-                draft = input.take(7)
-                if (BadgeColor.isValid(draft)) onChange(draft)
-            },
-            textStyle = terminalTextStyle(colors.foreground),
-            cursorBrush = SolidColor(colors.foreground),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().background(colors.secondary.copy(alpha = 0.2f))
-                .padding(12.dp).semantics { contentDescription = label },
-        )
-        if (draft.isNotEmpty() && !BadgeColor.isValid(draft)) {
-            TerminalText(state.write(SettingsEntry.INVALID_BADGE_COLOR.label))
+        TerminalText(state.write(entry.label))
+        DosColor.entries.chunked(4).forEach { row ->
+            ColorRow(entry = entry, row = row, selected = color, onSelect = onChange)
         }
         ActionLine(
             text = state.write(SettingsEntry.BADGE_RESET.label),
-            onClick = { draft = ""; onChange(null) },
+            onClick = { onChange(null) },
+        )
+    }
+}
+
+@Composable
+private fun ColorRow(
+    entry: SettingsEntry,
+    row: List<DosColor>,
+    selected: String?,
+    onSelect: (String) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        row.forEach { dosColor ->
+            ColorSwatch(
+                tag = entry.optionKey(dosColor),
+                dosColor = dosColor,
+                selected = selected.equals(dosColor.hex, ignoreCase = true),
+                onSelect = { onSelect(dosColor.hex) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.ColorSwatch(
+    tag: String,
+    dosColor: DosColor,
+    selected: Boolean,
+    onSelect: () -> Unit,
+) {
+    val colors = LocalTerminalColors.current
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .height(48.dp)
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                onClick = onSelect,
+            )
+            .border(2.dp, if (selected) colors.foreground else colors.secondary)
+            .background(dosColor.color)
+            .semantics { contentDescription = dosColor.name }
+            .testTag(tag),
+    )
+}
+
+@Composable
+private fun BadgePreview(state: SettingsUiState) {
+    val colors = LocalTerminalColors.current
+    val size = state.badgeSize
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TerminalText(state.write(SettingsEntry.BADGE_PREVIEW.label) + " ")
+        BasicText(
+            text = "1",
+            style = terminalTextStyle(
+                color = stateColor(state.badgeText) ?: colors.background,
+                fontSize = size.fontSize,
+                lineHeight = size.lineHeight,
+            ),
+            modifier = Modifier
+                .background(
+                    stateColor(state.badgeBackground) ?: colors.foreground,
+                    CircleShape,
+                )
+                .padding(horizontal = size.horizontalPadding, vertical = size.verticalPadding),
         )
     }
 }

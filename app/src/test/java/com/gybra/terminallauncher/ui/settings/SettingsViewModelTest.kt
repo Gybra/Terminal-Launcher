@@ -9,6 +9,7 @@ import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
+import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
@@ -85,8 +86,10 @@ class SettingsViewModelTest {
             assertEquals("#ABCDEF", viewModel.uiState.value.badgeBackground)
             assertEquals("#123456", viewModel.uiState.value.badgeText)
             viewModel.setBadgeText(null)
+            viewModel.setBadgeSize(BadgeSize.THREE)
             advanceUntilIdle()
             assertEquals(null, viewModel.uiState.value.badgeText)
+            assertEquals(BadgeSize.THREE, viewModel.uiState.value.badgeSize)
             viewModel.refreshNotificationAccess(false)
             assertEquals(false, viewModel.uiState.value.notificationAccess)
         }
@@ -106,6 +109,7 @@ class SettingsViewModelTest {
         viewModel.selectPromptSymbol(PromptSymbol.ARROW)
         viewModel.setShowPromptPath(false)
         viewModel.selectDosDrive(DosDrive.A)
+        viewModel.setBadgeSize(BadgeSize.ONE)
         advanceUntilIdle()
 
         assertEquals(ShellType.DOS, repository.shellType)
@@ -118,6 +122,7 @@ class SettingsViewModelTest {
         assertEquals(PromptSymbol.ARROW, repository.promptSymbol)
         assertEquals(false, repository.showPromptPath)
         assertEquals(DosDrive.A, repository.dosDrive)
+        assertEquals(BadgeSize.ONE, repository.badgeSize)
     }
 
     @Test
@@ -261,6 +266,7 @@ class SettingsViewModelTest {
         var promptSymbol: PromptSymbol? = null
         var showPromptPath: Boolean? = null
         var dosDrive: DosDrive? = null
+        var badgeSize: BadgeSize? = null
         val usernameWrites = mutableListOf<String>()
 
         fun emit(preferences: LauncherPreferences) {
@@ -287,6 +293,12 @@ class SettingsViewModelTest {
         override suspend fun setBadgeText(color: String?) {
             writeFailure?.let { throw it }
             emit(mutablePreferences.value.copy(badgeText = color))
+        }
+
+        override suspend fun setBadgeSize(size: BadgeSize) {
+            writeFailure?.let { throw it }
+            badgeSize = size
+            emit(mutablePreferences.value.copy(badgeSize = size))
         }
 
         override suspend fun setShowClock(showClock: Boolean) {
@@ -381,6 +393,8 @@ class SettingsViewModelTest {
         override suspend fun setBadgeBackground(color: String?) = unsupported()
 
         override suspend fun setBadgeText(color: String?) = unsupported()
+
+        override suspend fun setBadgeSize(size: BadgeSize) = unsupported()
 
         override suspend fun setShowClock(showClock: Boolean) {
             throw IOException("disk full")

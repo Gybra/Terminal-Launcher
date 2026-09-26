@@ -5,6 +5,7 @@ import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.theme.TerminalTheme
 
 public data class LauncherPreferences(
@@ -15,6 +16,7 @@ public data class LauncherPreferences(
     public val immersiveMode: Boolean = true,
     public val badgeBackground: String? = null,
     public val badgeText: String? = null,
+    public val badgeSize: BadgeSize = BadgeSize.TWO,
     public val username: String = "user",
     public val hostname: String = "android",
     public val promptSymbol: PromptSymbol = PromptSymbol.DOLLAR,

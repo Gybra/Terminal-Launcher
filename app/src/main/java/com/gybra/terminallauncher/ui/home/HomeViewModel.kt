@@ -360,6 +360,7 @@ public class HomeViewModel(
             shortcuts = preferences.pinnedShortcuts,
             badgeBackground = preferences.badgeBackground,
             badgeText = preferences.badgeText,
+            badgeSize = preferences.badgeSize,
             searchResults = AppSearchEngine.search(
                 query = prompt.input,
                 apps = installedApps,

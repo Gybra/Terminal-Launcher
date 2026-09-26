@@ -3,13 +3,18 @@ package com.gybra.terminallauncher.ui
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 
-internal fun terminalTextStyle(color: Color): TextStyle = TextStyle(
+internal fun terminalTextStyle(
+    color: Color,
+    fontSize: TextUnit = TERMINAL_FONT_SIZE,
+    lineHeight: TextUnit = 24.sp,
+): TextStyle = TextStyle(
     color = color,
     fontFamily = FontFamily.Monospace,
-    fontSize = TERMINAL_FONT_SIZE,
-    lineHeight = 24.sp,
+    fontSize = fontSize,
+    lineHeight = lineHeight,
 )
 
 /**
