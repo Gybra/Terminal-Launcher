@@ -88,6 +88,36 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `collects and clears live package counts without changing pinned or search results`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
+            val counts = MutableStateFlow<Map<String, Int>>(emptyMap())
+            val viewModel = HomeViewModel(
+                appRepository = FakeAppRepository(apps = listOf(app)),
+                preferencesRepository = RecordingPreferencesRepository(
+                    initialPreferences = LauncherPreferences(pinnedPackages = setOf(app.packageName)),
+                ),
+                batteryRepository = FakeBatteryRepository(status = null),
+                launcherClock = FakeLauncherClock(),
+                commandExecutor = commandExecutor(),
+                packageMonitor = FakePackageMonitor(),
+                notificationCounts = counts,
+            )
+            startCollecting(viewModel)
+            viewModel.updatePromptValue(PromptState(input = "mail"))
+            advanceUntilIdle()
+            val before = viewModel.uiState.value
+            counts.value = mapOf(app.packageName to 3)
+            advanceUntilIdle()
+            assertEquals(3, viewModel.uiState.value.notificationCounts[app.packageName])
+            assertEquals(before.apps, viewModel.uiState.value.apps)
+            assertEquals(before.searchResults, viewModel.uiState.value.searchResults)
+            counts.value = emptyMap()
+            advanceUntilIdle()
+            assertEquals(emptyMap<String, Int>(), viewModel.uiState.value.notificationCounts)
+        }
+
+    @Test
     fun `reacts when pinned package preferences change`() = runTest(mainDispatcherRule.dispatcher) {
         val app = InstalledApp(packageName = "com.example.mail", label = "Mail")
         val preferencesRepository = RecordingPreferencesRepository()

@@ -5,6 +5,7 @@ import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
@@ -37,6 +38,20 @@ class RecordingPreferencesRepository(
         write("setTerminalTheme($terminalTheme)") { preferences ->
             preferences.copy(terminalTheme = terminalTheme)
         }
+    }
+
+    override suspend fun setBadgeBackground(color: String?) {
+        write("setBadgeBackground($color)") { preferences ->
+            preferences.copy(badgeBackground = color)
+        }
+    }
+
+    override suspend fun setBadgeText(color: String?) {
+        write("setBadgeText($color)") { preferences -> preferences.copy(badgeText = color) }
+    }
+
+    override suspend fun setBadgeSize(size: BadgeSize) {
+        write("setBadgeSize($size)") { preferences -> preferences.copy(badgeSize = size) }
     }
 
     override suspend fun setShowClock(showClock: Boolean) {

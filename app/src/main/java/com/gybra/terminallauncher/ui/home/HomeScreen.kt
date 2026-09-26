@@ -2,15 +2,18 @@ package com.gybra.terminallauncher.ui.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -34,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -42,9 +46,13 @@ import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
+import com.gybra.terminallauncher.theme.BadgeColor
+import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.shell.SectionLines
 import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
@@ -268,6 +276,10 @@ private fun LazyListScope.searchResults(
         val rowKey = HomeItem.SEARCH.rowKey(result.app.packageName)
         AppRow(
             displayName = state.shellProfile.formatAppName(result.app),
+            notificationCount = state.notificationCounts[result.app.packageName],
+            badgeBackground = state.badgeBackground,
+            badgeText = state.badgeText,
+            badgeSize = state.badgeSize,
             onClick = { rowActions.onAppClick(result.app) },
             onLongClick = { rowActions.onAppLongClick(result.app, rowKey) },
             choices = state.choicesUnder(rowKey),
@@ -290,6 +302,10 @@ private fun LazyListScope.pinnedItems(
     ) { app ->
         AppRow(
             displayName = state.shellProfile.formatAppName(app),
+            notificationCount = state.notificationCounts[app.packageName],
+            badgeBackground = state.badgeBackground,
+            badgeText = state.badgeText,
+            badgeSize = state.badgeSize,
             onClick = { rowActions.onAppClick(app) },
             onLongClick = { rowActions.onAppLongClick(app, app.packageName) },
             choices = state.choicesUnder(app.packageName),
@@ -379,6 +395,10 @@ private fun StatusLine(clock: String?, battery: String?) {
 private fun AppRow(
     displayName: String,
     onClick: () -> Unit,
+    notificationCount: Int? = null,
+    badgeBackground: String? = null,
+    badgeText: String? = null,
+    badgeSize: BadgeSize = BadgeSize.TWO,
     onLongClick: () -> Unit = {},
     choices: List<HoldChoice> = emptyList(),
     onChoiceClick: (HoldChoice) -> Unit = {},
@@ -411,7 +431,23 @@ private fun AppRow(
             BasicText(
                 text = displayName,
                 style = terminalTextStyle(if (pressed) colors.background else ink),
+                modifier = if (notificationCount != null && notificationCount > 0) {
+                    Modifier.weight(weight = 1f, fill = false)
+                } else {
+                    Modifier
+                },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
+            if (notificationCount != null && notificationCount > 0) {
+                NotificationBadge(
+                    notificationCount,
+                    badgeBackground,
+                    badgeText,
+                    pressed,
+                    badgeSize,
+                )
+            }
         }
         choices.forEach { choice ->
             AppRow(
@@ -422,6 +458,39 @@ private fun AppRow(
         }
     }
 }
+
+@Composable
+private fun NotificationBadge(
+    count: Int,
+    background: String?,
+    text: String?,
+    pressed: Boolean,
+    size: BadgeSize,
+) {
+    val colors = LocalTerminalColors.current
+    val fill = background.badgeColor() ?: colors.foreground
+    val ink = text.badgeColor() ?: colors.background
+    Spacer(modifier = Modifier.width(8.dp))
+    BasicText(
+        text = if (count > 99) HomeItem.BADGE_OVERFLOW else count.toString(),
+        style = terminalTextStyle(
+            color = if (pressed) colors.foreground else ink,
+            fontSize = size.fontSize,
+            lineHeight = size.lineHeight,
+        ),
+        modifier = Modifier
+            .background(
+                if (pressed) colors.background else fill,
+                CircleShape,
+            )
+            .padding(horizontal = size.horizontalPadding, vertical = size.verticalPadding)
+            .semantics { contentDescription = HomeItem.badgeDescription(count) },
+    )
+}
+
+private fun String?.badgeColor(): Color? = this?.takeIf(BadgeColor::isValid)
+    ?.removePrefix("#")?.toLongOrNull(radix = 16)
+    ?.let { rgb -> Color(0xff000000L or rgb) }
 
 /** The commands offered under [rowKey], or none when another row was held. */
 private fun HomeUiState.choicesUnder(rowKey: String): List<HoldChoice> =

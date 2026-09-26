@@ -9,6 +9,8 @@ import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellProfiles
 import com.gybra.terminallauncher.shell.ShellType
+import com.gybra.terminallauncher.theme.BadgeColor
+import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.theme.TerminalTheme
 import java.io.IOException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +47,33 @@ public class SettingsViewModel(
             update = { state -> state.copy(terminalTheme = terminalTheme) },
             persist = { preferencesRepository.setTerminalTheme(terminalTheme) },
         )
+    }
+
+    public fun setBadgeBackground(color: String?) {
+        if (color != null && !BadgeColor.isValid(color)) return
+        updateSetting(
+            update = { state -> state.copy(badgeBackground = color) },
+            persist = { preferencesRepository.setBadgeBackground(color) },
+        )
+    }
+
+    public fun setBadgeText(color: String?) {
+        if (color != null && !BadgeColor.isValid(color)) return
+        updateSetting(
+            update = { state -> state.copy(badgeText = color) },
+            persist = { preferencesRepository.setBadgeText(color) },
+        )
+    }
+
+    public fun setBadgeSize(size: BadgeSize) {
+        updateSetting(
+            update = { state -> state.copy(badgeSize = size) },
+            persist = { preferencesRepository.setBadgeSize(size) },
+        )
+    }
+
+    public fun refreshNotificationAccess(enabled: Boolean) {
+        mutableUiState.value = mutableUiState.value.copy(notificationAccess = enabled)
     }
 
     public fun setShowClock(showClock: Boolean) {
@@ -138,6 +167,7 @@ public class SettingsViewModel(
             preferencesRepository.preferences.collect { preferences ->
                 if (pendingWrites == 0) {
                     mutableUiState.value = preferences.toUiState()
+                        .copy(notificationAccess = mutableUiState.value.notificationAccess)
                 }
             }
         }
@@ -168,13 +198,19 @@ public class SettingsViewModel(
         if (pendingWrites == 0) {
             val error = if (batchFailed) STORAGE_ERROR else null
             batchFailed = false
-            mutableUiState.value = preferences.toUiState().copy(storageError = error)
+            mutableUiState.value = preferences.toUiState().copy(
+                storageError = error,
+                notificationAccess = mutableUiState.value.notificationAccess,
+            )
         }
     }
 
     private fun LauncherPreferences.toUiState(): SettingsUiState = SettingsUiState(
         shellProfile = ShellProfiles.forType(shellType),
         terminalTheme = terminalTheme,
+        badgeBackground = badgeBackground,
+        badgeText = badgeText,
+        badgeSize = badgeSize,
         showClock = showClock,
         showBattery = showBattery,
         immersiveMode = immersiveMode,

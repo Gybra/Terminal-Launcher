@@ -3,6 +3,7 @@ package com.gybra.terminallauncher.ui.settings
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellProfile
+import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.theme.TerminalTheme
 
 public data class SettingsUiState(
@@ -18,4 +19,8 @@ public data class SettingsUiState(
     public val showPromptPath: Boolean,
     public val dosDrive: DosDrive,
     public val storageError: String? = null,
+    public val notificationAccess: Boolean = false,
+    public val badgeBackground: String? = null,
+    public val badgeText: String? = null,
+    public val badgeSize: BadgeSize = BadgeSize.TWO,
 )

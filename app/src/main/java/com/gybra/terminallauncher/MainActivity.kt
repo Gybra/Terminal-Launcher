@@ -1,6 +1,9 @@
 package com.gybra.terminallauncher
 
 import android.graphics.Color
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.provider.Settings
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -9,6 +12,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -25,6 +29,7 @@ import com.gybra.terminallauncher.command.launcherCommands
 import com.gybra.terminallauncher.launcher.AppLauncher
 import com.gybra.terminallauncher.launcher.BroadcastPackageMonitor
 import com.gybra.terminallauncher.launcher.SystemDeviceLock
+import com.gybra.terminallauncher.launcher.TerminalApplication
 import com.gybra.terminallauncher.launcher.SystemOverview
 import com.gybra.terminallauncher.launcher.SystemShade
 import com.gybra.terminallauncher.launcher.PackageManagerAppRepository
@@ -53,8 +58,7 @@ public class MainActivity : ComponentActivity() {
 
         val packageMonitor = BroadcastPackageMonitor(applicationContext)
         val appRepository = PackageManagerAppRepository(
-            packageManager = packageManager,
-            launcherPackageName = packageName,
+            packageManager = packageManager, launcherPackageName = packageName,
             packageMonitor = packageMonitor,
         )
         val preferencesRepository = DataStorePreferencesRepository(applicationContext.launcherDataStore)
@@ -65,15 +69,9 @@ public class MainActivity : ComponentActivity() {
         val batteryRepository = SystemBatteryRepository(applicationContext)
         val shortcutRepository = LauncherAppsShortcutRepository(applicationContext)
         val deviceLock = SystemDeviceLock(applicationContext)
-        val commandExecutor = CommandExecutor(
-            CommandRegistry(
-                commands = launcherCommands(
-                    preferencesRepository = preferencesRepository,
-                    batteryRepository = batteryRepository,
-                    shortcutRepository = shortcutRepository,
-                    torch = SystemTorch(applicationContext),
-                ),
-            ),
+        val notificationCounts = (application as TerminalApplication).notificationCounts
+        val commandExecutor = createCommandExecutor(
+            preferencesRepository, batteryRepository, shortcutRepository,
         )
         val launcherViewModelFactory = viewModelFactory {
             initializer {
@@ -84,6 +82,7 @@ public class MainActivity : ComponentActivity() {
                     launcherClock = launcherClock,
                     commandExecutor = commandExecutor,
                     packageMonitor = packageMonitor,
+                    notificationCounts = notificationCounts.values,
                 )
             }
             initializer { SettingsViewModel(preferencesRepository, deviceLock) }
@@ -97,6 +96,21 @@ public class MainActivity : ComponentActivity() {
             deviceLock = deviceLock,
         )
     }
+
+    private fun createCommandExecutor(
+        preferences: DataStorePreferencesRepository,
+        battery: SystemBatteryRepository,
+        shortcuts: LauncherAppsShortcutRepository,
+    ): CommandExecutor = CommandExecutor(
+        CommandRegistry(
+            commands = launcherCommands(
+                preferencesRepository = preferences,
+                batteryRepository = battery,
+                shortcutRepository = shortcuts,
+                torch = SystemTorch(applicationContext),
+            ),
+        ),
+    )
 
     private fun setLauncherContent(
         viewModelFactory: ViewModelProvider.Factory,
@@ -115,6 +129,12 @@ public class MainActivity : ComponentActivity() {
             val terminalColors = settingsState.terminalTheme.colors(isSystemInDarkTheme())
             LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
                 settingsViewModel.refreshDeviceLock()
+                val enabled = NotificationManagerCompat
+                    .getEnabledListenerPackages(this@MainActivity).contains(packageName)
+                if (!enabled) {
+                    (application as TerminalApplication).notificationCounts.clear()
+                }
+                settingsViewModel.refreshNotificationAccess(enabled)
             }
             SideEffect {
                 updateSystemBarIconAppearance(
@@ -125,19 +145,7 @@ public class MainActivity : ComponentActivity() {
             LauncherApp(
                 homeState = homeState,
                 settingsState = settingsState,
-                settingsActions = SettingsActions(
-                    selectShell = settingsViewModel::selectShell,
-                    selectTheme = settingsViewModel::selectTheme,
-                    setShowClock = settingsViewModel::setShowClock,
-                    setShowBattery = settingsViewModel::setShowBattery,
-                    setImmersiveMode = settingsViewModel::setImmersiveMode,
-                    setDoubleTapToLock = settingsViewModel::setDoubleTapToLock,
-                    setUsername = settingsViewModel::setUsername,
-                    setHostname = settingsViewModel::setHostname,
-                    selectPromptSymbol = settingsViewModel::selectPromptSymbol,
-                    setShowPromptPath = settingsViewModel::setShowPromptPath,
-                    selectDosDrive = settingsViewModel::selectDosDrive,
-                ),
+                settingsActions = settingsActions(settingsViewModel),
                 promptActions = PromptActions(
                     updateValue = homeViewModel::updatePromptValue,
                     updateFocus = homeViewModel::updatePromptFocus,
@@ -160,6 +168,30 @@ public class MainActivity : ComponentActivity() {
             )
         }
     }
+
+    private fun settingsActions(viewModel: SettingsViewModel): SettingsActions = SettingsActions(
+        selectShell = viewModel::selectShell,
+        selectTheme = viewModel::selectTheme,
+        setShowClock = viewModel::setShowClock,
+        setShowBattery = viewModel::setShowBattery,
+        setImmersiveMode = viewModel::setImmersiveMode,
+        setDoubleTapToLock = viewModel::setDoubleTapToLock,
+        setUsername = viewModel::setUsername,
+        setHostname = viewModel::setHostname,
+        selectPromptSymbol = viewModel::selectPromptSymbol,
+        setShowPromptPath = viewModel::setShowPromptPath,
+        selectDosDrive = viewModel::selectDosDrive,
+        setBadgeBackground = viewModel::setBadgeBackground,
+        setBadgeText = viewModel::setBadgeText,
+        setBadgeSize = viewModel::setBadgeSize,
+        openNotificationAccess = {
+            try {
+                startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+            } catch (_: ActivityNotFoundException) {
+                // Some devices provide no notification-access settings activity.
+            }
+        },
+    )
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)

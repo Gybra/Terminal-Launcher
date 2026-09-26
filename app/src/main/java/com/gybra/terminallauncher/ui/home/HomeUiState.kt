@@ -4,6 +4,7 @@ import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.search.SearchResult
 import com.gybra.terminallauncher.shell.ShellContext
+import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.shell.ShellProfile
 
 public data class HomeUiState(
@@ -19,4 +20,8 @@ public data class HomeUiState(
     public val prompt: PromptState = PromptState(),
     public val holdChoices: List<HoldChoice> = emptyList(),
     public val holdRowKey: String? = null,
+    public val notificationCounts: Map<String, Int> = emptyMap(),
+    public val badgeBackground: String? = null,
+    public val badgeText: String? = null,
+    public val badgeSize: BadgeSize = BadgeSize.TWO,
 )
