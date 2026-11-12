@@ -6,6 +6,7 @@ import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.PromptCursor
+import com.gybra.terminallauncher.shell.PromptOption
 import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.PINNED_DIRECTORY
 import com.gybra.terminallauncher.shell.SectionLines
@@ -17,6 +18,8 @@ public object DosShellProfile : ShellProfile {
     override val type: ShellType = ShellType.DOS
 
     override val cursor: PromptCursor = PromptCursor.BLOCK
+
+    override val promptOptions: Set<PromptOption> = setOf(PromptOption.DRIVE, PromptOption.PATH)
 
     override fun prompt(context: ShellContext): String = "${formatPath(context)}>"
 

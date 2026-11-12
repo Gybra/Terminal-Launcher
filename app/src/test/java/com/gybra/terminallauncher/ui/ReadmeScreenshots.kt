@@ -5,7 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import com.gybra.terminallauncher.command.Command
 import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.InstalledApp
@@ -25,6 +27,7 @@ import com.gybra.terminallauncher.ui.home.PromptState
 import com.gybra.terminallauncher.ui.home.TerminalEntry
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsScreen
+import com.gybra.terminallauncher.ui.settings.SettingsSection
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
 import com.gybra.terminallauncher.ui.theme.TerminalThemeProvider
 import org.junit.Assert.assertTrue
@@ -111,7 +114,11 @@ class ReadmeScreenshots {
 
     @Test
     fun `writes the settings screen`() {
-        capture("settings", TerminalTheme.SOLARIZED) {
+        capture(
+            name = "settings",
+            theme = TerminalTheme.SOLARIZED,
+            arrange = { composeRule.onNodeWithTag(SettingsSection.APPEARANCE.entry.key).performClick() },
+        ) {
             SettingsScreen(
                 state = SettingsUiState(
                     shellProfile = UnixShellProfile,
@@ -125,6 +132,7 @@ class ReadmeScreenshots {
                     promptSymbol = PromptSymbol.DOLLAR,
                     showPromptPath = true,
                     dosDrive = DosDrive.C,
+                    notificationAccess = true,
                 ),
                 actions = emptySettingsActions(),
                 onBack = {},
@@ -132,10 +140,16 @@ class ReadmeScreenshots {
         }
     }
 
-    private fun capture(name: String, theme: TerminalTheme, content: @Composable () -> Unit) {
+    private fun capture(
+        name: String,
+        theme: TerminalTheme,
+        arrange: () -> Unit = {},
+        content: @Composable () -> Unit,
+    ) {
         composeRule.setContent {
             TerminalThemeProvider(theme = theme, content = content)
         }
+        arrange()
         composeRule.waitForIdle()
 
         val picture = screenshotsDirectory().resolve("$name.png")

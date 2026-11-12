@@ -9,6 +9,7 @@ import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.PromptCursor
+import com.gybra.terminallauncher.shell.PromptOption
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.SectionLines
 import com.gybra.terminallauncher.shell.ShellContext
@@ -18,6 +19,14 @@ import org.junit.Test
 
 class UnixShellProfileTest {
     private val profile = UnixShellProfile
+
+    @Test
+    fun `offers only the prompt options this shell writes`() {
+        assertEquals(
+            setOf(PromptOption.USERNAME, PromptOption.HOSTNAME, PromptOption.SYMBOL, PromptOption.PATH),
+            profile.promptOptions,
+        )
+    }
 
     @Test
     fun `writes the cursor as an underscore`() {

@@ -2,48 +2,53 @@ package com.gybra.terminallauncher.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.shell.DosDrive
+import com.gybra.terminallauncher.shell.PromptOption
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.theme.BadgeSize
-import com.gybra.terminallauncher.theme.DosColor
 import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 
+/**
+ * The settings, read from the top: what Home would look like, then the sections, collapsed until
+ * one is opened. Opening a section closes the one already open. The preview scrolls with the
+ * sections so they stay reachable above the keyboard, even in a short window.
+ */
 @Composable
 public fun SettingsScreen(
     state: SettingsUiState,
@@ -52,11 +57,13 @@ public fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalTerminalColors.current
+    var openSection by rememberSaveable { mutableStateOf<SettingsSection?>(null) }
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .background(colors.background)
             .windowInsetsPadding(WindowInsets.systemBars)
+            .imePadding()
             .testTag(TestTag.SETTINGS_LIST.tag),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -67,382 +74,156 @@ public fun SettingsScreen(
         state.storageError?.let { error ->
             item(key = SettingsEntry.STORAGE_ERROR.key) { TerminalText(state.write(error)) }
         }
-        appearanceSettings(state = state, actions = actions)
-        homeSettings(state = state, actions = actions)
-        notificationSettings(state = state, actions = actions)
-        unixSettings(state = state, actions = actions)
-        dosSettings(state = state, actions = actions)
+        item(key = SettingsEntry.PREVIEW.key) { SettingsPreview(state = state) }
+        val toggle = { section: SettingsSection -> openSection = section.takeUnless { it == openSection } }
+        section(state, SettingsSection.APPEARANCE, openSection, toggle) { AppearanceRows(state, actions) }
+        section(state, SettingsSection.HOME_SCREEN, openSection, toggle) { HomeScreenRows(state, actions) }
+        section(state, SettingsSection.GESTURES, openSection, toggle) {
+            ToggleRow(state, SettingsEntry.DOUBLE_TAP_TO_LOCK, state.doubleTapToLock, actions.setDoubleTapToLock)
+        }
+        section(state, SettingsSection.PROMPT, openSection, toggle) { PromptRows(state, actions) }
+        section(state, SettingsSection.NOTIFICATIONS, openSection, toggle) { NotificationRows(state, actions) }
     }
 }
 
-private fun LazyListScope.appearanceSettings(
+/** One section: its header, and its rows inside the same border once it is open. */
+private fun LazyListScope.section(
     state: SettingsUiState,
-    actions: SettingsActions,
+    section: SettingsSection,
+    openSection: SettingsSection?,
+    onToggle: (SettingsSection) -> Unit,
+    rows: @Composable () -> Unit,
 ) {
-    item(key = SettingsEntry.APPEARANCE.key) {
-        SectionTitle(state.write(SettingsEntry.APPEARANCE.label))
-    }
-    item(key = SettingsEntry.SHELL.key) { TerminalText(state.write(SettingsEntry.SHELL.label)) }
-    ShellType.entries.forEach { shellType ->
-        item(key = SettingsEntry.SHELL.optionKey(shellType)) {
-            SelectionOption(
-                label = state.write(shellType.name),
-                selected = state.shellProfile.type == shellType,
-                onClick = { actions.selectShell(shellType) },
-            )
-        }
-    }
-    item(key = SettingsEntry.THEME.key) { TerminalText(state.write(SettingsEntry.THEME.label)) }
-    TerminalTheme.entries.forEach { terminalTheme ->
-        item(key = SettingsEntry.THEME.optionKey(terminalTheme)) {
-            SelectionOption(
-                label = state.write(terminalTheme.name),
-                selected = state.terminalTheme == terminalTheme,
-                onClick = { actions.selectTheme(terminalTheme) },
-            )
+    item(key = section.entry.key) {
+        val colors = LocalTerminalColors.current
+        val open = openSection == section
+        Column(modifier = Modifier.border(1.dp, if (open) colors.foreground else colors.secondary)) {
+            SectionHeader(state = state, section = section, open = open, onToggle = { onToggle(section) })
+            if (open) {
+                Column(modifier = Modifier.padding(horizontal = 12.dp)) { rows() }
+            }
         }
     }
 }
 
-/** Lists what Home shows and how it behaves, under the same section as the appearance. */
-private fun LazyListScope.homeSettings(
+/** The header of a section, carrying its summary, and inverted while the section is open. */
+@Composable
+private fun SectionHeader(
     state: SettingsUiState,
-    actions: SettingsActions,
+    section: SettingsSection,
+    open: Boolean,
+    onToggle: () -> Unit,
 ) {
-    item(key = SettingsEntry.SHOW_CLOCK.key) {
-        ToggleOption(
-            label = state.write(SettingsEntry.SHOW_CLOCK.label),
-            checked = state.showClock,
-            onCheckedChange = actions.setShowClock,
-        )
-    }
-    item(key = SettingsEntry.SHOW_BATTERY.key) {
-        ToggleOption(
-            label = state.write(SettingsEntry.SHOW_BATTERY.label),
-            checked = state.showBattery,
-            onCheckedChange = actions.setShowBattery,
-        )
-    }
-    item(key = SettingsEntry.IMMERSIVE_MODE.key) {
-        ToggleOption(
-            label = state.write(SettingsEntry.IMMERSIVE_MODE.label),
-            checked = state.immersiveMode,
-            onCheckedChange = actions.setImmersiveMode,
-        )
-    }
-    item(key = SettingsEntry.DOUBLE_TAP_TO_LOCK.key) {
-        ToggleOption(
-            label = state.write(SettingsEntry.DOUBLE_TAP_TO_LOCK.label),
-            checked = state.doubleTapToLock,
-            onCheckedChange = actions.setDoubleTapToLock,
-        )
-    }
-    item(key = SettingsEntry.SHOW_PROMPT_PATH.key) {
-        ToggleOption(
-            label = state.write(SettingsEntry.SHOW_PROMPT_PATH.label),
-            checked = state.showPromptPath,
-            onCheckedChange = actions.setShowPromptPath,
-        )
-    }
-}
-
-private fun LazyListScope.notificationSettings(
-    state: SettingsUiState,
-    actions: SettingsActions,
-) {
-    notificationAccess(state, actions)
-    item(key = SettingsEntry.BADGE_SIZE.key) {
-        TerminalText(state.write(SettingsEntry.BADGE_SIZE.label))
-    }
-    BadgeSize.entries.forEach { size ->
-        item(key = SettingsEntry.BADGE_SIZE.optionKey(size)) {
-            SelectionOption(
-                label = state.write(size.step.toString()),
-                selected = state.badgeSize == size,
-                onClick = { actions.setBadgeSize(size) },
-            )
-        }
-    }
-    item(key = SettingsEntry.BADGE_BACKGROUND.key) {
-        BadgeColorSetting(
-            state = state,
-            entry = SettingsEntry.BADGE_BACKGROUND,
-            color = state.badgeBackground,
-            onChange = actions.setBadgeBackground,
-        )
-    }
-    item(key = SettingsEntry.BADGE_TEXT.key) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            BadgeColorSetting(
-                state = state,
-                entry = SettingsEntry.BADGE_TEXT,
-                color = state.badgeText,
-                onChange = actions.setBadgeText,
-            )
-            BadgePreview(state)
-        }
-    }
-}
-
-private fun LazyListScope.notificationAccess(
-    state: SettingsUiState,
-    actions: SettingsActions,
-) {
-    val status = if (state.notificationAccess) {
-        SettingsEntry.NOTIFICATION_ENABLED.label
+    val colors = LocalTerminalColors.current
+    val (fill, ink, quiet) = if (open) {
+        Triple(colors.foreground, colors.background, colors.background)
     } else {
-        SettingsEntry.NOTIFICATION_DISABLED.label
+        Triple(Color.Transparent, colors.foreground, colors.secondary)
     }
-    item(key = SettingsEntry.NOTIFICATION_ACCESS.key) {
-        TerminalText(state.write("${SettingsEntry.NOTIFICATION_ACCESS.label} $status"))
-    }
-    if (state.notificationAccess) return
-    item(key = SettingsEntry.NOTIFICATION_SETTINGS.key) {
-        ActionLine(
-            text = state.write(SettingsEntry.NOTIFICATION_SETTINGS.label),
-            onClick = actions.openNotificationAccess,
-        )
-    }
-}
-
-@Composable
-private fun BadgeColorSetting(
-    state: SettingsUiState,
-    entry: SettingsEntry,
-    color: String?,
-    onChange: (String?) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        TerminalText(state.write(entry.label))
-        DosColor.entries.chunked(4).forEach { row ->
-            ColorRow(entry = entry, row = row, selected = color, onSelect = onChange)
-        }
-        ActionLine(
-            text = state.write(SettingsEntry.BADGE_RESET.label),
-            onClick = { onChange(null) },
-        )
-    }
-}
-
-@Composable
-private fun ColorRow(
-    entry: SettingsEntry,
-    row: List<DosColor>,
-    selected: String?,
-    onSelect: (String) -> Unit,
-) {
+    val openState = state.write(openness(open).label)
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        row.forEach { dosColor ->
-            ColorSwatch(
-                tag = entry.optionKey(dosColor),
-                dosColor = dosColor,
-                selected = selected.equals(dosColor.hex, ignoreCase = true),
-                onSelect = { onSelect(dosColor.hex) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun RowScope.ColorSwatch(
-    tag: String,
-    dosColor: DosColor,
-    selected: Boolean,
-    onSelect: () -> Unit,
-) {
-    val colors = LocalTerminalColors.current
-    Box(
         modifier = Modifier
-            .weight(1f)
-            .height(48.dp)
-            .selectable(
-                selected = selected,
-                role = Role.RadioButton,
-                onClick = onSelect,
-            )
-            .border(2.dp, if (selected) colors.foreground else colors.secondary)
-            .background(dosColor.color)
-            .semantics { contentDescription = dosColor.name }
-            .testTag(tag),
-    )
-}
-
-@Composable
-private fun BadgePreview(state: SettingsUiState) {
-    val colors = LocalTerminalColors.current
-    val size = state.badgeSize
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        TerminalText(state.write(SettingsEntry.BADGE_PREVIEW.label) + " ")
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .background(fill)
+            .clickable(role = Role.Button, onClick = onToggle)
+            .semantics { stateDescription = openState }
+            .testTag(section.entry.key)
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        OpenMark(open = open, color = ink)
         BasicText(
-            text = "1",
-            style = terminalTextStyle(
-                color = stateColor(state.badgeText) ?: colors.background,
-                fontSize = size.fontSize,
-                lineHeight = size.lineHeight,
-            ),
-            modifier = Modifier
-                .background(
-                    stateColor(state.badgeBackground) ?: colors.foreground,
-                    CircleShape,
-                )
-                .padding(horizontal = size.horizontalPadding, vertical = size.verticalPadding),
+            text = state.write(section.entry.label),
+            style = terminalTextStyle(ink).copy(fontWeight = FontWeight.Bold),
         )
-    }
-}
-
-private fun stateColor(color: String?): Color? = color?.drop(1)?.toLongOrNull(16)
-    ?.let { rgb -> Color(0xff000000L or rgb) }
-
-private fun LazyListScope.unixSettings(
-    state: SettingsUiState,
-    actions: SettingsActions,
-) {
-    item(key = SettingsEntry.UNIX.key) { SectionTitle(state.write(SettingsEntry.UNIX.label)) }
-    item(key = SettingsEntry.USERNAME.key) {
-        TextSetting(
-            label = state.write(SettingsEntry.USERNAME.label),
-            value = state.username,
-            onValueChange = actions.setUsername,
-        )
-    }
-    item(key = SettingsEntry.HOSTNAME.key) {
-        TextSetting(
-            label = state.write(SettingsEntry.HOSTNAME.label),
-            value = state.hostname,
-            onValueChange = actions.setHostname,
-        )
-    }
-    item(key = SettingsEntry.PROMPT_SYMBOL.key) {
-        TerminalText(state.write(SettingsEntry.PROMPT_SYMBOL.label))
-    }
-    PromptSymbol.entries.forEach { promptSymbol ->
-        item(key = SettingsEntry.PROMPT_SYMBOL.optionKey(promptSymbol)) {
-            SelectionOption(
-                label = state.write(promptSymbol.text),
-                selected = state.promptSymbol == promptSymbol,
-                onClick = { actions.selectPromptSymbol(promptSymbol) },
-            )
-        }
-    }
-}
-
-private fun LazyListScope.dosSettings(
-    state: SettingsUiState,
-    actions: SettingsActions,
-) {
-    item(key = SettingsEntry.DOS.key) { SectionTitle(state.write(SettingsEntry.DOS.label)) }
-    item(key = SettingsEntry.DRIVE.key) { TerminalText(state.write(SettingsEntry.DRIVE.label)) }
-    DosDrive.entries.forEach { dosDrive ->
-        item(key = SettingsEntry.DRIVE.optionKey(dosDrive)) {
-            SelectionOption(
-                label = state.write("${dosDrive.name}:"),
-                selected = state.dosDrive == dosDrive,
-                onClick = { actions.selectDosDrive(dosDrive) },
-            )
-        }
-    }
-}
-
-/**
- * Writes [text] the way the selected shell writes a line, so the settings read in the same voice
- * as Home instead of keeping a face of their own.
- */
-private fun SettingsUiState.write(text: String): String = shellProfile.formatMessage(text)
-
-@Composable
-private fun SelectionOption(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .selectable(
-                selected = selected,
-                role = Role.RadioButton,
-                onClick = onClick,
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        TerminalText("${if (selected) "(*)" else "( )"} $label")
-    }
-}
-
-@Composable
-private fun ToggleOption(
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .toggleable(
-                value = checked,
-                role = Role.Checkbox,
-                onValueChange = onCheckedChange,
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        TerminalText("[${if (checked) "*" else " "}] $label")
-    }
-}
-
-@Composable
-private fun TextSetting(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-) {
-    val colors = LocalTerminalColors.current
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        TerminalText(label)
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            textStyle = terminalTextStyle(colors.foreground),
-            cursorBrush = SolidColor(colors.foreground),
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(colors.secondary.copy(alpha = 0.2f))
-                .padding(12.dp)
-                .semantics { contentDescription = label },
+        BasicText(
+            text = section.summarize(state),
+            style = descriptionStyle(quiet).copy(textAlign = TextAlign.End),
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
 @Composable
-private fun SectionTitle(text: String) {
-    val colors = LocalTerminalColors.current
-    BasicText(
-        text = text,
-        style = terminalTextStyle(colors.secondary),
-        modifier = Modifier.padding(top = 16.dp),
+private fun AppearanceRows(state: SettingsUiState, actions: SettingsActions) {
+    ChoiceRow(
+        state = state,
+        entry = SettingsEntry.SHELL,
+        options = ShellType.entries,
+        selected = state.shellProfile.type,
+        optionLabel = ShellType::name,
+        onSelect = actions.selectShell,
+    )
+    ChoiceRow(
+        state = state,
+        entry = SettingsEntry.THEME,
+        options = TerminalTheme.entries,
+        selected = state.terminalTheme,
+        optionLabel = TerminalTheme::name,
+        onSelect = actions.selectTheme,
+        leading = { theme -> ThemeSwatch(theme) },
     )
 }
 
 @Composable
-private fun ActionLine(text: String, onClick: () -> Unit) {
-    val colors = LocalTerminalColors.current
-    BasicText(
-        text = text,
-        style = terminalTextStyle(colors.foreground),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clickable(onClick = onClick),
-    )
+private fun HomeScreenRows(state: SettingsUiState, actions: SettingsActions) {
+    ToggleRow(state, SettingsEntry.SHOW_CLOCK, state.showClock, actions.setShowClock)
+    ToggleRow(state, SettingsEntry.SHOW_BATTERY, state.showBattery, actions.setShowBattery)
+    ToggleRow(state, SettingsEntry.IMMERSIVE_MODE, state.immersiveMode, actions.setImmersiveMode)
 }
 
+/** Writes the rows for the prompt parts the selected shell honours, which is its decision. */
 @Composable
-private fun TerminalText(text: String) {
-    val colors = LocalTerminalColors.current
-    BasicText(text = text, style = terminalTextStyle(colors.foreground))
+private fun PromptRows(state: SettingsUiState, actions: SettingsActions) {
+    val options = state.shellProfile.promptOptions
+    if (PromptOption.USERNAME in options) {
+        TextRow(state, SettingsEntry.USERNAME, state.username, actions.setUsername)
+    }
+    if (PromptOption.HOSTNAME in options) {
+        TextRow(state, SettingsEntry.HOSTNAME, state.hostname, actions.setHostname)
+    }
+    if (PromptOption.SYMBOL in options) {
+        ChoiceRow(
+            state = state,
+            entry = SettingsEntry.PROMPT_SYMBOL,
+            options = PromptSymbol.entries,
+            selected = state.promptSymbol,
+            optionLabel = PromptSymbol::text,
+            onSelect = actions.selectPromptSymbol,
+        )
+    }
+    if (PromptOption.DRIVE in options) {
+        ChoiceRow(
+            state = state,
+            entry = SettingsEntry.DRIVE,
+            options = DosDrive.entries,
+            selected = state.dosDrive,
+            optionLabel = { drive -> "${drive.name}:" },
+            onSelect = actions.selectDosDrive,
+        )
+    }
+    if (PromptOption.PATH in options) {
+        ToggleRow(state, SettingsEntry.SHOW_PROMPT_PATH, state.showPromptPath, actions.setShowPromptPath)
+    }
+}
+
+/** The badge settings change nothing until Android grants access, so they wait for it. */
+@Composable
+private fun NotificationRows(state: SettingsUiState, actions: SettingsActions) {
+    NotificationAccessRow(state = state, onOpenSettings = actions.openNotificationAccess)
+    if (!state.notificationAccess) return
+    ChoiceRow(
+        state = state,
+        entry = SettingsEntry.BADGE_SIZE,
+        options = BadgeSize.entries,
+        selected = state.badgeSize,
+        optionLabel = { size -> size.step.toString() },
+        onSelect = actions.setBadgeSize,
+    )
+    BadgeColorRow(state, SettingsEntry.BADGE_BACKGROUND, state.badgeBackground, actions.setBadgeBackground)
+    BadgeColorRow(state, SettingsEntry.BADGE_TEXT, state.badgeText, actions.setBadgeText)
 }

@@ -45,6 +45,7 @@ import com.gybra.terminallauncher.ui.home.SubmittedAction
 import com.gybra.terminallauncher.ui.home.TerminalEntry
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsEntry
+import com.gybra.terminallauncher.ui.settings.SettingsSection
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.emptyFlow
@@ -83,7 +84,7 @@ class LauncherAppTest {
             )
         }
 
-        composeRule.onNodeWithText(UnixShellProfile.formatMessage(SettingsEntry.APPEARANCE.label)).assertIsDisplayed()
+        composeRule.onNodeWithTag(SettingsSection.APPEARANCE.entry.key).assertIsDisplayed()
 
         composeRule.onNodeWithText(UnixShellProfile.formatMessage(SettingsEntry.BACK.label)).performClick()
         composeRule.onNodeWithText("user@android:~$", substring = true).assertIsDisplayed()
@@ -208,7 +209,7 @@ class LauncherAppTest {
                 onRestartLauncher = {},
             )
         }
-        composeRule.onNodeWithText(UnixShellProfile.formatMessage(SettingsEntry.APPEARANCE.label)).assertIsDisplayed()
+        composeRule.onNodeWithTag(SettingsSection.APPEARANCE.entry.key).assertIsDisplayed()
 
         composeRule.runOnIdle {
             checkNotNull(backDispatcher).onBackPressed()
@@ -301,7 +302,7 @@ class LauncherAppTest {
         composeRule.runOnIdle { submittedActions.tryEmit(SubmittedAction.OpenSettings) }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText(UnixShellProfile.formatMessage(SettingsEntry.APPEARANCE.label)).assertIsDisplayed()
+        composeRule.onNodeWithTag(SettingsSection.APPEARANCE.entry.key).assertIsDisplayed()
     }
 
     @Test
