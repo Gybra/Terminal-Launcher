@@ -3,8 +3,7 @@ package com.gybra.terminallauncher.ui.settings
 /**
  * Every row and fixed word the settings screen writes, named once: the screen lists a row under
  * [key] and writes [label], [description] says what the setting changes, and [summary] is the word
- * a collapsed section uses for it. A test reads the same values instead of repeating them. A row
- * whose text is not fixed, such as the one carrying a storage error, keeps no label.
+ * a collapsed section uses for it. A test reads the same values instead of repeating them.
  */
 public enum class SettingsEntry(
     public val key: String,
@@ -13,7 +12,6 @@ public enum class SettingsEntry(
     public val summary: String = label,
 ) {
     BACK("back", "< back"),
-    STORAGE_ERROR("storage-error"),
     PREVIEW("preview", "preview"),
     APPEARANCE("appearance", "Appearance"),
     HOME_SCREEN("home-screen", "Home screen"),
