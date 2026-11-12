@@ -18,9 +18,7 @@ public enum class SettingsSection(public val entry: SettingsEntry) {
             listOf(state.shellProfile.type.name, state.terminalTheme.name).joinSummary(),
         )
         HOME_SCREEN -> state.write(homeScreenSummary(state))
-        GESTURES -> state.write(
-            if (state.doubleTapToLock) SettingsEntry.DOUBLE_TAP_TO_LOCK.summary else SettingsEntry.OFF.label,
-        )
+        GESTURES -> state.write(gesturesSummary(state))
         PROMPT -> state.shellProfile.prompt(state.shellContext())
         NOTIFICATIONS -> state.write(notificationsSummary(state))
     }
@@ -31,6 +29,12 @@ private fun homeScreenSummary(state: SettingsUiState): String = listOfNotNull(
     SettingsEntry.SHOW_BATTERY.takeIf { state.showBattery },
     SettingsEntry.IMMERSIVE_MODE.takeIf { state.immersiveMode },
 ).map(SettingsEntry::summary).ifEmpty { listOf(SettingsEntry.ALL_OFF.label) }.joinSummary()
+
+private fun gesturesSummary(state: SettingsUiState): String = if (state.doubleTapToLock) {
+    SettingsEntry.DOUBLE_TAP_TO_LOCK.summary
+} else {
+    SettingsEntry.OFF.label
+}
 
 private fun notificationsSummary(state: SettingsUiState): String = if (state.notificationAccess) {
     listOf(
