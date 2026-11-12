@@ -13,6 +13,9 @@ public interface ShellProfile {
     /** The shape this shell writes its prompt cursor as. */
     public val cursor: PromptCursor
 
+    /** The prompt parts this shell writes, so the settings list no option it would ignore. */
+    public val promptOptions: List<PromptOption>
+
     public fun prompt(context: ShellContext): String
 
     public fun formatAppName(app: InstalledApp): String
