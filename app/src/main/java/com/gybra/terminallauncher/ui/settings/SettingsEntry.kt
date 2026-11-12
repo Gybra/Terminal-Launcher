@@ -14,6 +14,7 @@ public enum class SettingsEntry(
 ) {
     BACK("back", "< back"),
     PREVIEW("preview", "preview"),
+    STORAGE_ERROR("storage-error"),
     APPEARANCE("appearance", "Appearance"),
     HOME_SCREEN("home-screen", "Home screen"),
     GESTURES("gestures", "Gestures"),

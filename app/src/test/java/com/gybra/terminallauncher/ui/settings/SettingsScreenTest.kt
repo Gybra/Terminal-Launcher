@@ -1,10 +1,13 @@
 package com.gybra.terminallauncher.ui.settings
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -12,11 +15,14 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
@@ -32,6 +38,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellProfile
@@ -169,6 +176,52 @@ class SettingsScreenTest {
         assertEquals("oreste", harness.state.username)
         assertEquals("phone", harness.state.hostname)
         assertFalse(harness.state.showPromptPath)
+    }
+
+    @Test
+    @Config(qualifiers = "w891dp-h411dp-land")
+    fun `prompt fields remain editable in the short space left above a landscape keyboard`() {
+        val harness = SettingsHarness()
+        composeRule.setContent {
+            // Leave only the height available above an open landscape keyboard.
+            Box(modifier = Modifier.height(180.dp)) { harness.Content() }
+        }
+        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).assertHeightIsAtLeast(48.dp)
+        header(SettingsSection.PROMPT).performClick()
+
+        scrollTo(hasContentDescription(label(SettingsEntry.USERNAME)))
+        composeRule.onNodeWithContentDescription(label(SettingsEntry.USERNAME))
+            .assertIsDisplayed().performClick().performTextReplacement("oreste")
+        scrollTo(hasContentDescription(label(SettingsEntry.HOSTNAME)))
+        composeRule.onNodeWithContentDescription(label(SettingsEntry.HOSTNAME))
+            .assertIsDisplayed().performClick().performTextReplacement("phone")
+
+        assertEquals("oreste", harness.state.username)
+        assertEquals("phone", harness.state.hostname)
+    }
+
+    @Test
+    @Config(qualifiers = "w891dp-h411dp-land")
+    fun `a focused hostname stays visible when the landscape viewport shrinks`() {
+        val harness = SettingsHarness()
+        var availableHeight by mutableStateOf(411.dp)
+        composeRule.setContent {
+            Box(modifier = Modifier.height(availableHeight)) { harness.Content() }
+        }
+        header(SettingsSection.PROMPT).performClick()
+        scrollTo(hasContentDescription(label(SettingsEntry.HOSTNAME)))
+        val hostname = composeRule.onNodeWithContentDescription(label(SettingsEntry.HOSTNAME))
+        hostname.performClick().assertIsFocused()
+
+        composeRule.runOnIdle { availableHeight = 180.dp }
+
+        hostname.assertIsFocused().assertIsDisplayed()
+        val field = hostname.getUnclippedBoundsInRoot()
+        val viewport = composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).getUnclippedBoundsInRoot()
+        assertTrue("The focused field must remain above the viewport bottom", field.bottom <= viewport.bottom)
+        assertTrue("The focused field must remain below the viewport top", field.top >= viewport.top)
+        hostname.performTextReplacement("phone")
+        assertEquals("phone", harness.state.hostname)
     }
 
     @Test

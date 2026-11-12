@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,8 +46,8 @@ import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 
 /**
  * The settings, read from the top: what Home would look like, then the sections, collapsed until
- * one is opened. Opening a section closes the one already open, so the preview stays next to
- * whatever is being changed.
+ * one is opened. Opening a section closes the one already open. The preview scrolls with the
+ * sections so they stay reachable above the keyboard, even in a short window.
  */
 @Composable
 public fun SettingsScreen(
@@ -57,33 +58,31 @@ public fun SettingsScreen(
 ) {
     val colors = LocalTerminalColors.current
     var openSection by rememberSaveable { mutableStateOf<SettingsSection?>(null) }
-    Column(
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .background(colors.background)
             .windowInsetsPadding(WindowInsets.systemBars)
             .imePadding()
-            .padding(horizontal = 24.dp, vertical = 32.dp),
+            .testTag(TestTag.SETTINGS_LIST.tag),
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ActionLine(text = state.write(SettingsEntry.BACK.label), onClick = onBack)
-        state.storageError?.let { error -> TerminalText(state.write(error)) }
-        SettingsPreview(state = state)
-        LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .testTag(TestTag.SETTINGS_LIST.tag),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            val toggle = { section: SettingsSection -> openSection = section.takeUnless { it == openSection } }
-            section(state, SettingsSection.APPEARANCE, openSection, toggle) { AppearanceRows(state, actions) }
-            section(state, SettingsSection.HOME_SCREEN, openSection, toggle) { HomeScreenRows(state, actions) }
-            section(state, SettingsSection.GESTURES, openSection, toggle) {
-                ToggleRow(state, SettingsEntry.DOUBLE_TAP_TO_LOCK, state.doubleTapToLock, actions.setDoubleTapToLock)
-            }
-            section(state, SettingsSection.PROMPT, openSection, toggle) { PromptRows(state, actions) }
-            section(state, SettingsSection.NOTIFICATIONS, openSection, toggle) { NotificationRows(state, actions) }
+        item(key = SettingsEntry.BACK.key) {
+            ActionLine(text = state.write(SettingsEntry.BACK.label), onClick = onBack)
         }
+        state.storageError?.let { error ->
+            item(key = SettingsEntry.STORAGE_ERROR.key) { TerminalText(state.write(error)) }
+        }
+        item(key = SettingsEntry.PREVIEW.key) { SettingsPreview(state = state) }
+        val toggle = { section: SettingsSection -> openSection = section.takeUnless { it == openSection } }
+        section(state, SettingsSection.APPEARANCE, openSection, toggle) { AppearanceRows(state, actions) }
+        section(state, SettingsSection.HOME_SCREEN, openSection, toggle) { HomeScreenRows(state, actions) }
+        section(state, SettingsSection.GESTURES, openSection, toggle) {
+            ToggleRow(state, SettingsEntry.DOUBLE_TAP_TO_LOCK, state.doubleTapToLock, actions.setDoubleTapToLock)
+        }
+        section(state, SettingsSection.PROMPT, openSection, toggle) { PromptRows(state, actions) }
+        section(state, SettingsSection.NOTIFICATIONS, openSection, toggle) { NotificationRows(state, actions) }
     }
 }
 
