@@ -52,10 +52,12 @@ public fun LauncherApp(
     onExpandQuickSettings: () -> Unit = {},
     onOpenOverview: () -> Unit = {},
 ) {
-    var destination by rememberLauncherDestination(
+    var destination by rememberSubmittedActionDestination(
         submittedActions, onLaunchApp, onOpenSystemScreen, onRestartLauncher,
     )
     val releasePrompt = rememberPromptRelease()
+    // External app starts, recents and locking also leave Home; none may restore a live keyboard.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { releasePrompt() }
 
     LaunchedEffect(settingsState.accessibilityDisclosureVisible) {
         if (settingsState.accessibilityDisclosureVisible) releasePrompt()
@@ -116,7 +118,7 @@ public fun LauncherApp(
 }
 
 @Composable
-private fun rememberLauncherDestination(
+private fun rememberSubmittedActionDestination(
     submittedActions: Flow<SubmittedAction>,
     onLaunchApp: (InstalledApp) -> Unit,
     onOpenSystemScreen: (SystemScreen) -> Unit,
@@ -127,8 +129,6 @@ private fun rememberLauncherDestination(
     val launchApp by rememberUpdatedState(onLaunchApp)
     val openSystemScreen by rememberUpdatedState(onOpenSystemScreen)
     val restartLauncher by rememberUpdatedState(onRestartLauncher)
-    // External app starts, recents and locking also leave Home; none may restore a live keyboard.
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { releasePrompt() }
     LaunchedEffect(submittedActions) {
         submittedActions.collect { action ->
             releasePrompt()
