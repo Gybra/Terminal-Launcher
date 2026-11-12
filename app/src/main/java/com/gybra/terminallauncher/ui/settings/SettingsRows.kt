@@ -344,7 +344,7 @@ internal fun OpenMark(open: Boolean, color: Color) {
 internal fun openness(open: Boolean): SettingsEntry =
     if (open) SettingsEntry.EXPANDED else SettingsEntry.COLLAPSED
 
-/** The smaller arrested text that explains or summarises a setting. */
+/** The smaller secondary text that explains or summarises a setting. */
 internal fun descriptionStyle(color: Color): TextStyle =
     terminalTextStyle(color = color, fontSize = 14.sp, lineHeight = 20.sp)
 

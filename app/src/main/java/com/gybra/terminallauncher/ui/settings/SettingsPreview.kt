@@ -65,12 +65,10 @@ internal fun SettingsPreview(state: SettingsUiState, modifier: Modifier = Modifi
         Column {
             BasicText(text = state.write(SettingsEntry.PREVIEW.label), style = descriptionStyle(colors.secondary))
             if (statusVisible) {
-                ChangeHighlight(value = listOf(state.showClock, state.showBattery)) {
-                    StatusLine(
-                        clock = PreviewSample.CLOCK.takeIf { state.showClock },
-                        battery = state.shellProfile.formatBattery(PreviewSample.BATTERY).takeIf { state.showBattery },
-                    )
-                }
+                StatusLine(
+                    clock = PreviewSample.CLOCK.takeIf { state.showClock },
+                    battery = state.shellProfile.formatBattery(PreviewSample.BATTERY).takeIf { state.showBattery },
+                )
             }
             ChangeHighlight(value = prompt) {
                 BasicText(text = prompt, style = terminalTextStyle(colors.foreground))
