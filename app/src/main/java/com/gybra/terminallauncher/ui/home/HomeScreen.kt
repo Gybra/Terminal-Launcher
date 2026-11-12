@@ -2,18 +2,15 @@ package com.gybra.terminallauncher.ui.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -46,14 +43,13 @@ import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.launcher.AppShortcut
-import com.gybra.terminallauncher.theme.BadgeColor
 import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.shell.SectionLines
+import com.gybra.terminallauncher.ui.NotificationBadge
+import com.gybra.terminallauncher.ui.StatusLine
 import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
@@ -373,18 +369,6 @@ private fun LazyListScope.terminalHistory(
     }
 }
 
-/** Places the status parts on the two sides of the line, the way a status bar reads. */
-@Composable
-private fun StatusLine(clock: String?, battery: String?) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        TerminalLine(text = clock.orEmpty())
-        TerminalLine(text = battery.orEmpty())
-    }
-}
-
 /**
  * One startable line, written in full colour and tall enough to be operated reliably. Pressing it
  * swaps the two terminal colours, the way a TTY marks a selection, so the answer to a touch needs
@@ -458,39 +442,6 @@ private fun AppRow(
         }
     }
 }
-
-@Composable
-private fun NotificationBadge(
-    count: Int,
-    background: String?,
-    text: String?,
-    pressed: Boolean,
-    size: BadgeSize,
-) {
-    val colors = LocalTerminalColors.current
-    val fill = background.badgeColor() ?: colors.foreground
-    val ink = text.badgeColor() ?: colors.background
-    Spacer(modifier = Modifier.width(8.dp))
-    BasicText(
-        text = if (count > 99) HomeItem.BADGE_OVERFLOW else count.toString(),
-        style = terminalTextStyle(
-            color = if (pressed) colors.foreground else ink,
-            fontSize = size.fontSize,
-            lineHeight = size.lineHeight,
-        ),
-        modifier = Modifier
-            .background(
-                if (pressed) colors.background else fill,
-                CircleShape,
-            )
-            .padding(horizontal = size.horizontalPadding, vertical = size.verticalPadding)
-            .semantics { contentDescription = HomeItem.badgeDescription(count) },
-    )
-}
-
-private fun String?.badgeColor(): Color? = this?.takeIf(BadgeColor::isValid)
-    ?.removePrefix("#")?.toLongOrNull(radix = 16)
-    ?.let { rgb -> Color(0xff000000L or rgb) }
 
 /** The commands offered under [rowKey], or none when another row was held. */
 private fun HomeUiState.choicesUnder(rowKey: String): List<HoldChoice> =
