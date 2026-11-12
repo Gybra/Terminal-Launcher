@@ -30,8 +30,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -222,10 +224,13 @@ internal fun BadgeColorRow(
 ) {
     var open by remember { mutableStateOf(false) }
     Column {
+        val openState = state.write(openness(open).label)
         SettingRow(
             state = state,
             entry = entry,
-            modifier = Modifier.clickable(role = Role.Button) { open = !open },
+            modifier = Modifier
+                .clickable(role = Role.Button) { open = !open }
+                .semantics { stateDescription = openState },
             trailing = { BadgeColorValue(state = state, color = color, open = open) },
         )
         if (open) {
@@ -252,10 +257,8 @@ private fun BadgeColorValue(state: SettingsUiState, color: String?, open: Boolea
                 .background(BadgeColor.parse(color) ?: Color.Transparent)
                 .border(1.dp, colors.secondary),
         )
-        BasicText(
-            text = "${state.write(name)} ${if (open) OPEN_MARK else CLOSED_MARK}",
-            style = terminalTextStyle(colors.foreground),
-        )
+        BasicText(text = state.write(name), style = terminalTextStyle(colors.foreground))
+        OpenMark(open = open, color = colors.foreground)
     }
 }
 
@@ -340,6 +343,23 @@ internal fun TerminalText(text: String) {
     BasicText(text = text, style = terminalTextStyle(colors.foreground))
 }
 
+/**
+ * Marks something that opens in place. It is only drawn: the element carrying it states whether
+ * it is open, so a screen reader does not also read the triangle.
+ */
+@Composable
+internal fun OpenMark(open: Boolean, color: Color) {
+    BasicText(
+        text = if (open) OPEN_MARK else CLOSED_MARK,
+        style = terminalTextStyle(color),
+        modifier = Modifier.clearAndSetSemantics {},
+    )
+}
+
+/** The words an element that opens in place states to accessibility services. */
+internal fun openness(open: Boolean): SettingsEntry =
+    if (open) SettingsEntry.EXPANDED else SettingsEntry.COLLAPSED
+
 /** The smaller arrested text that explains or summarises a setting. */
 internal fun descriptionStyle(color: Color): TextStyle =
     terminalTextStyle(color = color, fontSize = 14.sp, lineHeight = 20.sp)
@@ -347,6 +367,5 @@ internal fun descriptionStyle(color: Color): TextStyle =
 private const val CHECKED_BOX = "[x]"
 private const val EMPTY_BOX = "[ ]"
 private const val INPUT_MARK = ">"
-/** Marks something that opens in place, once open and while closed. */
-internal const val OPEN_MARK: String = "▾"
-internal const val CLOSED_MARK: String = "▸"
+private const val OPEN_MARK = "▾"
+private const val CLOSED_MARK = "▸"

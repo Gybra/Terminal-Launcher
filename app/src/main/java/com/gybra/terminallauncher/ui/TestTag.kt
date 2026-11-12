@@ -7,6 +7,5 @@ package com.gybra.terminallauncher.ui
 public enum class TestTag(public val tag: String) {
     HOME_LIST("home-list"),
     SETTINGS_LIST("settings-list"),
-    SETTINGS_PREVIEW("settings-preview"),
     PROMPT_INPUT("prompt-input"),
 }

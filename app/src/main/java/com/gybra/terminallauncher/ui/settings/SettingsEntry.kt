@@ -3,7 +3,8 @@ package com.gybra.terminallauncher.ui.settings
 /**
  * Every row and fixed word the settings screen writes, named once: the screen lists a row under
  * [key] and writes [label], [description] says what the setting changes, and [summary] is the word
- * a collapsed section uses for it. A test reads the same values instead of repeating them.
+ * a collapsed section uses for it. A test reads the same values instead of repeating them. A word
+ * that is not a row, such as [OFF] or [EXPANDED], keeps a key nothing reads.
  */
 public enum class SettingsEntry(
     public val key: String,

@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -235,6 +236,8 @@ class SettingsScreenTest {
         composeRule.onAllNodesWithTag(red).assertCountEquals(0)
 
         tapRow(SettingsEntry.BADGE_BACKGROUND)
+        composeRule.onNode(hasText(label(SettingsEntry.BADGE_BACKGROUND)) and hasOpenState(SettingsEntry.EXPANDED))
+            .assertIsDisplayed()
         tap(red)
         assertEquals(DosColor.RED.hex, harness.state.badgeBackground)
         composeRule.onNodeWithTag(red).assertIsSelected()
@@ -249,6 +252,41 @@ class SettingsScreenTest {
 
         tapRow(SettingsEntry.BADGE_BACKGROUND)
         composeRule.onAllNodesWithTag(red).assertCountEquals(0)
+        composeRule.onNode(hasText(label(SettingsEntry.BADGE_BACKGROUND)) and hasOpenState(SettingsEntry.COLLAPSED))
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `revoking notification access while the section is open swaps the badge settings for the grant action`() {
+        val harness = SettingsHarness(defaultState().copy(notificationAccess = true))
+        composeRule.setContent { harness.Content() }
+        header(SettingsSection.NOTIFICATIONS).performClick()
+
+        harness.state = harness.state.copy(notificationAccess = false)
+
+        header(SettingsSection.NOTIFICATIONS).assert(hasOpenState(SettingsEntry.EXPANDED))
+        composeRule.onAllNodesWithTag(SettingsEntry.BADGE_SIZE.optionKey(BadgeSize.TWO)).assertCountEquals(0)
+        scrollTo(hasText(label(SettingsEntry.NOTIFICATION_SETTINGS)))
+        composeRule.onNodeWithText(label(SettingsEntry.NOTIFICATION_SETTINGS)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the preview badge takes the chosen colour`() {
+        val harness = SettingsHarness(defaultState().copy(notificationAccess = true))
+        composeRule.setContent { harness.Content() }
+
+        harness.state = harness.state.copy(badgeBackground = DosColor.RED.hex)
+        composeRule.waitForIdle()
+
+        val badge = composeRule
+            .onNode(hasContentDescription(badgeDescription(PreviewSample.NOTIFICATIONS)))
+            .fetchSemanticsNode().boundsInRoot
+        val inset = with(composeRule.density) { (BadgeSize.TWO.horizontalPadding / 2).toPx() }
+        val picture = composeRule.onRoot().captureToImage().asAndroidBitmap()
+        assertEquals(
+            DosColor.RED.color.toArgb(),
+            picture.getPixel((badge.left - inset).toInt(), badge.center.y.toInt()),
+        )
     }
 
     @Test
@@ -284,7 +322,7 @@ class SettingsScreenTest {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
 
-        harness.state = harness.state.copy(showClock = false, showBattery = false, badgeText = DosColor.RED.hex)
+        harness.state = harness.state.copy(showClock = false, showBattery = false)
 
         composeRule.onAllNodes(previewText(UnixShellProfile.formatBattery(PreviewSample.BATTERY))).assertCountEquals(0)
         inPreview("user@android:~$").assertIsDisplayed()
@@ -353,7 +391,7 @@ class SettingsScreenTest {
         hasText(label(SettingsEntry.NOTIFICATION_ACCESS)) and hasText(label(status))
 
     private fun previewText(text: String): SemanticsMatcher =
-        hasText(text) and hasAnyAncestor(hasTestTag(TestTag.SETTINGS_PREVIEW.tag))
+        hasText(text) and hasAnyAncestor(hasTestTag(SettingsEntry.PREVIEW.key))
 
     private fun inPreview(text: String): SemanticsNodeInteraction = composeRule.onNode(previewText(text))
 

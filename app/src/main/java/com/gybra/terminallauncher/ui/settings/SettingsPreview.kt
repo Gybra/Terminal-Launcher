@@ -27,7 +27,6 @@ import com.gybra.terminallauncher.launcher.BatteryStatus
 import com.gybra.terminallauncher.launcher.InstalledApp
 import com.gybra.terminallauncher.ui.NotificationBadge
 import com.gybra.terminallauncher.ui.StatusLine
-import com.gybra.terminallauncher.ui.TestTag
 import com.gybra.terminallauncher.ui.terminalTextStyle
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 
@@ -42,7 +41,7 @@ internal object PreviewSample {
 /**
  * What Home would write with these settings: the status line, the prompt, and one application
  * with its badge. It answers no touch. Whatever a change touched is outlined for a moment, and the
- * whole preview is when the change took a part away or recoloured everything.
+ * whole preview is when the change added or took away a part or recoloured everything.
  */
 @Composable
 internal fun SettingsPreview(state: SettingsUiState, modifier: Modifier = Modifier) {
@@ -55,7 +54,7 @@ internal fun SettingsPreview(state: SettingsUiState, modifier: Modifier = Modifi
             .fillMaxWidth()
             .dashedBorder(colors.secondary)
             .padding(12.dp)
-            .testTag(TestTag.SETTINGS_PREVIEW.tag),
+            .testTag(SettingsEntry.PREVIEW.key),
     ) {
         Column {
             BasicText(text = state.write(SettingsEntry.PREVIEW.label), style = descriptionStyle(colors.secondary))

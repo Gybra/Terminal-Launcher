@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -61,6 +62,7 @@ public fun SettingsScreen(
             .fillMaxSize()
             .background(colors.background)
             .windowInsetsPadding(WindowInsets.systemBars)
+            .imePadding()
             .padding(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -85,6 +87,7 @@ public fun SettingsScreen(
     }
 }
 
+/** One section: its header, and its rows inside the same border once it is open. */
 private fun LazyListScope.section(
     state: SettingsUiState,
     section: SettingsSection,
@@ -93,57 +96,56 @@ private fun LazyListScope.section(
     rows: @Composable () -> Unit,
 ) {
     item(key = section.entry.key) {
-        SectionBlock(
-            state = state,
-            section = section,
-            open = openSection == section,
-            onToggle = { onToggle(section) },
-            rows = rows,
-        )
+        val colors = LocalTerminalColors.current
+        val open = openSection == section
+        Column(modifier = Modifier.border(1.dp, if (open) colors.foreground else colors.secondary)) {
+            SectionHeader(state = state, section = section, open = open, onToggle = { onToggle(section) })
+            if (open) {
+                Column(modifier = Modifier.padding(horizontal = 12.dp)) { rows() }
+            }
+        }
     }
 }
 
-/** One section: a header carrying its summary, and its rows inside the same border once open. */
+/** The header of a section, carrying its summary, and inverted while the section is open. */
 @Composable
-private fun SectionBlock(
+private fun SectionHeader(
     state: SettingsUiState,
     section: SettingsSection,
     open: Boolean,
     onToggle: () -> Unit,
-    rows: @Composable () -> Unit,
 ) {
     val colors = LocalTerminalColors.current
-    val ink = if (open) colors.background else colors.foreground
-    val openState = state.write(if (open) SettingsEntry.EXPANDED.label else SettingsEntry.COLLAPSED.label)
-    Column(modifier = Modifier.border(1.dp, if (open) colors.foreground else colors.secondary)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 48.dp)
-                .background(if (open) colors.foreground else Color.Transparent)
-                .clickable(role = Role.Button, onClick = onToggle)
-                .semantics { stateDescription = openState }
-                .testTag(section.entry.key)
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            BasicText(
-                text = "${if (open) OPEN_MARK else CLOSED_MARK} ${state.write(section.entry.label)}",
-                style = terminalTextStyle(ink).copy(fontWeight = FontWeight.Bold),
-            )
-            BasicText(
-                text = section.summarize(state),
-                style = descriptionStyle(if (open) colors.background else colors.secondary)
-                    .copy(textAlign = TextAlign.End),
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        if (open) {
-            Column(modifier = Modifier.padding(horizontal = 12.dp)) { rows() }
-        }
+    val (fill, ink, quiet) = if (open) {
+        Triple(colors.foreground, colors.background, colors.background)
+    } else {
+        Triple(Color.Transparent, colors.foreground, colors.secondary)
+    }
+    val openState = state.write(openness(open).label)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .background(fill)
+            .clickable(role = Role.Button, onClick = onToggle)
+            .semantics { stateDescription = openState }
+            .testTag(section.entry.key)
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        OpenMark(open = open, color = ink)
+        BasicText(
+            text = state.write(section.entry.label),
+            style = terminalTextStyle(ink).copy(fontWeight = FontWeight.Bold),
+        )
+        BasicText(
+            text = section.summarize(state),
+            style = descriptionStyle(quiet).copy(textAlign = TextAlign.End),
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
