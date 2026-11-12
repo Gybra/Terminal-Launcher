@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -30,8 +29,8 @@ internal fun NotificationBadge(
     size: BadgeSize,
 ) {
     val colors = LocalTerminalColors.current
-    val fill = background.badgeColor() ?: colors.foreground
-    val ink = text.badgeColor() ?: colors.background
+    val fill = BadgeColor.parse(background) ?: colors.foreground
+    val ink = BadgeColor.parse(text) ?: colors.background
     Spacer(modifier = Modifier.width(8.dp))
     BasicText(
         text = if (count > 99) HomeItem.BADGE_OVERFLOW else count.toString(),
@@ -49,7 +48,3 @@ internal fun NotificationBadge(
             .semantics { contentDescription = HomeItem.badgeDescription(count) },
     )
 }
-
-private fun String?.badgeColor(): Color? = this?.takeIf(BadgeColor::isValid)
-    ?.removePrefix("#")?.toLongOrNull(radix = 16)
-    ?.let { rgb -> Color(0xff000000L or rgb) }

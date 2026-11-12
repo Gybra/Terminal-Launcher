@@ -1,12 +1,25 @@
 package com.gybra.terminallauncher.ui.settings
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -14,23 +27,21 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.Composable
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.PromptSymbol
 import com.gybra.terminallauncher.shell.ShellProfile
-import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.shell.ShellProfiles
+import com.gybra.terminallauncher.shell.ShellType
 import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.theme.DosColor
 import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.ui.TestTag
+import com.gybra.terminallauncher.ui.home.HomeItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -39,252 +50,289 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], qualifiers = "w411dp-h891dp")
 class SettingsScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
     @Test
-    fun `renders and changes shell and clock controls`() {
+    fun `starts with every section collapsed under its summary`() {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
 
-        composeRule
-            .onNodeWithText(optionText(ShellType.UNIX.name, selected = true))
-            .assertIsDisplayed()
-        composeRule.onNodeWithText(optionText(ShellType.DOS.name)).performClick()
+        SettingsSection.entries.forEach { section ->
+            header(section).assert(hasOpenState(SettingsEntry.COLLAPSED))
+            header(section).assert(hasText(section.summarize(harness.state)))
+        }
+        composeRule.onAllNodesWithText(label(SettingsEntry.SHELL)).assertCountEquals(0)
+    }
 
-        val clock = toggleText(SettingsEntry.SHOW_CLOCK, checked = true, profile = DosShellProfile)
-        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(clock))
-        composeRule.onNodeWithText(clock).performClick()
+    @Test
+    fun `opening a section shows its settings and what each one changes`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
 
+        header(SettingsSection.APPEARANCE).performClick()
+
+        header(SettingsSection.APPEARANCE).assert(hasOpenState(SettingsEntry.EXPANDED))
+        composeRule.onNodeWithText(label(SettingsEntry.SHELL)).assertIsDisplayed()
+        composeRule.onNodeWithText(description(SettingsEntry.SHELL)).assertIsDisplayed()
+        composeRule.onNodeWithText(description(SettingsEntry.THEME)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `opening another section closes the open one, and tapping it again closes it`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+
+        header(SettingsSection.APPEARANCE).performClick()
+        header(SettingsSection.HOME_SCREEN).performClick()
+
+        composeRule.onAllNodesWithText(label(SettingsEntry.SHELL)).assertCountEquals(0)
+        composeRule.onNodeWithText(label(SettingsEntry.SHOW_CLOCK)).assertIsDisplayed()
+
+        header(SettingsSection.HOME_SCREEN).performClick()
+
+        composeRule.onAllNodesWithText(label(SettingsEntry.SHOW_CLOCK)).assertCountEquals(0)
+        header(SettingsSection.HOME_SCREEN).assert(hasOpenState(SettingsEntry.COLLAPSED))
+    }
+
+    @Test
+    fun `keeps the open section when the screen is recreated`() {
+        val harness = SettingsHarness()
+        val restoration = StateRestorationTester(composeRule)
+        restoration.setContent { harness.Content() }
+
+        header(SettingsSection.GESTURES).performClick()
+        restoration.emulateSavedInstanceStateRestore()
+
+        header(SettingsSection.GESTURES).assert(hasOpenState(SettingsEntry.EXPANDED))
+        composeRule.onNodeWithText(label(SettingsEntry.DOUBLE_TAP_TO_LOCK)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `forwards the shell and every theme`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+        header(SettingsSection.APPEARANCE).performClick()
+
+        tap(SettingsEntry.SHELL.optionKey(ShellType.DOS))
         assertEquals(DosShellProfile, harness.state.shellProfile)
-        assertFalse(harness.state.showClock)
-    }
+        composeRule.onNodeWithTag(SettingsEntry.SHELL.optionKey(ShellType.DOS)).assertIsSelected()
 
-    @Test
-    fun `reads every label in the shell that was chosen`() {
-        val harness = SettingsHarness()
-        composeRule.setContent { harness.Content() }
-
-        composeRule.onNodeWithText(label(SettingsEntry.BACK)).assertIsDisplayed()
-        composeRule.onNodeWithText(label(SettingsEntry.APPEARANCE)).assertIsDisplayed()
-
-        composeRule.onNodeWithText(optionText(ShellType.DOS.name)).performClick()
-
-        composeRule
-            .onNodeWithText(label(SettingsEntry.BACK, profile = DosShellProfile))
-            .assertIsDisplayed()
-        composeRule
-            .onNodeWithText(label(SettingsEntry.APPEARANCE, profile = DosShellProfile))
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun `forwards every theme selection`() {
-        val harness = SettingsHarness()
-        composeRule.setContent { harness.Content() }
-
-        // The selected theme is written as `(*)`, so it is clicked last, once something else holds it.
-        val selectionOrder = TerminalTheme.entries.filterNot { theme ->
-            theme == harness.state.terminalTheme
-        } + harness.state.terminalTheme
-        selectionOrder.forEach { theme ->
-            val option = optionText(theme.name)
-            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(option))
-            composeRule.onNodeWithText(option).performClick()
-
+        TerminalTheme.entries.forEach { theme ->
+            tap(SettingsEntry.THEME.optionKey(theme))
             assertEquals(theme, harness.state.terminalTheme)
         }
     }
 
     @Test
-    fun `forwards username and hostname input`() {
+    fun `forwards every home screen toggle and the double tap`() {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
+        header(SettingsSection.HOME_SCREEN).performClick()
 
-        composeRule
-            .onNodeWithTag(TestTag.SETTINGS_LIST.tag)
-            .performScrollToNode(hasContentDescription(label(SettingsEntry.USERNAME)))
+        composeRule.onNodeWithText(label(SettingsEntry.SHOW_CLOCK)).assertIsOn().performClick()
+        tapRow(SettingsEntry.SHOW_BATTERY)
+        tapRow(SettingsEntry.IMMERSIVE_MODE)
+        composeRule.onNodeWithText(label(SettingsEntry.SHOW_CLOCK)).assertIsOff()
+        header(SettingsSection.GESTURES).performClick()
+        tapRow(SettingsEntry.DOUBLE_TAP_TO_LOCK)
+
+        assertFalse(harness.state.showClock)
+        assertFalse(harness.state.showBattery)
+        assertFalse(harness.state.immersiveMode)
+        assertTrue(harness.state.doubleTapToLock)
+    }
+
+    @Test
+    fun `forwards the unix prompt settings`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+        header(SettingsSection.PROMPT).performClick()
+
         composeRule.onNodeWithContentDescription(label(SettingsEntry.USERNAME)).performTextReplacement("oreste")
-        composeRule
-            .onNodeWithTag(TestTag.SETTINGS_LIST.tag)
-            .performScrollToNode(hasContentDescription(label(SettingsEntry.HOSTNAME)))
-        composeRule
-            .onNodeWithContentDescription(label(SettingsEntry.HOSTNAME))
-            .performTextReplacement("phone")
+        composeRule.onNodeWithContentDescription(label(SettingsEntry.HOSTNAME)).performTextReplacement("phone")
+        listOf(PromptSymbol.PERCENT, PromptSymbol.ARROW).forEach { symbol ->
+            tap(SettingsEntry.PROMPT_SYMBOL.optionKey(symbol))
+            assertEquals(symbol, harness.state.promptSymbol)
+        }
+        tapRow(SettingsEntry.SHOW_PROMPT_PATH)
 
         assertEquals("oreste", harness.state.username)
         assertEquals("phone", harness.state.hostname)
-    }
-
-    @Test
-    fun `forwards every prompt symbol selection`() {
-        val harness = SettingsHarness()
-        composeRule.setContent { harness.Content() }
-
-        listOf(PromptSymbol.PERCENT, PromptSymbol.ARROW, PromptSymbol.DOLLAR).forEach { symbol ->
-            val option = optionText(symbol.text)
-            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(option))
-            composeRule.onNodeWithText(option).performClick()
-
-            assertEquals(symbol, harness.state.promptSymbol)
-        }
-    }
-
-    @Test
-    fun `forwards every DOS drive selection`() {
-        val harness = SettingsHarness()
-        composeRule.setContent { harness.Content() }
-
-        listOf(DosDrive.A, DosDrive.D, DosDrive.C).forEach { drive ->
-            val option = optionText("${drive.name}:")
-            composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(option))
-            composeRule.onNodeWithText(option).performClick()
-
-            assertEquals(drive, harness.state.dosDrive)
-        }
-    }
-
-    @Test
-    fun `forwards the battery toggle`() {
-        val harness = SettingsHarness()
-        composeRule.setContent { harness.Content() }
-
-        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(toggleText(SettingsEntry.SHOW_BATTERY, checked = true)))
-        composeRule.onNodeWithText(toggleText(SettingsEntry.SHOW_BATTERY, checked = true)).performClick()
-
-        assertFalse(harness.state.showBattery)
-    }
-
-    @Test
-    fun `forwards the immersive mode toggle`() {
-        val harness = SettingsHarness()
-        composeRule.setContent { harness.Content() }
-
-        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(toggleText(SettingsEntry.IMMERSIVE_MODE, checked = true)))
-        composeRule.onNodeWithText(toggleText(SettingsEntry.IMMERSIVE_MODE, checked = true)).performClick()
-
-        assertFalse(harness.state.immersiveMode)
-    }
-
-    @Test
-    fun `forwards the prompt path toggle`() {
-        val harness = SettingsHarness()
-        composeRule.setContent { harness.Content() }
-
-        composeRule
-            .onNodeWithTag(TestTag.SETTINGS_LIST.tag)
-            .performScrollToNode(hasText(toggleText(SettingsEntry.SHOW_PROMPT_PATH, checked = true)))
-        composeRule.onNodeWithText(toggleText(SettingsEntry.SHOW_PROMPT_PATH, checked = true)).performClick()
-
         assertFalse(harness.state.showPromptPath)
     }
 
     @Test
-    fun `renders unchecked clock and selected DOS state`() {
-        val harness = SettingsHarness(
-            initialState = defaultState().copy(
-                shellProfile = DosShellProfile,
-                showClock = false,
-                storageError = "Unable to save preferences",
-            ),
-        )
+    fun `lists the prompt settings of the active shell and swaps them while open`() {
+        val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
+        header(SettingsSection.PROMPT).performClick()
+        composeRule.onAllNodesWithText(label(SettingsEntry.DRIVE)).assertCountEquals(0)
 
-        val dosClock = toggleText(SettingsEntry.SHOW_CLOCK, checked = false, profile = DosShellProfile)
-        composeRule
-            .onNodeWithText(optionText(ShellType.DOS.name, selected = true, profile = DosShellProfile))
-            .assertIsDisplayed()
-        composeRule.onNodeWithText("UNABLE TO SAVE PREFERENCES").assertIsDisplayed()
-        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(hasText(dosClock))
-        composeRule.onNodeWithText(dosClock).assertIsDisplayed()
+        harness.state = harness.state.copy(shellProfile = DosShellProfile)
+
+        composeRule.onAllNodes(hasContentDescription(label(SettingsEntry.USERNAME, DosShellProfile))).assertCountEquals(0)
+        listOf(DosDrive.A, DosDrive.D).forEach { drive ->
+            tap(SettingsEntry.DRIVE.optionKey(drive))
+            assertEquals(drive, harness.state.dosDrive)
+        }
+        composeRule.onNodeWithText(label(SettingsEntry.SHOW_PROMPT_PATH, DosShellProfile)).assertIsDisplayed()
     }
 
     @Test
-    fun `notification access is a status line and opens android settings only when off`() {
+    fun `writes descriptions and summaries in the dos voice`() {
+        val harness = SettingsHarness(defaultState().copy(shellProfile = DosShellProfile))
+        composeRule.setContent { harness.Content() }
+
+        header(SettingsSection.APPEARANCE).assert(hasText("DOS · SYSTEM"))
+        header(SettingsSection.APPEARANCE).performClick()
+
+        composeRule.onNodeWithText(description(SettingsEntry.SHELL, DosShellProfile)).assertIsDisplayed()
+        composeRule.onNodeWithTag(SettingsEntry.SHELL.optionKey(ShellType.DOS)).assert(hasText("DOS"))
+    }
+
+    @Test
+    fun `without notification access offers the android settings and no badge settings`() {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
-        val list = composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag)
-        val off = accessText(SettingsEntry.NOTIFICATION_DISABLED)
-        val grant = label(SettingsEntry.NOTIFICATION_SETTINGS)
-        list.performScrollToNode(hasText(off))
-        composeRule.onNodeWithText(off).assertIsDisplayed()
-        composeRule.onNodeWithText(grant).performClick()
+        header(SettingsSection.NOTIFICATIONS).performClick()
+
+        composeRule.onNode(accessRow(SettingsEntry.OFF)).assertIsDisplayed()
+        composeRule.onAllNodesWithTag(SettingsEntry.BADGE_SIZE.optionKey(BadgeSize.ONE)).assertCountEquals(0)
+        tapRow(SettingsEntry.NOTIFICATION_SETTINGS)
+
         assertTrue(harness.openedNotificationAccess)
     }
 
     @Test
-    fun `enabled notification access has no settings action`() {
+    fun `granted notification access shows the badge settings instead of the way to grant it`() {
         val harness = SettingsHarness(defaultState().copy(notificationAccess = true))
         composeRule.setContent { harness.Content() }
-        val list = composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag)
-        val on = accessText(SettingsEntry.NOTIFICATION_ENABLED)
-        list.performScrollToNode(hasText(on))
-        composeRule.onNodeWithText(on).assertIsDisplayed()
+        header(SettingsSection.NOTIFICATIONS).performClick()
+
+        composeRule.onNode(accessRow(SettingsEntry.NOTIFICATION_ENABLED)).assertIsDisplayed()
         composeRule.onAllNodesWithText(label(SettingsEntry.NOTIFICATION_SETTINGS)).assertCountEquals(0)
-    }
+        composeRule.onNodeWithTag(SettingsEntry.BADGE_SIZE.optionKey(BadgeSize.TWO)).assertIsSelected()
+        tap(SettingsEntry.BADGE_SIZE.optionKey(BadgeSize.THREE))
 
-    @Test
-    fun `badge color is picked from the dos palette and can return to the theme`() {
-        val harness = SettingsHarness()
-        composeRule.setContent { harness.Content() }
-        val list = composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag)
-        val red = SettingsEntry.BADGE_BACKGROUND.optionKey(DosColor.RED)
-        list.performScrollToNode(hasTestTag(red))
-        composeRule.onNodeWithTag(red).performClick()
-        assertEquals(DosColor.RED.hex, harness.state.badgeBackground)
-        composeRule.onNodeWithTag(red).assertIsSelected()
-        val white = SettingsEntry.BADGE_TEXT.optionKey(DosColor.WHITE)
-        list.performScrollToNode(hasTestTag(white))
-        composeRule.onNodeWithTag(white).performClick()
-        assertEquals(DosColor.WHITE.hex, harness.state.badgeText)
-        composeRule.onAllNodesWithText(label(SettingsEntry.BADGE_RESET))[1].performClick()
-        assertEquals(null, harness.state.badgeText)
-    }
-
-    @Test
-    fun `badge size uses the current step until another is chosen`() {
-        val harness = SettingsHarness()
-        composeRule.setContent { harness.Content() }
-        val list = composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag)
-        list.performScrollToNode(hasText(optionText("2", selected = true)))
-        composeRule.onNodeWithText(optionText("2", selected = true)).assertIsDisplayed()
-        composeRule.onNodeWithText(optionText("3")).performClick()
         assertEquals(BadgeSize.THREE, harness.state.badgeSize)
     }
 
     @Test
-    fun `forwards the explicit back action`() {
+    fun `a badge colour opens the palette, takes a colour, and returns to the theme`() {
+        val harness = SettingsHarness(defaultState().copy(notificationAccess = true))
+        composeRule.setContent { harness.Content() }
+        header(SettingsSection.NOTIFICATIONS).performClick()
+        val red = SettingsEntry.BADGE_BACKGROUND.optionKey(DosColor.RED)
+        composeRule.onAllNodesWithTag(red).assertCountEquals(0)
+
+        tapRow(SettingsEntry.BADGE_BACKGROUND)
+        tap(red)
+        assertEquals(DosColor.RED.hex, harness.state.badgeBackground)
+        composeRule.onNodeWithTag(red).assertIsSelected()
+        header(SettingsSection.NOTIFICATIONS).assert(hasText(SettingsSection.NOTIFICATIONS.summarize(harness.state)))
+        tapRow(SettingsEntry.BADGE_RESET)
+        assertNull(harness.state.badgeBackground)
+
+        tapRow(SettingsEntry.BADGE_TEXT)
+        val white = SettingsEntry.BADGE_TEXT.optionKey(DosColor.WHITE)
+        tap(white)
+        assertEquals(DosColor.WHITE.hex, harness.state.badgeText)
+
+        tapRow(SettingsEntry.BADGE_BACKGROUND)
+        composeRule.onAllNodesWithTag(red).assertCountEquals(0)
+    }
+
+    @Test
+    fun `the preview writes the status line, the prompt and a badge from the settings`() {
+        val harness = SettingsHarness(defaultState().copy(notificationAccess = true))
+        composeRule.setContent { harness.Content() }
+
+        inPreview(PreviewSample.CLOCK).assertIsDisplayed()
+        inPreview(UnixShellProfile.formatBattery(PreviewSample.BATTERY)).assertIsDisplayed()
+        inPreview("user@android:~$").assertIsDisplayed()
+        inPreview(UnixShellProfile.formatAppName(PreviewSample.APP)).assertIsDisplayed()
+        composeRule
+            .onNodeWithContentDescription(HomeItem.badgeDescription(PreviewSample.NOTIFICATIONS))
+            .assertIsDisplayed()
+
+        harness.state = harness.state.copy(
+            shellProfile = DosShellProfile,
+            showClock = false,
+            notificationAccess = false,
+            badgeSize = BadgeSize.ONE,
+        )
+
+        inPreview("C:\\HOME>").assertIsDisplayed()
+        inPreview(DosShellProfile.formatAppName(PreviewSample.APP)).assertIsDisplayed()
+        composeRule.onAllNodes(previewText(PreviewSample.CLOCK)).assertCountEquals(0)
+        composeRule
+            .onAllNodes(hasContentDescription(HomeItem.badgeDescription(PreviewSample.NOTIFICATIONS)))
+            .assertCountEquals(0)
+    }
+
+    @Test
+    fun `the preview drops the status line when both of its parts are off`() {
         val harness = SettingsHarness()
         composeRule.setContent { harness.Content() }
 
+        harness.state = harness.state.copy(showClock = false, showBattery = false, badgeText = DosColor.RED.hex)
+
+        composeRule.onAllNodes(previewText(UnixShellProfile.formatBattery(PreviewSample.BATTERY))).assertCountEquals(0)
+        inPreview("user@android:~$").assertIsDisplayed()
+    }
+
+    @Test
+    fun `writes a storage error and forwards the back action`() {
+        val harness = SettingsHarness(defaultState().copy(storageError = "Unable to save preferences"))
+        composeRule.setContent { harness.Content() }
+
+        composeRule.onNodeWithText("unable to save preferences").assertIsDisplayed()
         composeRule.onNodeWithText(label(SettingsEntry.BACK)).performClick()
 
         assertTrue(harness.wentBack)
     }
 
-    private fun toggleText(
-        entry: SettingsEntry,
-        checked: Boolean,
-        profile: ShellProfile = UnixShellProfile,
-    ): String = "[${if (checked) "*" else " "}] ${profile.formatMessage(entry.label)}"
+    private fun header(section: SettingsSection): SemanticsNodeInteraction {
+        scrollTo(hasTestTag(section.entry.key))
+        return composeRule.onNodeWithTag(section.entry.key)
+    }
 
-    private fun optionText(
-        label: String,
-        selected: Boolean = false,
-        profile: ShellProfile = UnixShellProfile,
-    ): String = "${if (selected) "(*)" else "( )"} ${profile.formatMessage(label)}"
+    /** Scrolls to the control tagged [tag] and taps it. */
+    private fun tap(tag: String) {
+        scrollTo(hasTestTag(tag))
+        composeRule.onNodeWithTag(tag).performClick()
+    }
+
+    /** Scrolls to the row labelled [entry] and taps it. */
+    private fun tapRow(entry: SettingsEntry, profile: ShellProfile = UnixShellProfile) {
+        scrollTo(hasText(label(entry, profile)))
+        composeRule.onNodeWithText(label(entry, profile)).performClick()
+    }
+
+    private fun hasOpenState(entry: SettingsEntry): SemanticsMatcher =
+        SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, label(entry))
+
+    private fun scrollTo(matcher: SemanticsMatcher) {
+        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToNode(matcher)
+    }
+
+    private fun accessRow(status: SettingsEntry): SemanticsMatcher =
+        hasText(label(SettingsEntry.NOTIFICATION_ACCESS)) and hasText(label(status))
+
+    private fun previewText(text: String): SemanticsMatcher =
+        hasText(text) and hasAnyAncestor(hasTestTag(TestTag.SETTINGS_PREVIEW.tag))
+
+    private fun inPreview(text: String): SemanticsNodeInteraction = composeRule.onNode(previewText(text))
 
     /** The label the screen writes for [entry], which the selected shell decides. */
-    private fun label(
-        entry: SettingsEntry,
-        profile: ShellProfile = UnixShellProfile,
-    ): String = profile.formatMessage(entry.label)
+    private fun label(entry: SettingsEntry, profile: ShellProfile = UnixShellProfile): String =
+        profile.formatMessage(entry.label)
 
-    private fun accessText(status: SettingsEntry): String = UnixShellProfile.formatMessage(
-        "${SettingsEntry.NOTIFICATION_ACCESS.label} ${status.label}",
-    )
+    private fun description(entry: SettingsEntry, profile: ShellProfile = UnixShellProfile): String =
+        profile.formatMessage(entry.description)
 
     private fun defaultState(): SettingsUiState = SettingsUiState(
         shellProfile = UnixShellProfile,
