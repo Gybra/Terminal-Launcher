@@ -43,7 +43,9 @@ import com.gybra.terminallauncher.shell.dos.DosShellProfile
 import com.gybra.terminallauncher.shell.unix.UnixShellProfile
 import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.theme.colors
+import com.gybra.terminallauncher.ui.BADGE_OVERFLOW
 import com.gybra.terminallauncher.ui.TestTag
+import com.gybra.terminallauncher.ui.badgeDescription
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -110,7 +112,7 @@ class HomeScreenTest {
                 promptActions = emptyPromptActions(),
             )
         }
-        composeRule.onAllNodesWithText(HomeItem.BADGE_OVERFLOW).assertCountEquals(2)
+        composeRule.onAllNodesWithText(BADGE_OVERFLOW).assertCountEquals(2)
     }
 
     @Test
@@ -132,11 +134,11 @@ class HomeScreenTest {
                 promptActions = emptyPromptActions(),
             )
         }
-        composeRule.onNodeWithContentDescription(HomeItem.badgeDescription(105)).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(badgeDescription(105)).assertIsDisplayed()
         composeRule.onNodeWithText("browser").performClick()
         assertEquals(app, launched)
         composeRule.runOnIdle { counts = mapOf(app.packageName to 0) }
-        composeRule.onAllNodesWithText(HomeItem.BADGE_OVERFLOW).assertCountEquals(0)
+        composeRule.onAllNodesWithText(BADGE_OVERFLOW).assertCountEquals(0)
     }
 
     @Test

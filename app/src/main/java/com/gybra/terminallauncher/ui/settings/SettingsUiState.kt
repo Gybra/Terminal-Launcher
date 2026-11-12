@@ -1,7 +1,9 @@
 package com.gybra.terminallauncher.ui.settings
 
 import com.gybra.terminallauncher.shell.DosDrive
+import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.PromptSymbol
+import com.gybra.terminallauncher.shell.ShellContext
 import com.gybra.terminallauncher.shell.ShellProfile
 import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.theme.TerminalTheme
@@ -23,4 +25,20 @@ public data class SettingsUiState(
     public val badgeBackground: String? = null,
     public val badgeText: String? = null,
     public val badgeSize: BadgeSize = BadgeSize.TWO,
-)
+) {
+    /**
+     * Writes [text] the way the selected shell writes a line, so the settings read in the same
+     * voice as Home instead of keeping a face of their own.
+     */
+    public fun write(text: String): String = shellProfile.formatMessage(text)
+
+    /** What Home would write its prompt from with these settings, standing at Home. */
+    public fun shellContext(): ShellContext = ShellContext(
+        username = username,
+        hostname = hostname,
+        location = LauncherLocation.HOME,
+        promptSymbol = promptSymbol,
+        showPath = showPromptPath,
+        dosDrive = dosDrive,
+    )
+}
