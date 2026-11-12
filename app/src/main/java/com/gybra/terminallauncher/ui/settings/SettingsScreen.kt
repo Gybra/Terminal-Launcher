@@ -346,12 +346,6 @@ private fun LazyListScope.dosSettings(
     }
 }
 
-/**
- * Writes [text] the way the selected shell writes a line, so the settings read in the same voice
- * as Home instead of keeping a face of their own.
- */
-private fun SettingsUiState.write(text: String): String = shellProfile.formatMessage(text)
-
 @Composable
 private fun SelectionOption(
     label: String,
