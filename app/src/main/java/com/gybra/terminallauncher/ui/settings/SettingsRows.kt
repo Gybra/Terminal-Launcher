@@ -156,7 +156,9 @@ internal fun ToggleRow(
             BasicText(
                 text = state.write(if (checked) CHECKED_BOX else EMPTY_BOX),
                 style = terminalTextStyle(if (checked) colors.background else colors.foreground),
-                modifier = Modifier.background(if (checked) colors.foreground else Color.Transparent),
+                modifier = Modifier
+                    .background(if (checked) colors.foreground else Color.Transparent)
+                    .clearAndSetSemantics {},
             )
         },
     )

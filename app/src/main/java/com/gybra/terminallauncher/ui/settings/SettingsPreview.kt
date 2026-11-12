@@ -49,7 +49,13 @@ internal fun SettingsPreview(state: SettingsUiState, modifier: Modifier = Modifi
     val statusVisible = state.showClock || state.showBattery
     val prompt = state.shellProfile.prompt(state.shellContext())
     ChangeHighlight(
-        value = listOf(state.terminalTheme, state.showClock, state.showBattery, state.notificationAccess),
+        value = listOf(
+            state.shellProfile.type,
+            state.terminalTheme,
+            state.showClock,
+            state.showBattery,
+            state.notificationAccess,
+        ),
         modifier = modifier
             .fillMaxWidth()
             .dashedBorder(colors.secondary)

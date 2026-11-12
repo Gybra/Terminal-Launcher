@@ -21,6 +21,7 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
@@ -157,6 +158,17 @@ class SettingsScreenTest {
         assertFalse(harness.state.showBattery)
         assertFalse(harness.state.immersiveMode)
         assertTrue(harness.state.doubleTapToLock)
+    }
+
+    @Test
+    fun `a toggle announces its meaning and state without reading the drawn checkbox`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+        header(SettingsSection.HOME_SCREEN).performClick()
+
+        composeRule.onNodeWithText(label(SettingsEntry.SHOW_CLOCK))
+            .assertIsOn()
+            .assertTextEquals(label(SettingsEntry.SHOW_CLOCK), description(SettingsEntry.SHOW_CLOCK))
     }
 
     @Test
@@ -393,6 +405,21 @@ class SettingsScreenTest {
         composeRule.mainClock.advanceTimeBy(milliseconds = 100)
 
         assertTrue(promptEdgeBrightness("oreste@android:~$") > BRIGHT)
+    }
+
+    @Test
+    fun `changing shell outlines the whole preview whose parts are rewritten`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+        assertTrue(previewEdgeBrightness() < BRIGHT)
+
+        composeRule.mainClock.autoAdvance = false
+        harness.state = harness.state.copy(shellProfile = DosShellProfile)
+        Snapshot.sendApplyNotifications()
+        composeRule.mainClock.advanceTimeBy(milliseconds = 100)
+
+        inPreview(DosShellProfile.formatAppName(PreviewSample.APP)).assertIsDisplayed()
+        assertTrue(previewEdgeBrightness() > BRIGHT)
     }
 
     @Test
