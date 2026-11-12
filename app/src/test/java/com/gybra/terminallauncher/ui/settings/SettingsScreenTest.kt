@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -13,6 +15,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
@@ -24,6 +27,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextReplacement
@@ -48,9 +52,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class SettingsScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
@@ -285,6 +291,20 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `outlines the part of the preview a change touched, only once it changed`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+        assertTrue(promptEdgeBrightness("user@android:~$") < DARK)
+
+        composeRule.mainClock.autoAdvance = false
+        harness.state = harness.state.copy(username = "oreste")
+        Snapshot.sendApplyNotifications()
+        composeRule.mainClock.advanceTimeBy(milliseconds = 100)
+
+        assertTrue(promptEdgeBrightness("oreste@android:~$") > BRIGHT)
+    }
+
+    @Test
     fun `writes a storage error and forwards the back action`() {
         val harness = SettingsHarness(defaultState().copy(storageError = "Unable to save preferences"))
         composeRule.setContent { harness.Content() }
@@ -293,6 +313,16 @@ class SettingsScreenTest {
         composeRule.onNodeWithText(label(SettingsEntry.BACK)).performClick()
 
         assertTrue(harness.wentBack)
+    }
+
+    /**
+     * How bright the left edge of the preview prompt is, where its change outline is drawn in the
+     * white foreground of the default monochrome colours.
+     */
+    private fun promptEdgeBrightness(prompt: String): Int {
+        val bounds = inPreview(prompt).fetchSemanticsNode().boundsInRoot
+        val picture = composeRule.onRoot().captureToImage().asAndroidBitmap()
+        return android.graphics.Color.red(picture.getPixel(bounds.left.toInt(), bounds.center.y.toInt()))
     }
 
     private fun header(section: SettingsSection): SemanticsNodeInteraction {
@@ -379,5 +409,10 @@ class SettingsScreenTest {
                 onBack = { wentBack = true },
             )
         }
+    }
+
+    private companion object {
+        const val DARK = 64
+        const val BRIGHT = 192
     }
 }
