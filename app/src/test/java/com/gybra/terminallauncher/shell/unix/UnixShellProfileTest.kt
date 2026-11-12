@@ -23,7 +23,7 @@ class UnixShellProfileTest {
     @Test
     fun `offers only the prompt options this shell writes`() {
         assertEquals(
-            listOf(PromptOption.USERNAME, PromptOption.HOSTNAME, PromptOption.SYMBOL, PromptOption.PATH),
+            setOf(PromptOption.USERNAME, PromptOption.HOSTNAME, PromptOption.SYMBOL, PromptOption.PATH),
             profile.promptOptions,
         )
     }

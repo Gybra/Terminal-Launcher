@@ -19,7 +19,7 @@ public object DosShellProfile : ShellProfile {
 
     override val cursor: PromptCursor = PromptCursor.BLOCK
 
-    override val promptOptions: List<PromptOption> = listOf(PromptOption.DRIVE, PromptOption.PATH)
+    override val promptOptions: Set<PromptOption> = setOf(PromptOption.DRIVE, PromptOption.PATH)
 
     override fun prompt(context: ShellContext): String = "${formatPath(context)}>"
 

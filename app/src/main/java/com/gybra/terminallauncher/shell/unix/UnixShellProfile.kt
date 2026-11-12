@@ -16,7 +16,7 @@ public object UnixShellProfile : ShellProfile {
 
     override val cursor: PromptCursor = PromptCursor.UNDERSCORE
 
-    override val promptOptions: List<PromptOption> = listOf(
+    override val promptOptions: Set<PromptOption> = setOf(
         PromptOption.USERNAME,
         PromptOption.HOSTNAME,
         PromptOption.SYMBOL,

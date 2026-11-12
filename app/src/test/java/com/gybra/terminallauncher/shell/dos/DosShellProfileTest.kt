@@ -23,7 +23,7 @@ class DosShellProfileTest {
     @Test
     fun `offers only the prompt options this shell writes`() {
         assertEquals(
-            listOf(PromptOption.DRIVE, PromptOption.PATH),
+            setOf(PromptOption.DRIVE, PromptOption.PATH),
             profile.promptOptions,
         )
     }
