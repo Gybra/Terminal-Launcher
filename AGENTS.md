@@ -106,9 +106,9 @@ For every pull request:
 1. Inspect the complete diff against `main` and remove unrelated changes.
 2. Run the functions-shrinking pass.
 3. Run the branch-standards audit for naming, reuse, duplication, boundaries, tests, and documentation.
-4. Before the Gradle gate, review the bounded branch diff against this file. That review is not optional and has no substitute: not another model, not `pi --print`, not an in-thread self-review, and not a green CI check. Launch it only as an interactive Pi Coding Agent in a dedicated Herdr pane, model `xai/grok-4.6`, thinking effort `high`:
+4. Before the Gradle gate, review the bounded branch diff against this file. That review is not optional and has no substitute: not another model, not `pi --print`, not an in-thread self-review, and not a green CI check. Launch it only as an interactive Pi Coding Agent in a dedicated Herdr pane, model `claude-bridge/claude-opus-5-5`, thinking effort `high`:
    - `herdr pane split --current --direction right --cwd "$PWD" --no-focus`
-   - `herdr agent start <name> --kind pi --pane <id> -- --model xai/grok-4.6 --thinking high`
+   - `herdr agent start <name> --kind pi --pane <id> -- --model claude-bridge/claude-opus-5-5 --thinking high`
    - `herdr agent prompt <name> <review text>`
    Preserve this working directory and leave user focus unchanged. Keep the pane open until that agent writes a findings list and a verdict (`approve` or `request changes`). A hung process, an empty pane, or an exit status without that writeup is not a completed review: stop and report the blocker; do not open the PR. Read the output, verify every finding against the code, and fix every valid finding before delivery. The PR body must state that this review ran and what it verdicted.
 5. Run the required local Gradle gate.
