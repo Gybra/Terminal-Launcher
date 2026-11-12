@@ -91,52 +91,34 @@ internal fun <T : Enum<T>> ChoiceRow(
     onSelect: (T) -> Unit,
     leading: @Composable (T) -> Unit = {},
 ) {
+    val colors = LocalTerminalColors.current
     SettingRow(state = state, entry = entry) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             options.forEach { option ->
-                Choice(
-                    text = state.write(optionLabel(option)),
-                    selected = option == selected,
-                    tag = entry.optionKey(option),
-                    onClick = { onSelect(option) },
+                val chosen = option == selected
+                Row(
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .border(1.dp, if (chosen) colors.foreground else colors.secondary)
+                        .background(if (chosen) colors.foreground else Color.Transparent)
+                        .selectable(selected = chosen, role = Role.RadioButton, onClick = { onSelect(option) })
+                        .testTag(entry.optionKey(option))
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     leading(option)
+                    BasicText(
+                        text = state.write(optionLabel(option)),
+                        style = terminalTextStyle(if (chosen) colors.background else colors.foreground)
+                            .copy(fontWeight = if (chosen) FontWeight.Bold else FontWeight.Normal),
+                    )
                 }
             }
         }
-    }
-}
-
-/** One answer, inverted while it is the chosen one, the way a TTY marks a selection. */
-@Composable
-private fun Choice(
-    text: String,
-    selected: Boolean,
-    tag: String,
-    onClick: () -> Unit,
-    leading: @Composable () -> Unit,
-) {
-    val colors = LocalTerminalColors.current
-    Row(
-        modifier = Modifier
-            .heightIn(min = 48.dp)
-            .border(1.dp, if (selected) colors.foreground else colors.secondary)
-            .background(if (selected) colors.foreground else Color.Transparent)
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-            .testTag(tag)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        leading()
-        BasicText(
-            text = text,
-            style = terminalTextStyle(if (selected) colors.background else colors.foreground)
-                .copy(fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal),
-        )
     }
 }
 
