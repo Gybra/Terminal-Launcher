@@ -396,6 +396,23 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `removing only the clock outlines the whole preview and then fades`() {
+        val harness = SettingsHarness()
+        composeRule.setContent { harness.Content() }
+        assertTrue(previewEdgeBrightness() < BRIGHT)
+
+        composeRule.mainClock.autoAdvance = false
+        harness.state = harness.state.copy(showClock = false)
+        Snapshot.sendApplyNotifications()
+        composeRule.mainClock.advanceTimeBy(milliseconds = 100)
+
+        assertTrue(previewEdgeBrightness() > BRIGHT)
+        inPreview(UnixShellProfile.formatBattery(PreviewSample.BATTERY)).assertIsDisplayed()
+        composeRule.mainClock.advanceTimeBy(milliseconds = 1500)
+        assertTrue(previewEdgeBrightness() < BRIGHT)
+    }
+
+    @Test
     fun `writes a storage error and forwards the back action`() {
         val harness = SettingsHarness(defaultState().copy(storageError = "Unable to save preferences"))
         composeRule.setContent { harness.Content() }
@@ -414,6 +431,13 @@ class SettingsScreenTest {
         val bounds = inPreview(prompt).fetchSemanticsNode().boundsInRoot
         val picture = composeRule.onRoot().captureToImage().asAndroidBitmap()
         return android.graphics.Color.red(picture.getPixel(bounds.left.toInt(), bounds.center.y.toInt()))
+    }
+
+    private fun previewEdgeBrightness(): Int {
+        val bounds = composeRule.onNodeWithTag(SettingsEntry.PREVIEW.key).fetchSemanticsNode().boundsInRoot
+        val inset = with(composeRule.density) { 12.dp.toPx() }
+        val picture = composeRule.onRoot().captureToImage().asAndroidBitmap()
+        return android.graphics.Color.red(picture.getPixel((bounds.left - inset).toInt(), bounds.center.y.toInt()))
     }
 
     private fun header(section: SettingsSection): SemanticsNodeInteraction {
