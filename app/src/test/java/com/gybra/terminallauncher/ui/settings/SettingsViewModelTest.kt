@@ -3,6 +3,7 @@ package com.gybra.terminallauncher.ui.settings
 import com.gybra.terminallauncher.MainDispatcherRule
 import com.gybra.terminallauncher.launcher.AppShortcut
 import com.gybra.terminallauncher.launcher.FakeDeviceLock
+import com.gybra.terminallauncher.preferences.AccessibilityConsent
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.DosDrive
@@ -66,6 +67,7 @@ class SettingsViewModelTest {
                 promptSymbol = PromptSymbol.PERCENT,
                 showPromptPath = false,
                 dosDrive = DosDrive.D,
+                accessibilityDisclosureVisible = true,
             ),
             viewModel.uiState.value,
         )
@@ -126,14 +128,25 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `requests consent before opening Android accessibility settings`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = SettingsViewModel(FakePreferencesRepository(), deviceLock)
+            advanceUntilIdle()
+
+            viewModel.setDoubleTapToLock(true)
+
+            assertEquals(emptyList<String>(), deviceLock.calls)
+        }
+
+    @Test
     fun `sends the user to the accessibility service and turns it off`() =
         runTest(mainDispatcherRule.dispatcher) {
             val viewModel = SettingsViewModel(FakePreferencesRepository(), deviceLock)
             advanceUntilIdle()
 
             assertEquals(false, viewModel.uiState.value.doubleTapToLock)
-
-            viewModel.setDoubleTapToLock(true)
+            viewModel.acceptAccessibilityDisclosure()
+            advanceUntilIdle()
 
             assertEquals(listOf("requestEnable"), deviceLock.calls)
             assertEquals(true, viewModel.uiState.value.doubleTapToLock)
@@ -151,6 +164,8 @@ class SettingsViewModelTest {
             val viewModel = SettingsViewModel(FakePreferencesRepository(), declined)
             advanceUntilIdle()
 
+            viewModel.acceptAccessibilityDisclosure()
+            advanceUntilIdle()
             viewModel.setDoubleTapToLock(true)
 
             assertEquals(false, viewModel.uiState.value.doubleTapToLock)
@@ -162,6 +177,8 @@ class SettingsViewModelTest {
             val viewModel = SettingsViewModel(FakePreferencesRepository(), deviceLock)
             advanceUntilIdle()
 
+            viewModel.acceptAccessibilityDisclosure()
+            advanceUntilIdle()
             deviceLock.enabled = true
             viewModel.refreshDeviceLock()
 
@@ -271,6 +288,11 @@ class SettingsViewModelTest {
 
         fun emit(preferences: LauncherPreferences) {
             mutablePreferences.value = preferences
+        }
+
+        override suspend fun setAccessibilityConsent(consent: AccessibilityConsent) {
+            writeFailure?.let { throw it }
+            emit(mutablePreferences.value.copy(accessibilityConsent = consent))
         }
 
         override suspend fun setShellType(shellType: ShellType) {
@@ -385,6 +407,8 @@ class SettingsViewModelTest {
                 emit(snapshot)
             }
         }
+
+        override suspend fun setAccessibilityConsent(consent: AccessibilityConsent) = unsupported()
 
         override suspend fun setShellType(shellType: ShellType) = unsupported()
 

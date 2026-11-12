@@ -3,6 +3,7 @@ package com.gybra.terminallauncher.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gybra.terminallauncher.launcher.DeviceLock
+import com.gybra.terminallauncher.preferences.AccessibilityConsent
 import com.gybra.terminallauncher.preferences.LauncherPreferences
 import com.gybra.terminallauncher.preferences.PreferencesRepository
 import com.gybra.terminallauncher.shell.DosDrive
@@ -29,6 +30,8 @@ public class SettingsViewModel(
     private val writeMutex = Mutex()
     private var pendingWrites = 0
     private var batchFailed = false
+    private var preferencesLoaded = false
+    private var disclosureOffered = false
     public val uiState: StateFlow<SettingsUiState> = mutableUiState.asStateFlow()
 
     init {
@@ -97,22 +100,68 @@ public class SettingsViewModel(
         )
     }
 
-    /**
-     * Sends the user where the accessibility service that locking the screen needs is turned
-     * on, or turns it off. The toggle follows Android, so a service left off leaves it off.
-     */
+    /** Requests separate consent before Android permission; turning the service off needs neither. */
     public fun setDoubleTapToLock(enabled: Boolean) {
         if (enabled) {
-            deviceLock.requestEnable()
+            performAccessibilityAction { deviceLock.requestEnable() }
         } else {
             deviceLock.disable()
         }
         refreshDeviceLock()
     }
 
-    /** Reads the service again, such as after the user came back from the Android settings. */
+    /** Gates all four global actions, including when a legacy service is already enabled. */
+    public fun performAccessibilityAction(action: () -> Unit) {
+        val state = mutableUiState.value
+        if (!preferencesLoaded || state.savingAccessibilityConsent) return
+        if (state.accessibilityConsent == AccessibilityConsent.GRANTED) {
+            action()
+        } else {
+            mutableUiState.value = state.copy(accessibilityDisclosureVisible = true)
+        }
+    }
+
+    public fun acceptAccessibilityDisclosure() {
+        if (!canAnswerDisclosure()) return
+        saveAccessibilityConsent(AccessibilityConsent.GRANTED)
+    }
+
+    public fun dismissAccessibilityDisclosure() {
+        if (!canAnswerDisclosure()) return
+        mutableUiState.value = mutableUiState.value.copy(accessibilityDisclosureVisible = false)
+        saveAccessibilityConsent(AccessibilityConsent.DECLINED)
+    }
+
+    private fun canAnswerDisclosure(): Boolean = preferencesLoaded &&
+        mutableUiState.value.accessibilityDisclosureVisible && !mutableUiState.value.savingAccessibilityConsent
+
+    private fun saveAccessibilityConsent(consent: AccessibilityConsent) {
+        mutableUiState.value = mutableUiState.value.copy(savingAccessibilityConsent = true, storageError = null)
+        pendingWrites += 1
+        viewModelScope.launch {
+            try {
+                writeMutex.withLock { preferencesRepository.setAccessibilityConsent(consent) }
+                mutableUiState.value = mutableUiState.value.copy(
+                    accessibilityConsent = consent,
+                    accessibilityDisclosureVisible = false,
+                )
+                if (consent == AccessibilityConsent.GRANTED) deviceLock.requestEnable()
+                refreshDeviceLock()
+            } catch (_: IOException) {
+                batchFailed = true
+            }
+            pendingWrites -= 1
+            mutableUiState.value = mutableUiState.value.copy(savingAccessibilityConsent = false)
+            if (pendingWrites == 0) refreshPersistedState()
+        }
+    }
+
+    /** Reads the service again, keeping Android permission distinct from in-app consent. */
     public fun refreshDeviceLock() {
-        mutableUiState.value = mutableUiState.value.copy(doubleTapToLock = deviceLock.enabled)
+        val state = mutableUiState.value
+        mutableUiState.value = state.copy(
+            doubleTapToLock = deviceLock.enabled && state.accessibilityConsent == AccessibilityConsent.GRANTED,
+        )
     }
 
     /** Stores [username] as a prompt token, so what is typed can always be written in a prompt. */
@@ -166,8 +215,7 @@ public class SettingsViewModel(
         viewModelScope.launch {
             preferencesRepository.preferences.collect { preferences ->
                 if (pendingWrites == 0) {
-                    mutableUiState.value = preferences.toUiState()
-                        .copy(notificationAccess = mutableUiState.value.notificationAccess)
+                    applyPreferences(preferences)
                 }
             }
         }
@@ -198,11 +246,21 @@ public class SettingsViewModel(
         if (pendingWrites == 0) {
             val error = if (batchFailed) STORAGE_ERROR else null
             batchFailed = false
-            mutableUiState.value = preferences.toUiState().copy(
-                storageError = error,
-                notificationAccess = mutableUiState.value.notificationAccess,
-            )
+            applyPreferences(preferences, storageError = error)
         }
+    }
+
+    private fun applyPreferences(preferences: LauncherPreferences, storageError: String? = null) {
+        val current = mutableUiState.value
+        val offerDisclosure = !disclosureOffered && preferences.accessibilityConsent == AccessibilityConsent.UNDECIDED
+        preferencesLoaded = true
+        disclosureOffered = true
+        mutableUiState.value = preferences.toUiState().copy(
+            storageError = storageError,
+            notificationAccess = current.notificationAccess,
+            accessibilityDisclosureVisible = current.accessibilityDisclosureVisible || offerDisclosure,
+            savingAccessibilityConsent = current.savingAccessibilityConsent,
+        )
     }
 
     private fun LauncherPreferences.toUiState(): SettingsUiState = SettingsUiState(
@@ -214,7 +272,8 @@ public class SettingsViewModel(
         showClock = showClock,
         showBattery = showBattery,
         immersiveMode = immersiveMode,
-        doubleTapToLock = deviceLock.enabled,
+        doubleTapToLock = deviceLock.enabled && accessibilityConsent == AccessibilityConsent.GRANTED,
+        accessibilityConsent = accessibilityConsent,
         username = username,
         hostname = hostname,
         promptSymbol = promptSymbol,

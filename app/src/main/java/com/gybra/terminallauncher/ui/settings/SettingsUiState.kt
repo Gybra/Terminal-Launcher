@@ -1,5 +1,6 @@
 package com.gybra.terminallauncher.ui.settings
 
+import com.gybra.terminallauncher.preferences.AccessibilityConsent
 import com.gybra.terminallauncher.shell.DosDrive
 import com.gybra.terminallauncher.shell.LauncherLocation
 import com.gybra.terminallauncher.shell.PromptSymbol
@@ -25,6 +26,9 @@ public data class SettingsUiState(
     public val badgeBackground: String? = null,
     public val badgeText: String? = null,
     public val badgeSize: BadgeSize = BadgeSize.TWO,
+    public val accessibilityConsent: AccessibilityConsent = AccessibilityConsent.UNDECIDED,
+    public val accessibilityDisclosureVisible: Boolean = false,
+    public val savingAccessibilityConsent: Boolean = false,
 ) {
     /**
      * Writes [text] the way the selected shell writes a line, so the settings read in the same

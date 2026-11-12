@@ -50,6 +50,7 @@ class DataStorePreferencesRepositoryTest {
             scope = CoroutineScope(firstJob + Dispatchers.IO),
         )
 
+        firstRepository.setAccessibilityConsent(AccessibilityConsent.GRANTED)
         firstRepository.setShellType(ShellType.DOS)
         firstRepository.setTerminalTheme(TerminalTheme.AMBER)
         firstRepository.setShowClock(false)
@@ -75,6 +76,7 @@ class DataStorePreferencesRepositoryTest {
 
         assertEquals(
             LauncherPreferences(
+                accessibilityConsent = AccessibilityConsent.GRANTED,
                 shellType = ShellType.DOS,
                 terminalTheme = TerminalTheme.AMBER,
                 showClock = false,
@@ -370,6 +372,25 @@ class DataStorePreferencesRepositoryTest {
         assertThrows(IllegalStateException::class.java) {
             runTest { repository.preferences.first() }
         }
+    }
+
+    @Test
+    fun `round trips every consent choice without changing other preferences`() = runTest {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+        assertEquals(AccessibilityConsent.UNDECIDED, repository.preferences.first().accessibilityConsent)
+        repository.pinPackage("org.example.mail")
+        for (consent in AccessibilityConsent.entries) {
+            repository.setAccessibilityConsent(consent)
+            assertEquals(consent, repository.preferences.first().accessibilityConsent)
+            assertEquals(setOf("org.example.mail"), repository.preferences.first().pinnedPackages)
+        }
+    }
+
+    @Test
+    fun `unknown persisted consent never grants accessibility actions`() = runTest {
+        val stored = mutablePreferencesOf(stringPreferencesKey("accessibility_consent_v1") to "UNKNOWN")
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore(initialPreferences = stored))
+        assertEquals(AccessibilityConsent.UNDECIDED, repository.preferences.first().accessibilityConsent)
     }
 
     @Test

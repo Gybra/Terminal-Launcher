@@ -18,6 +18,8 @@ import com.gybra.terminallauncher.ui.home.HomeUiState
 import com.gybra.terminallauncher.ui.home.PromptActions
 import com.gybra.terminallauncher.ui.home.SubmittedAction
 import com.gybra.terminallauncher.ui.home.rememberPromptRelease
+import com.gybra.terminallauncher.ui.privacy.AccessibilityDisclosure
+import com.gybra.terminallauncher.ui.privacy.PrivacyPolicyScreen
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsScreen
 import com.gybra.terminallauncher.ui.settings.SettingsUiState
@@ -60,6 +62,10 @@ public fun LauncherApp(
     // no longer on screen. The Home gesture is not one of them, since the launcher is Home.
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { releasePrompt() }
 
+    LaunchedEffect(settingsState.accessibilityDisclosureVisible) {
+        if (settingsState.accessibilityDisclosureVisible) releasePrompt()
+    }
+
     LaunchedEffect(submittedActions) {
         submittedActions.collect { action ->
             releasePrompt()
@@ -78,8 +84,12 @@ public fun LauncherApp(
         // Registered first, so the settings below and the prompt inside Home are asked before it.
         BackHandler(enabled = true) {}
 
-        BackHandler(enabled = destination == LauncherDestination.SETTINGS) {
-            destination = LauncherDestination.HOME
+        BackHandler(enabled = destination != LauncherDestination.HOME) {
+            destination = if (destination == LauncherDestination.PRIVACY) {
+                LauncherDestination.SETTINGS
+            } else {
+                LauncherDestination.HOME
+            }
         }
 
         if (destination == LauncherDestination.HOME) {
@@ -101,11 +111,22 @@ public fun LauncherApp(
                 onOpenOverview = onOpenOverview,
                 promptActions = promptActions,
             )
-        } else {
+        } else if (destination == LauncherDestination.SETTINGS) {
             SettingsScreen(
                 state = settingsState,
                 actions = settingsActions,
                 onBack = { destination = LauncherDestination.HOME },
+                onOpenPrivacy = { destination = LauncherDestination.PRIVACY },
+            )
+        } else {
+            PrivacyPolicyScreen(onBack = { destination = LauncherDestination.SETTINGS })
+        }
+        if (settingsState.accessibilityDisclosureVisible) {
+            AccessibilityDisclosure(
+                onAccept = settingsActions.acceptAccessibilityDisclosure,
+                onDismiss = settingsActions.dismissAccessibilityDisclosure,
+                saving = settingsState.savingAccessibilityConsent,
+                error = settingsState.storageError,
             )
         }
     }
@@ -114,4 +135,5 @@ public fun LauncherApp(
 private enum class LauncherDestination {
     HOME,
     SETTINGS,
+    PRIVACY,
 }

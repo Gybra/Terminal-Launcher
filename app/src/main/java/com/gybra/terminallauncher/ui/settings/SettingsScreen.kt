@@ -55,6 +55,7 @@ public fun SettingsScreen(
     actions: SettingsActions,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenPrivacy: () -> Unit = {},
 ) {
     val colors = LocalTerminalColors.current
     var openSection by rememberSaveable { mutableStateOf<SettingsSection?>(null) }
@@ -83,6 +84,9 @@ public fun SettingsScreen(
         }
         section(state, SettingsSection.PROMPT, openSection, toggle) { PromptRows(state, actions) }
         section(state, SettingsSection.NOTIFICATIONS, openSection, toggle) { NotificationRows(state, actions) }
+        item(key = SettingsEntry.PRIVACY_POLICY.key) {
+            ActionLine(text = state.write(SettingsEntry.PRIVACY_POLICY.label), onClick = onOpenPrivacy)
+        }
     }
 }
 

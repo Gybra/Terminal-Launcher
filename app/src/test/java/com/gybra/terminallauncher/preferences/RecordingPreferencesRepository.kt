@@ -30,6 +30,10 @@ class RecordingPreferencesRepository(
         storedPreferences.value = preferences
     }
 
+    override suspend fun setAccessibilityConsent(consent: AccessibilityConsent) {
+        write("setAccessibilityConsent($consent)") { preferences -> preferences.copy(accessibilityConsent = consent) }
+    }
+
     override suspend fun setShellType(shellType: ShellType) {
         write("setShellType($shellType)") { preferences -> preferences.copy(shellType = shellType) }
     }

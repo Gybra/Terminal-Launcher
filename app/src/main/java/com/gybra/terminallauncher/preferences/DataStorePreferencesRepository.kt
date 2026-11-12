@@ -37,6 +37,12 @@ public class DataStorePreferencesRepository(
         }
         .map(::mapPreferences)
 
+    override suspend fun setAccessibilityConsent(consent: AccessibilityConsent) {
+        dataStore.edit { preferences ->
+            preferences[Keys.accessibilityConsent] = consent.name
+        }
+    }
+
     override suspend fun setShellType(shellType: ShellType) {
         dataStore.edit { preferences ->
             preferences[Keys.shellType] = shellType.name
@@ -212,6 +218,8 @@ public class DataStorePreferencesRepository(
             ?: defaults.pinnedShortcuts,
         aliases = preferences[Keys.aliases]?.toAliases() ?: defaults.aliases,
         usage = preferences[Keys.appUsage]?.toUsage() ?: defaults.usage,
+        accessibilityConsent = preferences[Keys.accessibilityConsent]
+            .toEnum(AccessibilityConsent.entries, defaults.accessibilityConsent),
     )
 
     /**
@@ -279,6 +287,7 @@ public class DataStorePreferencesRepository(
         entries.firstOrNull { entry -> entry.name == this } ?: default
 
     private object Keys {
+        val accessibilityConsent: Preferences.Key<String> = stringPreferencesKey("accessibility_consent_v1")
         val shellType: Preferences.Key<String> = stringPreferencesKey("shell_type")
         val terminalTheme: Preferences.Key<String> = stringPreferencesKey("terminal_theme")
         val showClock: Preferences.Key<Boolean> = booleanPreferencesKey("show_clock")

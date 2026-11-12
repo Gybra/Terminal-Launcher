@@ -159,10 +159,14 @@ public class MainActivity : ComponentActivity() {
                 onLaunchApp = appLauncher::launch,
                 onLaunchShortcut = shortcutLauncher::launch,
                 onRowStart = homeViewModel::clearPrompt,
-                onLockScreen = { deviceLock.lock() },
-                onExpandNotifications = systemShade::expandNotifications,
-                onExpandQuickSettings = systemShade::expandQuickSettings,
-                onOpenOverview = systemOverview::open,
+                onLockScreen = { settingsViewModel.performAccessibilityAction { deviceLock.lock() } },
+                onExpandNotifications = {
+                    settingsViewModel.performAccessibilityAction { systemShade.expandNotifications() }
+                },
+                onExpandQuickSettings = {
+                    settingsViewModel.performAccessibilityAction { systemShade.expandQuickSettings() }
+                },
+                onOpenOverview = { settingsViewModel.performAccessibilityAction { systemOverview.open() } },
                 onOpenSystemScreen = systemScreenLauncher::open,
                 onRestartLauncher = ::recreate,
             )
@@ -176,6 +180,8 @@ public class MainActivity : ComponentActivity() {
         setShowBattery = viewModel::setShowBattery,
         setImmersiveMode = viewModel::setImmersiveMode,
         setDoubleTapToLock = viewModel::setDoubleTapToLock,
+        acceptAccessibilityDisclosure = viewModel::acceptAccessibilityDisclosure,
+        dismissAccessibilityDisclosure = viewModel::dismissAccessibilityDisclosure,
         setUsername = viewModel::setUsername,
         setHostname = viewModel::setHostname,
         selectPromptSymbol = viewModel::selectPromptSymbol,
