@@ -13,7 +13,7 @@ public object PrivacyPolicy {
         Terminal Launcher is an Android home-screen launcher with a terminal-style interface, not a terminal emulator. It does not execute arbitrary shell commands.
 
         LOCAL DATA
-        The launcher reads names and package identifiers of launchable installed apps to search, list, pin and open them. It saves your preferences, prompt display labels, pins, shortcuts, aliases, accessibility consent choice and the frequency/time of launches made through this launcher in its private local storage. Launch history is used to rank search results, not to monitor other app activity.
+        The launcher reads names and package identifiers of launchable installed apps to search, list, pin and open them. It saves your preferences, prompt display labels, pins, shortcuts, aliases, accessibility consent choice and the frequency/time of launches made through this launcher in its private local storage. Launch history is used to rank search results, not to monitor other app activity. When you ask for an app's shortcuts, the launcher reads the identifiers and labels that app publishes to launchers; labels may include personal names, such as conversations. Pinning a shortcut saves its app package, identifier and label locally.
 
         Prompt input and displayed command history are held in memory, not saved as a transcript. Commands that change settings, aliases or pins save those specific changes. Battery state and device time are read to display the optional status line and battery command.
 

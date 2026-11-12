@@ -28,6 +28,7 @@ class AccessibilityConsentViewModelTest {
         val viewModel = SettingsViewModel(RecordingPreferencesRepository(), FakeDeviceLock())
         var actions = 0
         viewModel.performAccessibilityAction { actions += 1 }
+        viewModel.setDoubleTapToLock(true)
         viewModel.acceptAccessibilityDisclosure()
         viewModel.dismissAccessibilityDisclosure()
         assertEquals(false, viewModel.uiState.value.accessibilityDisclosureVisible)
@@ -53,7 +54,7 @@ class AccessibilityConsentViewModelTest {
     }
 
     @Test
-    fun `a declined gesture reopens disclosure without running the global action`() = runTest {
+    fun `declined gestures stay silent until the settings toggle explicitly reopens consent`() = runTest {
         val repository = RecordingPreferencesRepository(
             LauncherPreferences(accessibilityConsent = AccessibilityConsent.DECLINED),
         )
@@ -63,7 +64,7 @@ class AccessibilityConsentViewModelTest {
         viewModel.performAccessibilityAction { actions += 1 }
         assertEquals(0, actions)
         assertEquals(false, viewModel.uiState.value.doubleTapToLock)
-        assertEquals(true, viewModel.uiState.value.accessibilityDisclosureVisible)
+        assertEquals(false, viewModel.uiState.value.accessibilityDisclosureVisible)
         repository.emit(
             LauncherPreferences(
                 accessibilityConsent = AccessibilityConsent.DECLINED,
@@ -71,7 +72,10 @@ class AccessibilityConsentViewModelTest {
             ),
         )
         advanceUntilIdle()
+        assertEquals(false, viewModel.uiState.value.accessibilityDisclosureVisible)
+        viewModel.setDoubleTapToLock(true)
         assertEquals(true, viewModel.uiState.value.accessibilityDisclosureVisible)
+        assertEquals(emptyList<String>(), repository.writes)
     }
 
     @Test
@@ -91,6 +95,7 @@ class AccessibilityConsentViewModelTest {
         runCurrent()
         viewModel.acceptAccessibilityDisclosure()
         viewModel.dismissAccessibilityDisclosure()
+        viewModel.setDoubleTapToLock(true)
         var actions = 0
         viewModel.performAccessibilityAction { actions += 1 }
         assertEquals(true, viewModel.uiState.value.savingAccessibilityConsent)
@@ -149,6 +154,10 @@ class AccessibilityConsentViewModelTest {
         advanceUntilIdle()
         assertEquals(false, viewModel.uiState.value.accessibilityDisclosureVisible)
         assertEquals(SettingsEntry.STORAGE_ERROR.label, viewModel.uiState.value.storageError)
+        var actions = 0
+        viewModel.performAccessibilityAction { actions += 1 }
+        assertEquals(0, actions)
+        assertEquals(false, viewModel.uiState.value.accessibilityDisclosureVisible)
         repository.emit(LauncherPreferences(terminalTheme = TerminalTheme.GREEN))
         advanceUntilIdle()
         assertEquals(false, viewModel.uiState.value.accessibilityDisclosureVisible)

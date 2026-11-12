@@ -103,22 +103,24 @@ public class SettingsViewModel(
     /** Requests separate consent before Android permission; turning the service off needs neither. */
     public fun setDoubleTapToLock(enabled: Boolean) {
         if (enabled) {
-            performAccessibilityAction { deviceLock.requestEnable() }
+            val state = mutableUiState.value
+            if (!preferencesLoaded || state.savingAccessibilityConsent) return
+            if (state.accessibilityConsent == AccessibilityConsent.GRANTED) {
+                deviceLock.requestEnable()
+            } else {
+                mutableUiState.value = state.copy(accessibilityDisclosureVisible = true)
+            }
         } else {
             deviceLock.disable()
         }
         refreshDeviceLock()
     }
 
-    /** Gates all four global actions, including when a legacy service is already enabled. */
+    /** Gates all four global actions without prompting again after a refusal, even if its save failed. */
     public fun performAccessibilityAction(action: () -> Unit) {
         val state = mutableUiState.value
         if (!preferencesLoaded || state.savingAccessibilityConsent) return
-        if (state.accessibilityConsent == AccessibilityConsent.GRANTED) {
-            action()
-        } else {
-            mutableUiState.value = state.copy(accessibilityDisclosureVisible = true)
-        }
+        if (state.accessibilityConsent == AccessibilityConsent.GRANTED) action()
     }
 
     public fun acceptAccessibilityDisclosure() {

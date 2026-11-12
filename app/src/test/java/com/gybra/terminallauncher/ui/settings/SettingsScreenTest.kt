@@ -441,7 +441,7 @@ class SettingsScreenTest {
 
     @Test
     fun `writes a storage error and forwards the back action`() {
-        val harness = SettingsHarness(defaultState().copy(storageError = "Unable to save preferences"))
+        val harness = SettingsHarness(defaultState().copy(storageError = SettingsEntry.STORAGE_ERROR.label))
         composeRule.setContent { harness.Content() }
 
         composeRule.onNodeWithText("unable to save preferences").assertIsDisplayed()
