@@ -26,8 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
@@ -193,21 +191,20 @@ internal fun TextRow(
     SettingRow(state = state, entry = entry) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             BasicText(text = INPUT_MARK, style = terminalTextStyle(colors.secondary))
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                textStyle = terminalTextStyle(colors.foreground),
-                cursorBrush = SolidColor(colors.foreground),
-                singleLine = true,
-                modifier = Modifier
-                    .weight(1f)
-                    .drawBehind {
-                        val y = size.height - 1.dp.toPx()
-                        drawLine(colors.secondary, Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
-                    }
-                    .padding(vertical = 12.dp)
-                    .semantics { contentDescription = label },
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    textStyle = terminalTextStyle(colors.foreground),
+                    cursorBrush = SolidColor(colors.foreground),
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp)
+                        .semantics { contentDescription = label },
+                )
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(colors.secondary))
+            }
         }
     }
 }

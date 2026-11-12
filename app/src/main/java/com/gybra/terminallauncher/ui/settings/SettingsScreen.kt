@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -73,17 +73,33 @@ public fun SettingsScreen(
                 .testTag(TestTag.SETTINGS_LIST.tag),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(items = SettingsSection.entries, key = { section -> section.entry.key }) { section ->
-                SectionBlock(
-                    state = state,
-                    section = section,
-                    open = openSection == section,
-                    onToggle = { openSection = section.takeUnless { it == openSection } },
-                ) {
-                    SectionRows(section = section, state = state, actions = actions)
-                }
+            val toggle = { section: SettingsSection -> openSection = section.takeUnless { it == openSection } }
+            section(state, SettingsSection.APPEARANCE, openSection, toggle) { AppearanceRows(state, actions) }
+            section(state, SettingsSection.HOME_SCREEN, openSection, toggle) { HomeScreenRows(state, actions) }
+            section(state, SettingsSection.GESTURES, openSection, toggle) {
+                ToggleRow(state, SettingsEntry.DOUBLE_TAP_TO_LOCK, state.doubleTapToLock, actions.setDoubleTapToLock)
             }
+            section(state, SettingsSection.PROMPT, openSection, toggle) { PromptRows(state, actions) }
+            section(state, SettingsSection.NOTIFICATIONS, openSection, toggle) { NotificationRows(state, actions) }
         }
+    }
+}
+
+private fun LazyListScope.section(
+    state: SettingsUiState,
+    section: SettingsSection,
+    openSection: SettingsSection?,
+    onToggle: (SettingsSection) -> Unit,
+    rows: @Composable () -> Unit,
+) {
+    item(key = section.entry.key) {
+        SectionBlock(
+            state = state,
+            section = section,
+            open = openSection == section,
+            onToggle = { onToggle(section) },
+            rows = rows,
+        )
     }
 }
 
@@ -132,24 +148,6 @@ private fun SectionBlock(
 }
 
 @Composable
-private fun SectionRows(section: SettingsSection, state: SettingsUiState, actions: SettingsActions) {
-    when (section) {
-        SettingsSection.APPEARANCE -> AppearanceRows(state, actions)
-        SettingsSection.HOME_SCREEN -> HomeScreenRows(state, actions)
-        SettingsSection.GESTURES -> ToggleRow(
-            state = state,
-            entry = SettingsEntry.DOUBLE_TAP_TO_LOCK,
-            checked = state.doubleTapToLock,
-            onCheckedChange = actions.setDoubleTapToLock,
-        )
-        SettingsSection.PROMPT -> state.shellProfile.promptOptions.forEach { option ->
-            PromptOptionRow(option = option, state = state, actions = actions)
-        }
-        SettingsSection.NOTIFICATIONS -> NotificationRows(state, actions)
-    }
-}
-
-@Composable
 private fun AppearanceRows(state: SettingsUiState, actions: SettingsActions) {
     ChoiceRow(
         state = state,
@@ -177,13 +175,18 @@ private fun HomeScreenRows(state: SettingsUiState, actions: SettingsActions) {
     ToggleRow(state, SettingsEntry.IMMERSIVE_MODE, state.immersiveMode, actions.setImmersiveMode)
 }
 
-/** Writes the row for one prompt part; which parts are listed is the shell's decision. */
+/** Writes the rows for the prompt parts the selected shell honours, which is its decision. */
 @Composable
-private fun PromptOptionRow(option: PromptOption, state: SettingsUiState, actions: SettingsActions) {
-    when (option) {
-        PromptOption.USERNAME -> TextRow(state, SettingsEntry.USERNAME, state.username, actions.setUsername)
-        PromptOption.HOSTNAME -> TextRow(state, SettingsEntry.HOSTNAME, state.hostname, actions.setHostname)
-        PromptOption.SYMBOL -> ChoiceRow(
+private fun PromptRows(state: SettingsUiState, actions: SettingsActions) {
+    val options = state.shellProfile.promptOptions
+    if (PromptOption.USERNAME in options) {
+        TextRow(state, SettingsEntry.USERNAME, state.username, actions.setUsername)
+    }
+    if (PromptOption.HOSTNAME in options) {
+        TextRow(state, SettingsEntry.HOSTNAME, state.hostname, actions.setHostname)
+    }
+    if (PromptOption.SYMBOL in options) {
+        ChoiceRow(
             state = state,
             entry = SettingsEntry.PROMPT_SYMBOL,
             options = PromptSymbol.entries,
@@ -191,7 +194,9 @@ private fun PromptOptionRow(option: PromptOption, state: SettingsUiState, action
             optionLabel = PromptSymbol::text,
             onSelect = actions.selectPromptSymbol,
         )
-        PromptOption.DRIVE -> ChoiceRow(
+    }
+    if (PromptOption.DRIVE in options) {
+        ChoiceRow(
             state = state,
             entry = SettingsEntry.DRIVE,
             options = DosDrive.entries,
@@ -199,12 +204,9 @@ private fun PromptOptionRow(option: PromptOption, state: SettingsUiState, action
             optionLabel = { drive -> "${drive.name}:" },
             onSelect = actions.selectDosDrive,
         )
-        PromptOption.PATH -> ToggleRow(
-            state = state,
-            entry = SettingsEntry.SHOW_PROMPT_PATH,
-            checked = state.showPromptPath,
-            onCheckedChange = actions.setShowPromptPath,
-        )
+    }
+    if (PromptOption.PATH in options) {
+        ToggleRow(state, SettingsEntry.SHOW_PROMPT_PATH, state.showPromptPath, actions.setShowPromptPath)
     }
 }
 
