@@ -3,6 +3,7 @@ package com.gybra.terminallauncher.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
@@ -51,31 +52,13 @@ public fun LauncherApp(
     onExpandQuickSettings: () -> Unit = {},
     onOpenOverview: () -> Unit = {},
 ) {
-    var destination by rememberSaveable { mutableStateOf(LauncherDestination.HOME) }
+    var destination by rememberLauncherDestination(
+        submittedActions, onLaunchApp, onOpenSystemScreen, onRestartLauncher,
+    )
     val releasePrompt = rememberPromptRelease()
-    val launchApp by rememberUpdatedState(onLaunchApp)
-    val openSystemScreen by rememberUpdatedState(onOpenSystemScreen)
-    val restartLauncher by rememberUpdatedState(onRestartLauncher)
-
-    // The recents switcher, the lock, and an application started from anywhere else leave
-    // through none of the paths above, so the release is repeated where all of them end: Home is
-    // no longer on screen. The Home gesture is not one of them, since the launcher is Home.
-    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { releasePrompt() }
 
     LaunchedEffect(settingsState.accessibilityDisclosureVisible) {
         if (settingsState.accessibilityDisclosureVisible) releasePrompt()
-    }
-
-    LaunchedEffect(submittedActions) {
-        submittedActions.collect { action ->
-            releasePrompt()
-            when (action) {
-                is SubmittedAction.LaunchApp -> launchApp(action.app)
-                SubmittedAction.OpenSettings -> destination = LauncherDestination.SETTINGS
-                is SubmittedAction.OpenSystemScreen -> openSystemScreen(action.screen)
-                SubmittedAction.RestartLauncher -> restartLauncher()
-            }
-        }
     }
 
     TerminalThemeProvider(theme = settingsState.terminalTheme) {
@@ -130,6 +113,34 @@ public fun LauncherApp(
             )
         }
     }
+}
+
+@Composable
+private fun rememberLauncherDestination(
+    submittedActions: Flow<SubmittedAction>,
+    onLaunchApp: (InstalledApp) -> Unit,
+    onOpenSystemScreen: (SystemScreen) -> Unit,
+    onRestartLauncher: () -> Unit,
+): MutableState<LauncherDestination> {
+    val destination = rememberSaveable { mutableStateOf(LauncherDestination.HOME) }
+    val releasePrompt = rememberPromptRelease()
+    val launchApp by rememberUpdatedState(onLaunchApp)
+    val openSystemScreen by rememberUpdatedState(onOpenSystemScreen)
+    val restartLauncher by rememberUpdatedState(onRestartLauncher)
+    // External app starts, recents and locking also leave Home; none may restore a live keyboard.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { releasePrompt() }
+    LaunchedEffect(submittedActions) {
+        submittedActions.collect { action ->
+            releasePrompt()
+            when (action) {
+                is SubmittedAction.LaunchApp -> launchApp(action.app)
+                SubmittedAction.OpenSettings -> destination.value = LauncherDestination.SETTINGS
+                is SubmittedAction.OpenSystemScreen -> openSystemScreen(action.screen)
+                SubmittedAction.RestartLauncher -> restartLauncher()
+            }
+        }
+    }
+    return destination
 }
 
 private enum class LauncherDestination {

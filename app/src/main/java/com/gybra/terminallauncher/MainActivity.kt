@@ -146,15 +146,7 @@ public class MainActivity : ComponentActivity() {
                 homeState = homeState,
                 settingsState = settingsState,
                 settingsActions = settingsActions(settingsViewModel),
-                promptActions = PromptActions(
-                    updateValue = homeViewModel::updatePromptValue,
-                    updateFocus = homeViewModel::updatePromptFocus,
-                    submit = homeViewModel::submitPrompt,
-                    offerAppCommands = homeViewModel::offerAppCommands,
-                    writeChoice = homeViewModel::writeChoice,
-                    dismissChoices = homeViewModel::dismissChoices,
-                    writeShortcutCommand = homeViewModel::writeShortcutCommand,
-                ),
+                promptActions = promptActions(homeViewModel),
                 submittedActions = homeViewModel.submittedActions,
                 onLaunchApp = appLauncher::launch,
                 onLaunchShortcut = shortcutLauncher::launch,
@@ -172,6 +164,16 @@ public class MainActivity : ComponentActivity() {
             )
         }
     }
+
+    private fun promptActions(viewModel: HomeViewModel): PromptActions = PromptActions(
+        updateValue = viewModel::updatePromptValue,
+        updateFocus = viewModel::updatePromptFocus,
+        submit = viewModel::submitPrompt,
+        offerAppCommands = viewModel::offerAppCommands,
+        writeChoice = viewModel::writeChoice,
+        dismissChoices = viewModel::dismissChoices,
+        writeShortcutCommand = viewModel::writeShortcutCommand,
+    )
 
     private fun settingsActions(viewModel: SettingsViewModel): SettingsActions = SettingsActions(
         selectShell = viewModel::selectShell,

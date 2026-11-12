@@ -240,7 +240,7 @@ class SettingsViewModelTest {
         advanceUntilIdle()
 
         assertEquals(true, viewModel.uiState.value.showClock)
-        assertEquals("Unable to save preferences", viewModel.uiState.value.storageError)
+        assertEquals(SettingsEntry.STORAGE_ERROR.label, viewModel.uiState.value.storageError)
     }
 
     @Test
@@ -264,7 +264,7 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertEquals("oreste", viewModel.uiState.value.username)
-            assertEquals("Unable to save preferences", viewModel.uiState.value.storageError)
+            assertEquals(SettingsEntry.STORAGE_ERROR.label, viewModel.uiState.value.storageError)
         }
 
     private class FakePreferencesRepository(

@@ -244,7 +244,7 @@ public class SettingsViewModel(
     private suspend fun refreshPersistedState() {
         val preferences = preferencesRepository.preferences.first()
         if (pendingWrites == 0) {
-            val error = if (batchFailed) STORAGE_ERROR else null
+            val error = if (batchFailed) SettingsEntry.STORAGE_ERROR.label else null
             batchFailed = false
             applyPreferences(preferences, storageError = error)
         }
@@ -282,7 +282,6 @@ public class SettingsViewModel(
     )
 
     private companion object {
-        const val STORAGE_ERROR = "Unable to save preferences"
         const val MAX_PROMPT_TOKEN_LENGTH = 16
     }
 }

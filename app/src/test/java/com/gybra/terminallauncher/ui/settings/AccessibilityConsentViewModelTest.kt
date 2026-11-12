@@ -64,8 +64,12 @@ class AccessibilityConsentViewModelTest {
         assertEquals(0, actions)
         assertEquals(false, viewModel.uiState.value.doubleTapToLock)
         assertEquals(true, viewModel.uiState.value.accessibilityDisclosureVisible)
-        repository.emit(LauncherPreferences(accessibilityConsent = AccessibilityConsent.DECLINED,
-            terminalTheme = TerminalTheme.AMBER))
+        repository.emit(
+            LauncherPreferences(
+                accessibilityConsent = AccessibilityConsent.DECLINED,
+                terminalTheme = TerminalTheme.AMBER,
+            ),
+        )
         advanceUntilIdle()
         assertEquals(true, viewModel.uiState.value.accessibilityDisclosureVisible)
     }
@@ -114,7 +118,7 @@ class AccessibilityConsentViewModelTest {
         assertEquals(emptyList<String>(), deviceLock.calls)
         assertEquals(true, viewModel.uiState.value.accessibilityDisclosureVisible)
         assertEquals(false, viewModel.uiState.value.savingAccessibilityConsent)
-        assertEquals("Unable to save preferences", viewModel.uiState.value.storageError)
+        assertEquals(SettingsEntry.STORAGE_ERROR.label, viewModel.uiState.value.storageError)
         assertEquals(AccessibilityConsent.UNDECIDED, viewModel.uiState.value.accessibilityConsent)
         assertEquals(false, viewModel.uiState.value.doubleTapToLock)
     }
@@ -144,7 +148,7 @@ class AccessibilityConsentViewModelTest {
         viewModel.dismissAccessibilityDisclosure()
         advanceUntilIdle()
         assertEquals(false, viewModel.uiState.value.accessibilityDisclosureVisible)
-        assertEquals("Unable to save preferences", viewModel.uiState.value.storageError)
+        assertEquals(SettingsEntry.STORAGE_ERROR.label, viewModel.uiState.value.storageError)
         repository.emit(LauncherPreferences(terminalTheme = TerminalTheme.GREEN))
         advanceUntilIdle()
         assertEquals(false, viewModel.uiState.value.accessibilityDisclosureVisible)

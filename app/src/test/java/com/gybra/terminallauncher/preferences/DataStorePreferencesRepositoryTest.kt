@@ -50,21 +50,7 @@ class DataStorePreferencesRepositoryTest {
             scope = CoroutineScope(firstJob + Dispatchers.IO),
         )
 
-        firstRepository.setAccessibilityConsent(AccessibilityConsent.GRANTED)
-        firstRepository.setShellType(ShellType.DOS)
-        firstRepository.setTerminalTheme(TerminalTheme.AMBER)
-        firstRepository.setShowClock(false)
-        firstRepository.setShowBattery(false)
-        firstRepository.setImmersiveMode(false)
-        firstRepository.setUsername("oreste")
-        firstRepository.setHostname("phone")
-        firstRepository.setPromptSymbol(PromptSymbol.PERCENT)
-        firstRepository.setShowPromptPath(false)
-        firstRepository.setDosDrive(DosDrive.D)
-        firstRepository.pinPackage("org.example.mail")
-        firstRepository.pinShortcut(NEW_TAB)
-        firstRepository.setAlias(name = "browser", packageName = "org.example.firefox")
-        firstRepository.recordLaunch(packageName = "org.example.mail", launchedAt = LAUNCHED_AT)
+        storeCustomizedPreferences(firstRepository)
         firstJob.cancelAndJoin()
 
         val secondJob = SupervisorJob()
@@ -440,6 +426,24 @@ class DataStorePreferencesRepositoryTest {
             id = "new-tab",
             label = "New tab",
         )
+    }
+
+    private suspend fun storeCustomizedPreferences(repository: PreferencesRepository) {
+        repository.setAccessibilityConsent(AccessibilityConsent.GRANTED)
+        repository.setShellType(ShellType.DOS)
+        repository.setTerminalTheme(TerminalTheme.AMBER)
+        repository.setShowClock(false)
+        repository.setShowBattery(false)
+        repository.setImmersiveMode(false)
+        repository.setUsername("oreste")
+        repository.setHostname("phone")
+        repository.setPromptSymbol(PromptSymbol.PERCENT)
+        repository.setShowPromptPath(false)
+        repository.setDosDrive(DosDrive.D)
+        repository.pinPackage("org.example.mail")
+        repository.pinShortcut(NEW_TAB)
+        repository.setAlias(name = "browser", packageName = "org.example.firefox")
+        repository.recordLaunch(packageName = "org.example.mail", launchedAt = LAUNCHED_AT)
     }
 
     private fun fileBackedRepository(

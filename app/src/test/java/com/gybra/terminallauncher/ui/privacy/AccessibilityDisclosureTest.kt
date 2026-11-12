@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
 import com.gybra.terminallauncher.theme.TerminalTheme
+import com.gybra.terminallauncher.ui.settings.SettingsEntry
 import com.gybra.terminallauncher.ui.theme.TerminalThemeProvider
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -38,7 +39,7 @@ class AccessibilityDisclosureTest {
         var accepted = 0
         var dismissed = 0
         composeRule.setContent {
-            CompositionLocalProvider(LocalDensity provides Density(1f, fontScale = 2f)) {
+            CompositionLocalProvider(LocalDensity provides Density(density = 1f, fontScale = 2f)) {
                 TerminalThemeProvider(theme = TerminalTheme.GREEN) {
                     AccessibilityDisclosure(
                         onAccept = { accepted += 1 }, onDismiss = { dismissed += 1 },
@@ -109,7 +110,7 @@ class AccessibilityDisclosureTest {
 
     @Test
     fun `a storage error is readable before retrying or declining`() {
-        val error = "Unable to save preferences"
+        val error = SettingsEntry.STORAGE_ERROR.label
         composeRule.setContent {
             AccessibilityDisclosure(onAccept = {}, onDismiss = {}, saving = false, error = error)
         }

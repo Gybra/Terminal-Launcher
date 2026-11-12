@@ -14,7 +14,7 @@ public enum class SettingsEntry(
 ) {
     BACK("back", "< back"),
     PREVIEW("preview", "preview"),
-    STORAGE_ERROR("storage-error"),
+    STORAGE_ERROR("storage-error", "Unable to save preferences"),
     PRIVACY_POLICY("privacy-policy", "Privacy policy"),
     APPEARANCE("appearance", "Appearance"),
     HOME_SCREEN("home-screen", "Home screen"),
