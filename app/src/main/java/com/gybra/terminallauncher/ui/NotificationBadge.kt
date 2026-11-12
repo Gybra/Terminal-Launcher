@@ -13,7 +13,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.gybra.terminallauncher.theme.BadgeColor
 import com.gybra.terminallauncher.theme.BadgeSize
-import com.gybra.terminallauncher.ui.home.HomeItem
 import com.gybra.terminallauncher.ui.theme.LocalTerminalColors
 
 /**
@@ -33,7 +32,7 @@ internal fun NotificationBadge(
     val ink = BadgeColor.parse(text) ?: colors.background
     Spacer(modifier = Modifier.width(8.dp))
     BasicText(
-        text = if (count > 99) HomeItem.BADGE_OVERFLOW else count.toString(),
+        text = if (count > 99) BADGE_OVERFLOW else count.toString(),
         style = terminalTextStyle(
             color = if (pressed) colors.foreground else ink,
             fontSize = size.fontSize,
@@ -45,6 +44,12 @@ internal fun NotificationBadge(
                 CircleShape,
             )
             .padding(horizontal = size.horizontalPadding, vertical = size.verticalPadding)
-            .semantics { contentDescription = HomeItem.badgeDescription(count) },
+            .semantics { contentDescription = badgeDescription(count) },
     )
 }
+
+/** What a badge writes once the count no longer fits in two digits. */
+internal const val BADGE_OVERFLOW: String = "99+"
+
+/** What a badge says to accessibility services instead of its bare number. */
+internal fun badgeDescription(count: Int): String = "$count notifications"

@@ -42,7 +42,7 @@ import com.gybra.terminallauncher.theme.BadgeSize
 import com.gybra.terminallauncher.theme.DosColor
 import com.gybra.terminallauncher.theme.TerminalTheme
 import com.gybra.terminallauncher.ui.TestTag
-import com.gybra.terminallauncher.ui.home.HomeItem
+import com.gybra.terminallauncher.ui.badgeDescription
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -261,7 +261,7 @@ class SettingsScreenTest {
         inPreview("user@android:~$").assertIsDisplayed()
         inPreview(UnixShellProfile.formatAppName(PreviewSample.APP)).assertIsDisplayed()
         composeRule
-            .onNodeWithContentDescription(HomeItem.badgeDescription(PreviewSample.NOTIFICATIONS))
+            .onNodeWithContentDescription(badgeDescription(PreviewSample.NOTIFICATIONS))
             .assertIsDisplayed()
 
         harness.state = harness.state.copy(
@@ -275,7 +275,7 @@ class SettingsScreenTest {
         inPreview(DosShellProfile.formatAppName(PreviewSample.APP)).assertIsDisplayed()
         composeRule.onAllNodes(previewText(PreviewSample.CLOCK)).assertCountEquals(0)
         composeRule
-            .onAllNodes(hasContentDescription(HomeItem.badgeDescription(PreviewSample.NOTIFICATIONS)))
+            .onAllNodes(hasContentDescription(badgeDescription(PreviewSample.NOTIFICATIONS)))
             .assertCountEquals(0)
     }
 
