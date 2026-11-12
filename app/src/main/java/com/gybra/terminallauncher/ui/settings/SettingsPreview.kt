@@ -41,7 +41,7 @@ internal object PreviewSample {
 /**
  * What Home would write with these settings: the status line, the prompt, and one application
  * with its badge. It answers no touch. Whatever a change touched is outlined for a moment, and the
- * whole preview is when the change added or took away a part or recoloured everything.
+ * whole preview is when the change added or took away a part, changed shell, or recoloured everything.
  */
 @Composable
 internal fun SettingsPreview(state: SettingsUiState, modifier: Modifier = Modifier) {
