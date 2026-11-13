@@ -309,7 +309,7 @@ internal fun NotificationAccessRow(state: SettingsUiState, onOpenSettings: () ->
 }
 
 @Composable
-internal fun ActionLine(text: String, onClick: () -> Unit) {
+internal fun ActionLine(text: String, enabled: Boolean = true, onClick: () -> Unit) {
     val colors = LocalTerminalColors.current
     BasicText(
         text = text,
@@ -317,7 +317,7 @@ internal fun ActionLine(text: String, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
-            .clickable(onClick = onClick),
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
     )
 }
 

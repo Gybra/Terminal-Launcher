@@ -20,6 +20,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTouchInput
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -43,6 +45,8 @@ import com.gybra.terminallauncher.ui.home.PromptActions
 import com.gybra.terminallauncher.ui.home.PromptState
 import com.gybra.terminallauncher.ui.home.SubmittedAction
 import com.gybra.terminallauncher.ui.home.TerminalEntry
+import com.gybra.terminallauncher.ui.privacy.AccessibilityDisclosureText
+import com.gybra.terminallauncher.ui.privacy.PrivacyPolicy
 import com.gybra.terminallauncher.ui.settings.SettingsActions
 import com.gybra.terminallauncher.ui.settings.SettingsEntry
 import com.gybra.terminallauncher.ui.settings.SettingsSection
@@ -65,6 +69,93 @@ import org.robolectric.annotation.GraphicsMode
 class LauncherAppTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun `first use shows accessibility disclosure before forwarding agreement`() {
+        var accepted = 0
+        composeRule.setContent {
+            LauncherApp(
+                homeState = homeState(),
+                settingsState = settingsState().copy(accessibilityDisclosureVisible = true),
+                settingsActions = emptySettingsActions().copy(acceptAccessibilityDisclosure = { accepted += 1 }),
+                promptActions = emptyPromptActions(),
+                submittedActions = emptyFlow(),
+                onLaunchApp = {},
+                onLaunchShortcut = {},
+                onRowStart = {},
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+        composeRule.onNodeWithText(AccessibilityDisclosureText.TITLE).assertIsDisplayed()
+        assertEquals(0, accepted)
+        composeRule.onNodeWithText(AccessibilityDisclosureText.AGREE).performScrollTo().performClick()
+        assertEquals(1, accepted)
+    }
+
+    @Test
+    fun `privacy policy is available offline in both shells and returns to settings`() {
+        var state by mutableStateOf(settingsState())
+        var backDispatcher: OnBackPressedDispatcher? = null
+        composeRule.setContent {
+            backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+            LauncherApp(
+                homeState = homeState(),
+                settingsState = state,
+                settingsActions = emptySettingsActions(),
+                promptActions = emptyPromptActions(),
+                submittedActions = flowOf(SubmittedAction.OpenSettings),
+                onLaunchApp = {},
+                onLaunchShortcut = {},
+                onRowStart = {},
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToKey(SettingsEntry.PRIVACY_POLICY.key)
+        composeRule.onNodeWithText(UnixShellProfile.formatMessage(SettingsEntry.PRIVACY_POLICY.label)).performClick()
+        composeRule.onNodeWithText(PrivacyPolicy.TITLE).assertIsDisplayed()
+        composeRule.onNodeWithText(PrivacyPolicy.CONTACT).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText(SettingsEntry.BACK.label).performScrollTo().performClick()
+        composeRule.runOnIdle { state = state.copy(shellProfile = DosShellProfile) }
+        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).performScrollToKey(SettingsEntry.PRIVACY_POLICY.key)
+        composeRule.onNodeWithText(DosShellProfile.formatMessage(SettingsEntry.PRIVACY_POLICY.label)).performClick()
+        composeRule.onNodeWithText(PrivacyPolicy.TITLE).assertIsDisplayed()
+        composeRule.runOnIdle { checkNotNull(backDispatcher).onBackPressed() }
+        composeRule.onNodeWithTag(TestTag.SETTINGS_LIST.tag).assertIsDisplayed()
+    }
+
+    @Test
+    fun `declining accessibility leaves normal app launching available`() {
+        var state by mutableStateOf(settingsState().copy(accessibilityDisclosureVisible = true))
+        var accepted = false
+        var launched = false
+        composeRule.setContent {
+            LauncherApp(
+                homeState = homeState(apps = listOf(InstalledApp(packageName = "org.example.mail", label = "Mail"))),
+                settingsState = state,
+                settingsActions = emptySettingsActions().copy(
+                    acceptAccessibilityDisclosure = { accepted = true },
+                    dismissAccessibilityDisclosure = { state = state.copy(accessibilityDisclosureVisible = false) },
+                ),
+                promptActions = emptyPromptActions(),
+                submittedActions = emptyFlow(),
+                onLaunchApp = { launched = true },
+                onLaunchShortcut = {},
+                onRowStart = {},
+                onLockScreen = {},
+                onOpenSystemScreen = {},
+                onRestartLauncher = {},
+            )
+        }
+        composeRule.onNodeWithText(AccessibilityDisclosureText.NOT_NOW).performScrollTo().performClick()
+        composeRule.onNodeWithText(AccessibilityDisclosureText.TITLE).assertDoesNotExist()
+        composeRule.onNodeWithText("mail").performClick()
+        assertEquals(false, accepted)
+        assertEquals(true, launched)
+    }
 
     @Test
     fun `opens settings and returns home with the back action`() {

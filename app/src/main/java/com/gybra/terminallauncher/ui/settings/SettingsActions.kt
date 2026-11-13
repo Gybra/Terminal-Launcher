@@ -22,4 +22,6 @@ public data class SettingsActions(
     public val setBadgeText: (String?) -> Unit = {},
     public val setBadgeSize: (BadgeSize) -> Unit = {},
     public val openNotificationAccess: () -> Unit = {},
+    public val acceptAccessibilityDisclosure: () -> Unit = {},
+    public val dismissAccessibilityDisclosure: () -> Unit = {},
 )

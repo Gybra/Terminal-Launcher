@@ -146,28 +146,34 @@ public class MainActivity : ComponentActivity() {
                 homeState = homeState,
                 settingsState = settingsState,
                 settingsActions = settingsActions(settingsViewModel),
-                promptActions = PromptActions(
-                    updateValue = homeViewModel::updatePromptValue,
-                    updateFocus = homeViewModel::updatePromptFocus,
-                    submit = homeViewModel::submitPrompt,
-                    offerAppCommands = homeViewModel::offerAppCommands,
-                    writeChoice = homeViewModel::writeChoice,
-                    dismissChoices = homeViewModel::dismissChoices,
-                    writeShortcutCommand = homeViewModel::writeShortcutCommand,
-                ),
+                promptActions = promptActions(homeViewModel),
                 submittedActions = homeViewModel.submittedActions,
                 onLaunchApp = appLauncher::launch,
                 onLaunchShortcut = shortcutLauncher::launch,
                 onRowStart = homeViewModel::clearPrompt,
-                onLockScreen = { deviceLock.lock() },
-                onExpandNotifications = systemShade::expandNotifications,
-                onExpandQuickSettings = systemShade::expandQuickSettings,
-                onOpenOverview = systemOverview::open,
+                onLockScreen = { settingsViewModel.performAccessibilityAction { deviceLock.lock() } },
+                onExpandNotifications = {
+                    settingsViewModel.performAccessibilityAction { systemShade.expandNotifications() }
+                },
+                onExpandQuickSettings = {
+                    settingsViewModel.performAccessibilityAction { systemShade.expandQuickSettings() }
+                },
+                onOpenOverview = { settingsViewModel.performAccessibilityAction { systemOverview.open() } },
                 onOpenSystemScreen = systemScreenLauncher::open,
                 onRestartLauncher = ::recreate,
             )
         }
     }
+
+    private fun promptActions(viewModel: HomeViewModel): PromptActions = PromptActions(
+        updateValue = viewModel::updatePromptValue,
+        updateFocus = viewModel::updatePromptFocus,
+        submit = viewModel::submitPrompt,
+        offerAppCommands = viewModel::offerAppCommands,
+        writeChoice = viewModel::writeChoice,
+        dismissChoices = viewModel::dismissChoices,
+        writeShortcutCommand = viewModel::writeShortcutCommand,
+    )
 
     private fun settingsActions(viewModel: SettingsViewModel): SettingsActions = SettingsActions(
         selectShell = viewModel::selectShell,
@@ -176,6 +182,8 @@ public class MainActivity : ComponentActivity() {
         setShowBattery = viewModel::setShowBattery,
         setImmersiveMode = viewModel::setImmersiveMode,
         setDoubleTapToLock = viewModel::setDoubleTapToLock,
+        acceptAccessibilityDisclosure = viewModel::acceptAccessibilityDisclosure,
+        dismissAccessibilityDisclosure = viewModel::dismissAccessibilityDisclosure,
         setUsername = viewModel::setUsername,
         setHostname = viewModel::setHostname,
         selectPromptSymbol = viewModel::selectPromptSymbol,

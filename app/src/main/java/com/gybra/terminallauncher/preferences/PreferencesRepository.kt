@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 public interface PreferencesRepository {
     public val preferences: Flow<LauncherPreferences>
 
+    /** Stores the user's choice for the separate in-app accessibility disclosure. */
+    public suspend fun setAccessibilityConsent(consent: AccessibilityConsent)
+
     public suspend fun setShellType(shellType: ShellType)
 
     public suspend fun setTerminalTheme(terminalTheme: TerminalTheme)

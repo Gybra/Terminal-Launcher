@@ -26,4 +26,5 @@ public data class LauncherPreferences(
     public val pinnedShortcuts: List<AppShortcut> = emptyList(),
     public val aliases: Map<String, String> = emptyMap(),
     public val usage: Map<String, AppUsage> = emptyMap(),
+    public val accessibilityConsent: AccessibilityConsent = AccessibilityConsent.UNDECIDED,
 )

@@ -50,20 +50,7 @@ class DataStorePreferencesRepositoryTest {
             scope = CoroutineScope(firstJob + Dispatchers.IO),
         )
 
-        firstRepository.setShellType(ShellType.DOS)
-        firstRepository.setTerminalTheme(TerminalTheme.AMBER)
-        firstRepository.setShowClock(false)
-        firstRepository.setShowBattery(false)
-        firstRepository.setImmersiveMode(false)
-        firstRepository.setUsername("oreste")
-        firstRepository.setHostname("phone")
-        firstRepository.setPromptSymbol(PromptSymbol.PERCENT)
-        firstRepository.setShowPromptPath(false)
-        firstRepository.setDosDrive(DosDrive.D)
-        firstRepository.pinPackage("org.example.mail")
-        firstRepository.pinShortcut(NEW_TAB)
-        firstRepository.setAlias(name = "browser", packageName = "org.example.firefox")
-        firstRepository.recordLaunch(packageName = "org.example.mail", launchedAt = LAUNCHED_AT)
+        storeCustomizedPreferences(firstRepository)
         firstJob.cancelAndJoin()
 
         val secondJob = SupervisorJob()
@@ -75,6 +62,7 @@ class DataStorePreferencesRepositoryTest {
 
         assertEquals(
             LauncherPreferences(
+                accessibilityConsent = AccessibilityConsent.GRANTED,
                 shellType = ShellType.DOS,
                 terminalTheme = TerminalTheme.AMBER,
                 showClock = false,
@@ -373,6 +361,25 @@ class DataStorePreferencesRepositoryTest {
     }
 
     @Test
+    fun `round trips every consent choice without changing other preferences`() = runTest {
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore())
+        assertEquals(AccessibilityConsent.UNDECIDED, repository.preferences.first().accessibilityConsent)
+        repository.pinPackage("org.example.mail")
+        for (consent in AccessibilityConsent.entries) {
+            repository.setAccessibilityConsent(consent)
+            assertEquals(consent, repository.preferences.first().accessibilityConsent)
+            assertEquals(setOf("org.example.mail"), repository.preferences.first().pinnedPackages)
+        }
+    }
+
+    @Test
+    fun `unknown persisted consent never grants accessibility actions`() = runTest {
+        val stored = mutablePreferencesOf(stringPreferencesKey("accessibility_consent_v1") to "UNKNOWN")
+        val repository = DataStorePreferencesRepository(FakePreferencesDataStore(initialPreferences = stored))
+        assertEquals(AccessibilityConsent.UNDECIDED, repository.preferences.first().accessibilityConsent)
+    }
+
+    @Test
     fun `maps an unknown persisted shell to the default shell`() = runTest {
         val storedPreferences = mutablePreferencesOf(
             stringPreferencesKey("shell_type") to "UNKNOWN",
@@ -419,6 +426,24 @@ class DataStorePreferencesRepositoryTest {
             id = "new-tab",
             label = "New tab",
         )
+    }
+
+    private suspend fun storeCustomizedPreferences(repository: PreferencesRepository) {
+        repository.setAccessibilityConsent(AccessibilityConsent.GRANTED)
+        repository.setShellType(ShellType.DOS)
+        repository.setTerminalTheme(TerminalTheme.AMBER)
+        repository.setShowClock(false)
+        repository.setShowBattery(false)
+        repository.setImmersiveMode(false)
+        repository.setUsername("oreste")
+        repository.setHostname("phone")
+        repository.setPromptSymbol(PromptSymbol.PERCENT)
+        repository.setShowPromptPath(false)
+        repository.setDosDrive(DosDrive.D)
+        repository.pinPackage("org.example.mail")
+        repository.pinShortcut(NEW_TAB)
+        repository.setAlias(name = "browser", packageName = "org.example.firefox")
+        repository.recordLaunch(packageName = "org.example.mail", launchedAt = LAUNCHED_AT)
     }
 
     private fun fileBackedRepository(
